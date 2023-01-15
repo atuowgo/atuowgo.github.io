@@ -1,0 +1,44 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>Jacoco - 标签 - 程序猿二腊</title>
+        <link>https://atuowgo.github.io/tags/jacoco/</link>
+        <description>Jacoco - 标签 - 程序猿二腊</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Sat, 21 Dec 2019 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/jacoco/" rel="self" type="application/rss+xml" /><item>
+    <title>Instrument API介绍</title>
+    <link>https://atuowgo.github.io/03-instrument-api/</link>
+    <pubDate>Sat, 21 Dec 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/03-instrument-api/</guid>
+    <description><![CDATA[1. Instrumentation介绍 JVMTI（JVM Tool Interface）是 Java 虚拟机所提供的 native 编程接口，是 JVMPI（Java Virtual Machine Profiler Interface）和 JVMDI（Java Virtual Machine Debug Interface）的更新版本。JVMTI 提供了一套“代理”程序机制，可以支持第三方工具程序以代理的方式连接和访问 JVM，并利用 JVMTI 提供的丰富的编程接口，完成很多跟 JVM 相关的功能。
+Agent 即 JVMTI 的客户端，它和执行 Java 程序的虚拟机运行在同一个进程上。他们通常由另一个独立的进程控制，充当这个独立进程和当前虚拟机之间的中介，通过调用 JVMTI 提供的接口和虚拟机交互，负责获取并返回当前虚拟机的状态或者转发控制命令。java.lang.instrument 包的实现，也是基于这种机制的。在 Instrumentation 的实现当中，存在一个 JVMTI 的代理程序，通过调用 JVMTI 当中于 Java 类相关的函数来完成Java 类的动态操作。
+利用 java.lang.instrument 做动态 Instrumentation 是 Java SE 5 的新特性，它把 Java 的 instrument 功能从本地代码中解放出来，使之可以用 Java 代码的方式解决问题。使用 Instrumentation，开发者可以构建一个独立于应用程序的代理程序（Agent），用来监测和协助运行在 JVM 上的程序，甚至能够替换和修改某些类的定义。有了这样的功能，开发者就可以实现更为灵活的运行时虚拟机监控和 Java 类操作了，这样的特性实际上提供了 一种虚拟机级别支持的 AOP 实现方式，使得开发者无需对 JDK 做任何升级和改动，就可以实现某些 AOP 的功能了。]]></description>
+</item>
+<item>
+    <title>字节码增强</title>
+    <link>https://atuowgo.github.io/02-class-instrument/</link>
+    <pubDate>Fri, 13 Dec 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/02-class-instrument/</guid>
+    <description><![CDATA[上节介绍了Java字节码结构，这节介绍字节码增强技术。Java字节码增强指的是在Java字节码生成之后，对其进行修改，增强其功能，这种方式相当于对应用程序的二进制文件进行修改。
+常见的字节码增强技术包括：
+Java自带的动态代理 ASM Javassist 1. 动态代理 在介绍动态代理前，先介绍代理模式。如下图，为代理模式的UML类图：
+代理模式是一种设计模式，提供了对目标对象额外的访问方式，即通过代理对象访问目标对象，这样可以在不修改原目标对象的前提下，提供额外的功能操作，扩展目标对象的功能。代理类ProxyAction和被代理类CoreActionImpl都实现了同一个接口Action，ProxyAction还持有了CoreActionImpl，以调用被代理类的核心操作。代理模式实现可以分为静态代理和动态代理。
+1.1. 静态代理 静态代理完全就是上面UML类图的直译，若代理类在程序运行前就已经存在，那么这种代理方式被成为 静态代理 ，这种情况下的代理类通常都是我们在Java代码中定义的。 通常情况下， 静态代理中的代理类和委托类会实现同一接口或是派生自相同的父类，再通过聚合来实现，让代理类持有一个委托类的引用即可。例子如下：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 public interface Action { void say(); } public class CoreActionImpl implements Action { @Override public void say() { System.out.println(&#34;hello world&#34;); } } public class ProxyAction implements Action { private Action action = new CoreActionImpl(); @Override public void say() { System.]]></description>
+</item>
+<item>
+    <title>Class文件格式</title>
+    <link>https://atuowgo.github.io/01-class-filetype/</link>
+    <pubDate>Sun, 08 Dec 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/01-class-filetype/</guid>
+    <description><![CDATA[我们知道Java是一门跨平台的语言，我们编写的Java代码会被编译成中间class文件以让Java虚拟机解析运行。而Java虚拟机规范仅仅描述了抽象的Java虚拟机，在实现具体的Java虚拟机时，仅指出了设计规范。Java虚拟机的实现必须体现规范中的内容，但仅在确有必要时才应该受制于这些规范。对于完整内容，可以查看原文档，以JDK7为例，可查看https://docs.oracle.com/javase/specs/jvms/se7/html/，或者《深入理解Java虚拟机 JVM高级特性与最佳实践》一书。完整的规范主要包含以下内容：
+第2章：概览Java虚拟机整体架构 第3章：介绍如何将Java语言编写的程序转换为虚拟机指令集 第4章：定义class文件格式。它是一种与硬件和操作系统无关的二进制格式，用来表示编译后的类和接口 第5章：定义了Java虚拟机启动以及类和接口的加载、链接和初始化的过程 第6章：定义了Java虚拟机指令集 第7章：提供了一张以操作码值为索引的Java虚拟机操作码助记表 本文只是大概记录项目需要了解的基础概念，着重在介绍Class文件格式上，为该系列后续内容做铺垫。
+Class文件是一组以8字节为基础单位的二进制流，各个数据项目严格按照顺序紧凑排列在class文件中，中间没有任何分割符。每个 Class 文件都是由 8 字节为单位的字节流组成，所有的 16 位、32 位和 64 位长度的数据将被构造成 2 个、4 个和 8 个 8 字节单位来表示。
+每一个Class文件对应于一个如下所示的ClassFile结构体:
+涉及到的内容包括：
+magic：魔数，魔数的唯一作用是确定这个文件是否为一个能被虚拟机所接受的Class文件。魔数值固定为0xCAFEBABE，不会改变。 minor_version、major_version：副版本号和主版本号，minor_version和major_version的值分别表示Class文件的副、主版本。一个Java虚拟机实例只能支持特定范围内的主版本号（Mi至Mj）和0至特定范围内（0至m）的副版本号。 constant_pool_count：常量池计数器，constant_pool_count的值等于constant_pool表中的成员数加1。 constant_pool[]：常量池，constant_pool是一种表结构，它包含Class文件结构及其子结构中引用的所有字符串常量、类或接口名、字段名和其它常量。 access_flags：访问标志，access_flags是一种掩码标志，用于表示某个类或者接口的访问权限及基础属性。 this_class：类索引 super_class：父类索引 interfaces_count：接口计数器，interfaces_count的值表示当前类或接口的直接父接口数量 interfaces[]：接口表，在interfaces[]数组中，成员所表示的接口顺序和对应的源代码中给定的接口顺序（从左至右）一样，即interfaces[0]对应的是源代码中最左边的接口。 fields_count：字段计数器，fields_count的值表示当前Class文件fields[]数组的成员个数。 fields[]：字段表，fields[]数组描述当前类或接口声明的所有字段，但不包括从父类或父接口继承的部分。 methods_count：方法计数器，methods_count的值表示当前Class文件methods[]数组的成员个数。 methods[]：方法表，methods[]数组只描述当前类或接口中声明的方法，不包括从父类或父接口继承的方法。 attributes_count：属性计数器，attributes_count的值表示当前Class文件attributes表的成员个数。 attributes[]：属性表 可用jdk自带的javap命令对class文件进行反编译，以查看内容，如下代码：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 public class Ex { public void judgeAge(int age) { int step = 0; if (age &gt; 18) { step++; System.]]></description>
+</item>
+</channel>
+</rss>

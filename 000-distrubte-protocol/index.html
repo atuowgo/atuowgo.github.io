@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>分布式一致性协议 - 程序猿二腊</title><meta name="Description" content="介绍常见的分布式一致性协议"><meta property="og:title" content="分布式一致性协议" />
+<meta property="og:description" content="介绍常见的分布式一致性协议" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/000-distrubte-protocol/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-09-27T00:00:00+00:00" />
+<meta property="article:modified_time" content="2019-09-27T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="分布式一致性协议"/>
+<meta name="twitter:description" content="介绍常见的分布式一致性协议"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/000-distrubte-protocol/" /><link rel="prev" href="https://atuowgo.github.io/06-cluster/" /><link rel="next" href="https://atuowgo.github.io/001-java-eof/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "分布式一致性协议",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/000-distrubte-protocol\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "distrubute","wordcount":  396 ,
+        "url": "https:\/\/atuowgo.github.io\/000-distrubte-protocol\/","datePublished": "2019-09-27T00:00:00+00:00","dateModified": "2019-09-27T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "介绍常见的分布式一致性协议"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">分布式一致性协议</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2019-09-27">2019-09-27</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 396 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;<span id="/000-distrubte-protocol/" class="leancloud_visitors" data-flag-title="分布式一致性协议">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#一capbase">一．CAP/BASE</a>
+              <ul>
+                <li><a href="#1-cap理论">1. CAP理论</a></li>
+                <li><a href="#2-base理论">2. BASE理论</a></li>
+              </ul>
+            </li>
+            <li><a href="#二两阶段提交">二．两阶段提交</a></li>
+            <li><a href="#三三阶段提交">三．三阶段提交</a></li>
+            <li><a href="#四-paxos">四. Paxos</a>
+              <ul>
+                <li><a href="#1背景">1.背景</a></li>
+                <li><a href="#2相关概念">2.相关概念</a></li>
+                <li><a href="#3目标">3.目标</a></li>
+                <li><a href="#4两个原则">4.两个原则</a></li>
+                <li><a href="#5basic-paxos">5.Basic Paxos</a>
+                  <ul>
+                    <li><a href="#阶段一">阶段一：</a></li>
+                    <li><a href="#阶段二">阶段二：</a></li>
+                  </ul>
+                </li>
+                <li><a href="#6推导过程">6.推导过程</a></li>
+                <li><a href="#7multi-paxos">7.Multi-Paxos</a></li>
+              </ul>
+            </li>
+            <li><a href="#五raft">五．Raft</a>
+              <ul>
+                <li><a href="#1角色">1.角色：</a></li>
+                <li><a href="#2term">2.Term:</a></li>
+                <li><a href="#3rpc通信">3.RPC通信：</a></li>
+                <li><a href="#4-leader-election">4. Leader election</a></li>
+                <li><a href="#5-log-replication">5. Log replication</a></li>
+                <li><a href="#6-safety">6. Safety</a></li>
+                <li><a href="#7集群拓扑变化">7.集群拓扑变化</a></li>
+              </ul>
+            </li>
+            <li><a href="#六zab">六．Zab</a>
+              <ul>
+                <li><a href="#1相关术语">1.	相关术语</a></li>
+                <li><a href="#2协议内容">2.协议内容</a></li>
+                <li><a href="#3实现">3.实现</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 介绍常见的分布式一致性协议</p>
+<h4 id="一capbase">一．CAP/BASE</h4>
+<h5 id="1-cap理论">1. CAP理论</h5>
+<p> CAP理论又称之为布鲁尔定理（Brewer’S theorem），认为在设计一个大规模可扩放的网络服务时候不能同时兼容：一致性（consistency）、可用性（Availability）、分区容错（Partition-tolerance）。</p>
+<p> 一致性：在分布式系统中的所有数据备份，在同一时刻是否有同样的值。（等同于所有节点访问同一份最新的数据副本）</p>
+<p> 可用性：在集群中一部分节点故障后，集群整体是否还能响应客户端的读写请求。</p>
+<p> 分区容忍性：以实际效果而言，分区相当于对通信的时限要求。系统如果不能在时限内达成数据一致性，就意味着发生了分区的情况，必须就当前操作在C和A之间做出选择</p>
+<p> CAP理论容易理解，网上也有关于该理论的说明，包括模型的简易证明；弱条件下模型的成立等。</p>
+<p> 参考资料：</p>
+<ol>
+<li>
+<p><a href="http://www.cnblogs.com/mmjx/archive/2011/12/19/2290540.html" target="_blank" rel="noopener noreffer ">http://www.cnblogs.com/mmjx/archive/2011/12/19/2290540.html</a></p>
+</li>
+<li>
+<p><a href="http://nathanmarz.com/blog/how-to-beat-the-cap-theorem.html" target="_blank" rel="noopener noreffer ">http://nathanmarz.com/blog/how-to-beat-the-cap-theorem.html</a></p>
+</li>
+</ol>
+<h5 id="2-base理论">2. BASE理论</h5>
+<p> BASE是Basically Available（基本可用）、Soft state（软状态）和Eventually consistent（最终一致性）三个短语的简写，BASE是对CAP中一致性和可用性权衡的结果，其来源于对大规模互联网系统分布式实践的结论，是基于CAP定理逐步演化而来的，其核心思想是即使无法做到强一致性（Strong consistency），但每个应用都可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性（Eventual consistency）</p>
+<p> 基本可用：分布式系统在出现故障的时候，允许损失部分可用性，即保证核心可用。</p>
+<p> 软状态：允许系统存在中间状态，而该中间状态不会影响系统整体可用性</p>
+<p> 最终一致性：系统中的所有数据副本经过一定时间后，最终能够达到一致的状态</p>
+<h4 id="二两阶段提交">二．两阶段提交</h4>
+<p> 两阶段提交(Two-phaseCommit)是指，在计算机网络以及数据库领域内，为了使基于分布式系统架构下的所有节点在进行事务提交时保持一致性而设计的一种算法。</p>
+<p> 在分布式系统中，每个节点虽然可以知晓自己的操作时成功或者失败，却无法知道其他节点的操作的成功或失败。当一个事务跨越多个节点时，为了保持事务的ACID特性，需要引入一个作为协调者的组件来统一掌控所有节点(称作参与者)的操作结果并最终指示这些节点是否要把操作结果进行真正的提交。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/1.png"
+        data-srcset="/000-distrubte-protocol/1.png, /000-distrubte-protocol/1.png 1.5x, /000-distrubte-protocol/1.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/1.png"
+        title="/000-distrubte-protocol/1.png" width="664" height="484" /></p>
+<p> 如上图示，该协议分为两个阶段：</p>
+<ol>
+<li>
+<p>请求阶段（commit-request phase，或称表决阶段，voting phase）</p>
+<p>在请求阶段，协调者将通知事务参与者准备提交或取消事务，然后进入表决过程。在表决过程中，参与者将告知协调者自己的决策：同意（事务参与者本地作业执行成功）或取消（本地作业执行故障）。</p>
+</li>
+<li>
+<p>提交阶段（commit phase）</p>
+<p>在该阶段，协调者将基于第一个阶段的投票结果进行决策：提交或取消。当且仅当所有的参与者同意提交事务协调者才通知所有的参与者提交事务，否则协调者将通知所有的参与者取消事务。参与者在接收到协调者发来的消息后将执行相应的操作。</p>
+</li>
+</ol>
+<p> 二阶段提交算法的最大缺点就在于它在执行过程中间，节点都处于阻塞态。即节点之间在等待对方的响应消息时，它将什么也做不了。特别是，当一个节点在已经占有了某项资源的情况下，为了等待其他节点的响应消息而陷入阻塞状态时，当第三个节点尝试访问该节点占有的资源时，这个节点也将连带陷入阻塞状态。</p>
+<p> 另外，协调者节点指示参与者节点进行提交等操作时，如有参与者节点出现了崩溃等情况而导致协调者始终无法获取所有参与者的响应信息，这时协调者将只能依赖协调者自身的超时机制来生效。但往往超时机制生效时，协调者都会指示参与者进行回滚操作。这样的策略显得比较保守。</p>
+<p> 参考资料</p>
+<ol>
+<li><a href="https://en.wikipedia.org/wiki/Two-phase_commit_protocol" target="_blank" rel="noopener noreffer ">https://en.wikipedia.org/wiki/Two-phase_commit_protocol</a></li>
+</ol>
+<h4 id="三三阶段提交">三．三阶段提交</h4>
+<p> 与两阶段提交不同的是，三阶段提交是“非阻塞”协议。三阶段提交在两阶段提交的第一阶段与第二阶段之间插入了一个准备阶段，同时对于协调者和参与者都设置了超时机制，使得原先在两阶段提交中，参与者在投票之后，由于协调者发生崩溃或错误，而导致参与者处于无法知晓是否提交或者中止的“不确定状态”所产生的可能相当长的延时的问题得以解决。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/2.png"
+        data-srcset="/000-distrubte-protocol/2.png, /000-distrubte-protocol/2.png 1.5x, /000-distrubte-protocol/2.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/2.png"
+        title="/000-distrubte-protocol/2.png" width="865" height="454" /></p>
+<p> 如上图示，该协议分为三个阶段：</p>
+<ol>
+<li>canCommit</li>
+</ol>
+<p> 协调者向参与者发送commit请求，参与者如果可以提交就返回Yes响应，否则返回No响应。</p>
+<ol start="2">
+<li>
+<p>preCommit</p>
+<p>协调者根据参与者的反应情况来决定是否可以进行事务的PreCommit操作。根据响应情况，有以下两种可能.</p>
+<ol>
+<li>假如协调者从所有的参与者获得的反馈都是Yes响应，那么就会执行事务的预执行。</li>
+</ol>
+<p> 发送预提交请求,Coordinator向Cohort发送PreCommit请求，并进入Prepared阶段。</p>
+<p> 事务预提交,Cohort接收到PreCommit请求后，会执行事务操作，并将undo和redo信息记录到事务日志中。</p>
+<p> 响应反馈,如果Cohort成功的执行了事务操作，则返回ACK响应，同时开始等待最终指令。</p>
+<ol start="2">
+<li>假如有任何一个参与者向协调者发送了No响应，或者等待超时之后，协调者都没有接到参与者的响应，那么就执行事务的中断。</li>
+</ol>
+<p> 发送中断请求,Coordinator向所有Cohort发送abort请求。</p>
+<p> 中断事务,Cohort收到来自Coordinator的abort请求之后（或超时之后，仍未收到Cohort的请求），执行事务的中断。</p>
+</li>
+<li>
+<p>doCommit</p>
+<p>该阶段进行真正的事务提交，也可以分为以下两种情况:</p>
+<ol>
+<li>执行提交</li>
+</ol>
+<p> A.发送提交请求。Coordinator接收到Cohort发送的ACK响应，那么他将从预提交状态进入到提交状态。并向所有Cohort发送doCommit请求。</p>
+<p> B.事务提交。Cohort接收到doCommit请求之后，执行正式的事务提交。并在完成事务提交之后释放所有事务资源。</p>
+<p> C.响应反馈。事务提交完之后，向Coordinator发送ACK响应。</p>
+<p> D.完成事务。Coordinator接收到所有Cohort的ACK响应之后，完成事务。</p>
+<ol start="2">
+<li>中断事务 协调者没有接收到参与者发送的ACK响应（可能是接受者发送的不是ACK响应，也可能响应超时），那么就会执行中断事务。</li>
+</ol>
+</li>
+</ol>
+<p> 参考资料：</p>
+<ol>
+<li>
+<p><a href="https://en.wikipedia.org/wiki/Three-phase_commit_protocol" target="_blank" rel="noopener noreffer ">https://en.wikipedia.org/wiki/Three-phase_commit_protocol</a></p>
+</li>
+<li>
+<p><a href="https://my.oschina.net/wangzhenchao/blog/736909" target="_blank" rel="noopener noreffer ">https://my.oschina.net/wangzhenchao/blog/736909</a></p>
+</li>
+</ol>
+<h4 id="四-paxos">四. Paxos</h4>
+<h5 id="1背景">1.背景</h5>
+<p> 在常见的分布式系统中，总会发生诸如机器宕机或网络异常等情况。Paxos算法需要解决的问题就是如何在一个可能发生上述异常的分布式系统中，快速且正确地在集群内部对某个数据的值达成一致，并且保证不论发生以上任何异常，都不会破坏整个系统的一致性。这里某个数据的值并不只是狭义上的某个数，它可以是一条日志，也可以是一条命令（command）等，根据应用场景不同，某个数据的值有不同的含义。</p>
+<h5 id="2相关概念">2.相关概念</h5>
+<p> 在Paxos算法中，有三种角色：</p>
+<ol>
+<li>
+<p>Proposer：提案发起者，向集群中的其他节点发一个提案Proposal，该提案中有一个对应的值。</p>
+</li>
+<li>
+<p>Acceptor：提案接受者，负责处理接收到的提议，他们的回复就是一次投票。会存储一些状态来决定是否接收一个值。</p>
+</li>
+<li>
+<p>Learners：不参与提案的发起和投票，学习已经被Acceptor接受的提案</p>
+</li>
+</ol>
+<h5 id="3目标">3.目标</h5>
+<p> 保证最终有一个value会被选定，当value被选定后，进程最终也能获取到被选定的value。</p>
+<h5 id="4两个原则">4.两个原则</h5>
+<ol>
+<li>
+<p>安全性原则：保证不能做错的事。只能有一个值被批准，不能出现第二个值把第一个覆盖的情况；每个节点只能学习到已经被批准的值，不能学习没有被批准的值。</p>
+</li>
+<li>
+<p>存活原则：只要有多数服务器存活并且彼此间可以通信最终都要做到的事。最终会批准某个被提议的值；一个值被批准了，其他服务器最终会学习到这个值。</p>
+</li>
+</ol>
+<h5 id="5basic-paxos">5.Basic Paxos</h5>
+<p> Basic Paxos算法分为两个阶段。具体如下：</p>
+<h6 id="阶段一">阶段一：</h6>
+<ol>
+<li>
+<p>Proposer选择一个提案编号N，然后向半数以上的Acceptor发送编号为N的Prepare请求。</p>
+</li>
+<li>
+<p>如果一个Acceptor收到一个编号为N的Prepare请求，且N大于该Acceptor已经响应过的所有Prepare请求的编号，那么它就会将它已经接受过的编号最大的提案（如果有的话）作为响应反馈给Proposer，同时该Acceptor承诺不再接受任何编号小于N的提案。</p>
+</li>
+</ol>
+<h6 id="阶段二">阶段二：</h6>
+<ol>
+<li>
+<p>如果Proposer收到半数以上Acceptor对其发出的编号为N的Prepare请求的响应，那么它就会发送一个针对[N,V]提案的Accept请求给半数以上的Acceptor。注意：V就是收到的响应中编号最大的提案的value，如果响应中不包含任何提案，那么V就由Proposer自己决定。</p>
+</li>
+<li>
+<p>如果Acceptor收到一个针对编号为N的提案的Accept请求，只要该Acceptor没有对编号大于N的Prepare请求做出过响应，它就接受该提案。</p>
+</li>
+</ol>
+<p> 示例过程如下，其中MaxN,AccerptN,AcceptV分别表示Acceptor的最大响应提案编号，接受的最大编号和接受编号对应的值:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/3.png"
+        data-srcset="/000-distrubte-protocol/3.png, /000-distrubte-protocol/3.png 1.5x, /000-distrubte-protocol/3.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/3.png"
+        title="/000-distrubte-protocol/3.png" width="865" height="827" /></p>
+<h5 id="6推导过程">6.推导过程</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	1）只有一个Acceptor，只要Acceptor接受它收到的第一个提案并被选定，则可以保证只有一个value会被选定。
+</span></span><span class="line"><span class="cl">	2）多个Acceptor
+</span></span><span class="line"><span class="cl">	提案(Propersal) = [value]
+</span></span><span class="line"><span class="cl">	即使只有一个Proposer提出了一个value，该value也最终被选定 =&gt;
+</span></span><span class="line"><span class="cl">  	P1：一个Acceptor必须接受它收到的第一个提案。 =&gt;
+</span></span><span class="line"><span class="cl">	如果每个Proposer分别提出不同的value，发给不同的Acceptor, Acceptor分别接受自己收到的value，就导致不同的value被选定。 =&gt;
+</span></span><span class="line"><span class="cl">	一个提案被选定需要被半数以上的Acceptor接受 =&gt;
+</span></span><span class="line"><span class="cl">	一个Acceptor必须能够接受不止一个提案 =&gt;
+</span></span><span class="line"><span class="cl">	提案(Propersal) = [提案编号，value] =&gt;
+</span></span><span class="line"><span class="cl">	必须保证所有被选定的提案都具有相同的value值 =&gt;
+</span></span><span class="line"><span class="cl">	P2：如果某个value为v的提案被选定了，那么每个编号更高的被选定提案的value必须也是v。=&gt;
+</span></span><span class="line"><span class="cl">	P2a：如果某个value为v的提案被选定了，那么每个编号更高的被Acceptor接受的提案的value必须也是v。=&gt;
+</span></span><span class="line"><span class="cl">	分区不可用不符合 =&gt;
+</span></span><span class="line"><span class="cl">	P2b：如果某个value为v的提案被选定了，那么之后任何Proposer提出的编号更高的提案的value必须也是v。=&gt;
+</span></span><span class="line"><span class="cl">	P2c：对于任意的N和V，如果提案[N, V]被提出，那么存在一个半数以上的Acceptor组成的集合S，满足以下两个条件中的任意一个： - S中每个Acceptor都没有接受过编号小于N的提案。 - S中Acceptor接受过的最大编号的提案的value为V。=&gt;
+</span></span><span class="line"><span class="cl">	Proposer生成提案，需要先询问集群中其他的节点，确定可被接受的value。=&gt;
+</span></span><span class="line"><span class="cl">	Acceptor接受提案，一个Acceptor只要尚未响应过任何编号大于N的Prepare请求，那么他就可以接受这个编号为N的提案。
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h5 id="7multi-paxos">7.Multi-Paxos</h5>
+<p> basic paxos是由client发起的同步过程，在两阶段返回前，client不能得到成功的返回。引用wiki上的流程图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/4.png"
+        data-srcset="/000-distrubte-protocol/4.png, /000-distrubte-protocol/4.png 1.5x, /000-distrubte-protocol/4.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/4.png"
+        title="/000-distrubte-protocol/4.png" width="865" height="298" /></p>
+<p> multi-paxos 在basic paxos的二阶段上引入了一个机制，先运行一次完整的paxos算法选举出leader，由leader处理所有的读写请求，然后省略掉prepare过程，让自己看起来像一阶段一样。multi-paxos强leader状态的流程图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/5.png"
+        data-srcset="/000-distrubte-protocol/5.png, /000-distrubte-protocol/5.png 1.5x, /000-distrubte-protocol/5.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/5.png"
+        title="/000-distrubte-protocol/5.png" width="865" height="234" /></p>
+<p> 流程图中没有了basic paxos的两阶段，变成了一个一阶段的递交协议：</p>
+<p> 一阶段a：发起者（leader）直接告诉Acceptor，准备递交协议号为I+1的协议</p>
+<p> 一阶段b：收到了大部分acceptor的回复后（图中是全部），acceptor就直接回复client协议成功写入</p>
+<p> Multi-Paxos可以简单的理解为, 经过一轮的Basic Paxos, 成功得到多数派accept的proposer即成为leader(这个过程称为leader Election), 之后可以通过lease机制, 保持这个leader的身份, 使得其他proposer不再发起提案, 这样就进入了一个leader任期。在leader任期中, 由于没有了并发冲突, 这个leader在对后续的日志进行投票时, 不必每次都向多数派询问提案, 也不必执行prepare阶段, 直接执行accept阶段即可。</p>
+<p> 因此在Multi-Paxos中, 我们将leader Election过程中的prepare操作, 视为对leader任期内将要写的所有日志的一次性prepare操作, 在leader任期内投票的所有日志将携带有相同的提案编号. 需要强调的是, 为了遵守Basic Paxos协议约束, 在leader Election的prepare阶段, acceptor应答prepare成功的消息之前要先将这次prepare请求所携带的提案编号持久化到本地。</p>
+<p> 参考资料:</p>
+<ol>
+<li>
+<p>[https://en.wikipedia.org/wiki/Paxos_(computer_science)](<a href="https://en.wikipedia.org/wiki/Paxos_%28computer_science%29" target="_blank" rel="noopener noreffer ">https://en.wikipedia.org/wiki/Paxos_(computer_science)</a></p>
+</li>
+<li>
+<p><a href="http://www.infoq.com/cn/articles/weinxin-open-source-paxos-phxpaxos" target="_blank" rel="noopener noreffer ">http://www.infoq.com/cn/articles/weinxin-open-source-paxos-phxpaxos</a></p>
+</li>
+</ol>
+<h4 id="五raft">五．Raft</h4>
+<p> 与Paxos不同Raft强调的是易懂（Understandability），Raft和Paxos一样只要保证n/2+1节点正常就能够提供服务；众所周知但问题较为复杂时可以把问题分解为几个小问题来处理，Raft也使用了分而治之的思想把算法流程分为三个子问题：选举（Leader election）、日志复制（Log replication）、安全性（Safety）三个子问题。</p>
+<h5 id="1角色">1.角色：</h5>
+<p> 在任意的时间，每一个服务器一定会处于以下三种状态中的一个：Leader、Candidate、Follower。在正常情况下，只有一个服务器是Leader，剩下的服务器是Follower。Follower们是被动的：他们不会发送任何请求，只是响应来自领导人和候选人的请求;Leader来处理所有来自客户端的请求（如果一个客户端与追随者进行通信，追随者会将信息发送给领导人）;Candidate是用来选取一个新的领导人的,在Leader确定后降级为Follower。如下图为各个角色的转换流程:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/6.png"
+        data-srcset="/000-distrubte-protocol/6.png, /000-distrubte-protocol/6.png 1.5x, /000-distrubte-protocol/6.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/6.png"
+        title="/000-distrubte-protocol/6.png" width="865" height="388" /></p>
+<h5 id="2term">2.Term:</h5>
+<p> 在Raft中使用了一个可以理解为周期（第几届、任期）的概念，用Term作为一个周期，每个Term都是一个连续递增的编号，每一轮选举都是一个Term周期，在一个Term中只能产生一个Leader:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/7.png"
+        data-srcset="/000-distrubte-protocol/7.png, /000-distrubte-protocol/7.png 1.5x, /000-distrubte-protocol/7.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/7.png"
+        title="/000-distrubte-protocol/7.png" width="865" height="340" /></p>
+<p> 每一台服务器都存储着一个当前Term的数字，这个数字会单调的增加。当服务器之间进行通信时，会互相交换当前Term值；如果一台服务器的当前Term比其它服务器的小，则更新为较大的值。如果一个候选人或者领导人意识到它的Term过时了，它会立刻转换为Follower状态。如果一台服务器收到的请求的Term是过时的，那么它会拒绝此次请求。</p>
+<h5 id="3rpc通信">3.RPC通信：</h5>
+<ol>
+<li>
+<p>RequestVote RPC：Candidate在选举过程中触发，用于从Follower获取选票。</p>
+</li>
+<li>
+<p>AppendEntries RPC：Leader触发的，为的是复制日志条目和提供一种心跳机制。</p>
+</li>
+</ol>
+<h5 id="4-leader-election">4. Leader election</h5>
+<p> 在Leader election中有两个超时时间，分别为：</p>
+<ol>
+<li>
+<p>Election timeout：Follower转变为Candidate的超时时间，是一个随机值。在选举Leader过程中，如果一个Follower没有在Election timeout时间内收到来自Leader的AppendEntries RPC请求或者Candidate的RequestVote RPC请求的话，则Follower会转变为Candidate，并发起选举。</p>
+</li>
+<li>
+<p>Heartbeate timeout：Leader存在时，Follower在Heartbeat timeout时间内没有接收到Leader的AppendEntires请求，则认为Leader已经下线，自己会转变为Candidate，发起选举。</p>
+</li>
+</ol>
+<p> 开始时，每个节点都以Follower启动，在第一轮时，由于没有收到任何的RPC请求，会触发Election timeout,节点会自增Term，转为Candidate，发起选举，不断重试，直到满足以下任一条件：</p>
+<ol>
+<li>
+<p>获得超过半数Server的投票，转换为Leader，广播Heartbeat</p>
+</li>
+<li>
+<p>接收到合法Leader的AppendEntries RPC，转换为Follower</p>
+</li>
+<li>
+<p>选举超时，没有Server选举成功，自增currentTerm，重新选举</p>
+</li>
+</ol>
+<p> Candidate在等待投票结果的过程中，可能会接收到来自其它Leader的AppendEntries RPC。如果该Leader的Term不小于本地的currentTerm，则认可该Leader身份的合法性，主动降级为Follower；反之，则维持Candidate身份，继续等待投票结果；Candidate既没有选举成功，也没有收到其它Leader的RPC请求，这种情况一般出现在多个节点同时发起选举，最终每个Candidate都将超时。为了减少冲突，这里采取“随机退让”策略，每个Candidate重启选举定时器（随机值），大大降低了冲突概率。</p>
+<h5 id="5-log-replication">5. Log replication</h5>
+<p> Log Replication主要作用是用于保证节点的一致性，这阶段所做的操作也是为了保证一致性与高可用性；当Leader选举出来后便开始负责客户端的请求，所有事务（更新操作）请求都必须先经过Leader处理。</p>
+<p> 正常操作流程：</p>
+<ol>
+<li>
+<p>Client发送command给Leader</p>
+</li>
+<li>
+<p>Leader追加command至本地log</p>
+</li>
+<li>
+<p>Leader广播AppendEntries RPC至Followers</p>
+</li>
+<li>
+<p>一旦收到满足数量的日志项committed成功的响应：</p>
+<ol>
+<li>
+<p>Leader应用对应的command至本地State Machine，并返回结果至Client</p>
+</li>
+<li>
+<p>Leader通过后续Append EntriesRPC将committed日志项通知到Follower</p>
+</li>
+<li>
+<p>Follower收到committed日志项后，将其应用至本地State Machine</p>
+</li>
+</ol>
+</li>
+</ol>
+<h5 id="6-safety">6. Safety</h5>
+<p> 安全性是用于保证每个节点都执行相同序列的安全机制, Raft算法保证以下属性时刻为真：</p>
+<ol>
+<li>
+<p>Election Safety：在任意指定Term内，最多选举出一个Leader</p>
+</li>
+<li>
+<p>Leader Append-Only</p>
+</li>
+<li>
+<p>Log Matching：如果两个节点上的日志项拥有相同的Index和Term，那么这两个节点[0, Index]范围内的Log完全一致</p>
+</li>
+<li>
+<p>Leader Completeness：如果某个日志项在某个Term被commit，那么后续任意Term的Leader均拥有该日志项</p>
+</li>
+<li>
+<p>State Machine Safety</p>
+</li>
+</ol>
+<p> 一旦某个server将某个日志项应用于本地状态机，以后所有server对于该偏移都将应用相同日志项</p>
+<h5 id="7集群拓扑变化">7.集群拓扑变化</h5>
+<p> 集群拓扑变化的意思是在运行过程中多副本集群的结构性变化，如增加/减少副本数、节点替换等
+。为了防止出现多主的情况，raft使用了两阶段提交来处理。假设在Raft中，老集群配置用Cold表示，新集群配置用Cnew表示，整个集群拓扑变化的流程如下：</p>
+<ol>
+<li>
+<p>当集群成员配置改变时，leader收到人工发出的重配置命令从Cold切成Cnew；</p>
+</li>
+<li>
+<p>Leader副本在本地生成一个新的log entry，其内容是Cold∪Cnew，代表当前时刻新旧拓扑配置共存，写入本地日志，同时将该log entry推送至其他Follower节点；</p>
+</li>
+<li>
+<p>Follower副本收到log entry后更新本地日志，并且此时就以该配置作为自己了解的全局拓扑结构；如果多数Follower确认了Cold∪Cnew这条日志的时候，Leader就Commit这条log entry；</p>
+</li>
+<li>
+<p>接下来Leader生成一条新的log entry，其内容是全新的配置Cnew，同样将该log entry写入本地日志，同时推送到Follower上；</p>
+</li>
+<li>
+<p>Follower收到新的配置日志Cnew后，将其写入日志，并且从此刻起，就以该新的配置作为系统拓扑，并且如果发现自己不在Cnew这个配置中会自动退出；</p>
+</li>
+<li>
+<p>Leader收到多数Follower的确认消息以后，给客户端发起命令执行成功的消息。</p>
+</li>
+</ol>
+<p> 参考资料：</p>
+<ol>
+<li>
+<p><a href="https://raft.github.io/" target="_blank" rel="noopener noreffer ">https://raft.github.io/</a></p>
+</li>
+<li>
+<p><a href="http://www.infoq.com/cn/articles/raft-paper" target="_blank" rel="noopener noreffer ">http://www.infoq.com/cn/articles/raft-paper</a></p>
+</li>
+<li>
+<p><a href="http://thesecretlivesofdata.com/raft/" target="_blank" rel="noopener noreffer ">http://thesecretlivesofdata.com/raft/</a></p>
+</li>
+</ol>
+<h4 id="六zab">六．Zab</h4>
+<p> ZAB 协议是为分布式协调服务 ZooKeeper 专门设计的一种支持崩溃恢复的原子广播协议。在 ZooKeeper 中，主要依赖 ZAB 协议来实现分布式数据一致性，基于该协议，ZooKeeper 实现了一种主备模式的系统架构来保持集群中各个副本之间的数据一致性。</p>
+<h5 id="1相关术语">1.	相关术语</h5>
+<ol>
+<li>
+<p>Peer：节点。代表了系统中的进程，往往系统有多个进程，也就有多个节点提供服务</p>
+</li>
+<li>
+<p>Quorum：多数。当有N个Peer，多数就代表Q（Q&gt;N/2）个Peer</p>
+</li>
+<li>
+<p>Leader：主节点，最多存在一个。代表zookeeper系统中主要的工作进程，Leader才是真正处理所有zookeeper写请求的节点，写请求会从Leader广播到Quorum Follower</p>
+</li>
+<li>
+<p>Follower：从节点，可以有多个。如果client对zookeeper发起一个读请求，Follower可以直接处理。如果client对zookeeper发起一个写请求，Follower需要转发到唯一的Leader，再有Leader处理并发起广播</p>
+</li>
+<li>
+<p>transaction：事务，一次写请求就代表一次事务</p>
+</li>
+<li>
+<p>zxid：事务id。zk为了保证消息有序性，提出了事务编号这个概念。zxid是一个二元组，e代表选举纪元，c代表事务的计数，同一纪元内每次出现写请求，c自增。容易理解，纪元不变时，计数不断增加，纪元变化时，计数清零。</p>
+</li>
+<li>
+<p>acceptedEpoch：follower 已经接受的 leader 更改纪元的提议。</p>
+</li>
+<li>
+<p>state：节点状态，目前只有这三种:</p>
+<p>election：节点处于选举状态</p>
+<p>leading：当前节点是 leader，负责协调事务</p>
+<p>following：当前节点是跟随者，服从 leader 节点的命令</p>
+<p>代码实现中多了一种：observing 状态，这是 Zookeeper 引入 Observer 之后加入的，Observer 不参与选举，是只读节点，跟 ZAB 协议没有关系节点的持久状态。</p>
+</li>
+<li>
+<p>history：当前节点接收到事务提议的 log。</p>
+</li>
+<li>
+<p>lastZxid：history 中最近接收到的提议的 zxid （最大的）。</p>
+</li>
+</ol>
+<h5 id="2协议内容">2.协议内容</h5>
+<p> 随着系统启动或者恢复，会经历Zab协议中描述的如下四个阶段:</p>
+<p> Phase 0：Leader选举,每个peer从Quorum peer中选出自己心中的准leader。节点在一开始都处于选举阶段，只要有一个节点得到超半数节点的票数，它就可以当选准 leader。这一阶段的目的是就是为了选出一个准 leader，然后进入下一个阶段。</p>
+<p> Phase 1：发现，准leader从Quorum Follower中发现最新的数据，并覆盖自己的过期数据。在这个阶段，followers 跟准 leader 进行通信，同步 followers 最近接收的事务提议。这一阶段的主要目的是发现当前大多数节点接收的最新提议，并且准 leader 生成新的 epoch，让 followers 接受，更新它们的 acceptedEpoch。</p>
+<p> Phase 2：同步，准leader采用二阶段提交的方式将自己的最新数据同步给Quorum Follower。完成这个步骤，准leader就转为正式leader。同步阶段主要是利用 leader 前一阶段获得的最新提议历史，同步集群中所有的副本。只有当 quorum 都同步完成，准 leader 才会成为真正的 leader。follower 只会接收 zxid 比自己的 lastZxid 大的提议。</p>
+<p> Phase 3：广播，Leader接受写请求，并通过二阶段提交的方式广播给Quorum Follower。到了这个阶段，Zookeeper 集群才能正式对外提供事务服务，并且 leader 可以进行消息广播。同时如果有新的节点加入，还需要对新节点进行同步。ZAB 提交事务并不像 2PC 一样需要全部 follower 都 ACK，只需要得到 quorum （超过半数的节点）的 ACK 就可以了。</p>
+<h5 id="3实现">3.实现</h5>
+<p> 真正apache zookeeper在实现上提出设想：优化leader选举，直接选出最新的Peer作为预备Leader，这样就能将Phase 0和Phase 1合并，减少网络上的开销和多流程的复杂性。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/000-distrubte-protocol/8.png"
+        data-srcset="/000-distrubte-protocol/8.png, /000-distrubte-protocol/8.png 1.5x, /000-distrubte-protocol/8.png 2x"
+        data-sizes="auto"
+        alt="/000-distrubte-protocol/8.png"
+        title="/000-distrubte-protocol/8.png" width="865" height="284" /></p>
+<p> 实现上，协议被简化为三个阶段</p>
+<p> Fast Leader Election：从Quorum Peer中选出数据最新的peer作为leader。该阶段会选举拥有最新提议历史（lastZixd最大）的节点作为 leader，这样就省去了发现最新提议的步骤。这是基于拥有最新提议的节点也有最新提交记录的前提。成为 leader 的条件：选epoch最大的；epoch相等，选 zxid 最大的；epoch和zxid都相等，选择myid最大的。节点在选举开始都默认投票给自己，当接收其他节点的选票时，会根据上面的条件更改自己的选票并重新发送选票给其他节点，当有一个节点的得票超过半数，该节点会设置自己的状态为 leading，其他节点会设置自己的状态为 following。</p>
+<p> Recovery Phase：Leader将数据同步给Quorum Follower。</p>
+<p> Broadcast Phase：Leader接受写请求，并广播给Quorum Follower。</p>
+<p> 对于选举和恢复阶段，zab算法需要确保两件事：</p>
+<ol>
+<li>
+<p>已经处理过的提案不能被丢弃。</p>
+</li>
+<li>
+<p>已经丢弃的提案不能被重复处理。</p>
+</li>
+</ol>
+<p>参考资料：</p>
+<ol>
+<li><a href="http://www.tcs.hut.fi/Studies/T-79.5001/reports/2012-deSouzaMedeiros.pdf" target="_blank" rel="noopener noreffer ">http://www.tcs.hut.fi/Studies/T-79.5001/reports/2012-deSouzaMedeiros.pdf</a>
+r</li>
+</ol>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2019-09-27</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/000-distrubte-protocol/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/000-distrubte-protocol/" data-title="分布式一致性协议" data-hashtags="distrubute"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/000-distrubte-protocol/" data-hashtag="distrubute"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/000-distrubte-protocol/" data-title="分布式一致性协议"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/distrubute/">分布式</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/06-cluster/" class="prev" rel="prev" title="Redis集群"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>Redis集群</a>
+            <a href="/001-java-eof/" class="next" rel="next" title="Java的EOF标识？">Java的EOF标识？<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>golang error - 程序猿二腊</title><meta name="Description" content="记录go1.x error相关内容"><meta property="og:title" content="golang error" />
+<meta property="og:description" content="记录go1.x error相关内容" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/007-golang-error/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-05-31T00:00:00+00:00" />
+<meta property="article:modified_time" content="2022-05-31T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="golang error"/>
+<meta name="twitter:description" content="记录go1.x error相关内容"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/007-golang-error/" /><link rel="prev" href="https://atuowgo.github.io/03-provider/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "golang error",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/007-golang-error\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "golang","wordcount":  655 ,
+        "url": "https:\/\/atuowgo.github.io\/007-golang-error\/","datePublished": "2022-05-31T00:00:00+00:00","dateModified": "2022-05-31T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "记录go1.x error相关内容"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">golang error</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2022-05-31">2022-05-31</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 655 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 4 分钟&nbsp;<span id="/007-golang-error/" class="leancloud_visitors" data-flag-title="golang error">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#go-error">go error</a>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-原生error">1. 原生error</a></li>
+            <li><a href="#2-error的判定方式">2. error的判定方式</a>
+              <ul>
+                <li><a href="#21-sentinel-error">2.1 Sentinel error</a></li>
+                <li><a href="#22-error-types">2.2 Error types</a></li>
+                <li><a href="#23-opaque-errors">2.3 Opaque errors</a></li>
+              </ul>
+            </li>
+            <li><a href="#3-error和panic">3. error和panic</a></li>
+            <li><a href="#4-githubpkgerrors">4. github/pkg/errors</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h2 id="go-error">go error</h2>
+<blockquote>
+<p>记录go1.x error相关内容</p>
+</blockquote>
+<h4 id="1-原生error">1. 原生error</h4>
+<p><code>error</code> 只是一个普通的interface,在<code>buildin.go</code> 里给出了定义:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">// The error built-in interface type is the conventional interface for
+</span></span><span class="line"><span class="cl">// representing an error condition, with the nil value representing no error.
+</span></span><span class="line"><span class="cl">type error interface {
+</span></span><span class="line"><span class="cl">	Error() string
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>当返回值为nil时，表示没有错误，所以调用方需要通过类似<code>err != nil</code>的方式来处理。</p>
+<p>该接口只有一个方法，返回具体消息内容，可以使用<code>errors.New(text string)</code> 来返回一个error对象，入参只有一个string，为具体消息内容。如bufio.go内置的错误</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/007-golang-error/bufio_error.png"
+        data-srcset="/007-golang-error/bufio_error.png, /007-golang-error/bufio_error.png 1.5x, /007-golang-error/bufio_error.png 2x"
+        data-sizes="auto"
+        alt="/007-golang-error/bufio_error.png"
+        title="/007-golang-error/bufio_error.png" width="1112" height="238" /></p>
+<p>用该方法返回的对象，<code>即使文本相同，返回的error对象也是不同的</code>，从源码中可以知道原因：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">// New returns an error that formats as the given text.
+</span></span><span class="line"><span class="cl">// Each call to New returns a distinct error value even if the text is identical.
+</span></span><span class="line"><span class="cl">func New(text string) error {
+</span></span><span class="line"><span class="cl">	return &amp;errorString{text}
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">// errorString is a trivial implementation of error.
+</span></span><span class="line"><span class="cl">type errorString struct {
+</span></span><span class="line"><span class="cl">	s string
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">func (e *errorString) Error() string {
+</span></span><span class="line"><span class="cl">	return e.s
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如上，该方法返回的是errorString结构体对象的指针，因而是用地址作为比较。使用该种方式也能保证预定义的error只有一个，避免值复制。</p>
+<p><em>PS:1.为了防止自定义error过多，可以像基础库中设计的类似，在包内定义统一的error，以达到公用的目的，如上图的bufio.go中的内置错误</em></p>
+<p>也可以通过实现error接口以实现自定义error类型，同时还能传递上下文信息，如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">type MyError struct {
+</span></span><span class="line"><span class="cl">	Msg string
+</span></span><span class="line"><span class="cl">	Type string
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">func (err *MyError) Error() string {
+</span></span><span class="line"><span class="cl">	return fmt.Sprintf(&#34;%s:%s&#34;,err.Type,err.Msg);
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h4 id="2-error的判定方式">2. error的判定方式</h4>
+<h5 id="21-sentinel-error">2.1 Sentinel error</h5>
+<p>哨兵error，即预定义error，在这种方式中，错误被定义成了被包导出的变量.如：<code>if err == io.EOF {}</code>，这里的io.EOF便是哨兵error.可以通过判断error是否跟这个错误进行比较，就可以知道此处出现的error是否属于这个错误.</p>
+<h5 id="22-error-types">2.2 Error types</h5>
+<p>通过断言转换来确定error的原始类型以达到判定的目的，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">type MyError struct {
+</span></span><span class="line"><span class="cl">	Msg string
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">func (e *MyError) Error() string {
+</span></span><span class="line"><span class="cl">	return fmt.Sprintf(&#34;%s&#34;,e.Msg)
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">err := something()
+</span></span><span class="line"><span class="cl">switch err := err.(type) {
+</span></span><span class="line"><span class="cl">	case nil:
+</span></span><span class="line"><span class="cl">	    // call succeeded, nothing to do
+</span></span><span class="line"><span class="cl">	case *MyError:
+</span></span><span class="line"><span class="cl">	    fmt.Println(“error occurred on line:”, err.Line)
+</span></span><span class="line"><span class="cl">	default:
+</span></span><span class="line"><span class="cl">	    // unknown error
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>无论是对于哨兵错误还是错误类型断言，使用方都需要了解其使用包的错误定义细节，而包的提供方则需要提供可能的错误类型，加强了包之间的耦合，当错误类型很多时，维护会变得困难。</p>
+<h5 id="23-opaque-errors">2.3 Opaque errors</h5>
+<p>不透明错误处理：通过行为来断言错误，而不是类型。如net包里定义的错误，通过判断Temporary或者Timeout来判断具体是什么错。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">net</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">Error</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">error</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">Timeout</span><span class="p">()</span> <span class="kt">bool</span>   <span class="c1">// Is the error a timeout?
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nf">Temporary</span><span class="p">()</span> <span class="kt">bool</span> <span class="c1">// Is the error temporary?
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// main.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">if</span> <span class="nx">nerr</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">err</span><span class="p">.(</span><span class="nx">net</span><span class="p">.</span><span class="nx">Error</span><span class="p">);</span> <span class="nx">ok</span> <span class="o">&amp;&amp;</span> <span class="nx">nerr</span><span class="p">.</span><span class="nf">Temporary</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mf">1e9</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">continue</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h4 id="3-error和panic">3. error和panic</h4>
+<p>关于error和panic设计上的区别，可以看下Dave Cheney的博客<a href="https://dave.cheney.net/tag/panic" target="_blank" rel="noopener noreffer ">https://dave.cheney.net/tag/panic</a>。大体意思就是，Go设计者觉得Exception这个东西，在设计上经历过C、C++后，在Java中总算是上道了，但还是被乱用了。在Java中，不管异常是大是小，不管是简单还是严重，都往上抛给调用方，导致调用方无脑通过try&hellip;catch&hellip;finally对异常进行了捕获，没有针对异常的严重性分开处理。同时try&hellip;catch&hellip;finally这种方式将异常与流程控制混在一起会很容易使得代码变得混乱。</p>
+<p>Go设计者则认为错误(error)和异常(panic)是不同的，error是指意料中的问题，如文件不存在这种逻辑条件上的错误；panic是指意料外的问题，如数组越界这种系统异常。对于error，可以通过多值返回的形式通知调用方，上游需要显示处理；而panic的处理的捕获则需要借助defer和recover，类似于catch和finally的效果。</p>
+<p>panic的捕获方式如下:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">func main() {
+</span></span><span class="line"><span class="cl">	fmt.Println(&#34;c&#34;)
+</span></span><span class="line"><span class="cl">	defer func() { // 必须要先声明defer，否则不能捕获到panic异常
+</span></span><span class="line"><span class="cl">		  fmt.Println(&#34;d&#34;)
+</span></span><span class="line"><span class="cl">		  if err := recover(); err != nil {
+</span></span><span class="line"><span class="cl">		     fmt.Println(err) // 这里的err其实就是panic传入的内容
+</span></span><span class="line"><span class="cl">		  }
+</span></span><span class="line"><span class="cl">		  fmt.Println(&#34;e&#34;)
+</span></span><span class="line"><span class="cl">	}()
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">   f() //开始调用f
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">   fmt.Println(&#34;f&#34;) //这里开始下面代码不会再执行
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">func f() {
+</span></span><span class="line"><span class="cl">   fmt.Println(&#34;a&#34;)
+</span></span><span class="line"><span class="cl">   panic(&#34;异常信息&#34;)
+</span></span><span class="line"><span class="cl">   fmt.Println(&#34;b&#34;) //这里开始下面代码不会再执行
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">-------output-------
+</span></span><span class="line"><span class="cl">c
+</span></span><span class="line"><span class="cl">a
+</span></span><span class="line"><span class="cl">d
+</span></span><span class="line"><span class="cl">异常信息
+</span></span><span class="line"><span class="cl">e
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过捕获panic，使得必要时程序不至于中断，比如web服务，应该展示错误给到前端，而不是退出程序。</p>
+<p>当然个人觉得这两个是相对的，毕竟函数里什么场景返回error，什么场景抛出panic，都是明确的。同时，作为函数提供者无法预测使用者的业务场景，可能某些error对于上层业务来说就是panic。</p>
+<h4 id="4-githubpkgerrors">4. github/pkg/errors</h4>
+<p>上面的例子看出，在打印eroor时，只打印了错误信息，从实现上也可以看出来，不像java的exception一样会存储上下文堆栈信息，因而对定位问题不太友好。当然我们可以手动的在每个函数的调用入口处打印日志来模拟错误调用栈，只是比较低效，也比较挫，代码也不好看。这里介绍一个比较常用的组件<code>github/pkg/errors</code>，可以实现打印错误信息时附加堆栈信息。</p>
+<p>先来看个例子，常规的error处理时，是这样</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">func callF() error {
+</span></span><span class="line"><span class="cl">	//模拟抛出error
+</span></span><span class="line"><span class="cl">	return errors.New(&#34;src error&#34;)
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">err := callF()
+</span></span><span class="line"><span class="cl">if err != nil {
+</span></span><span class="line"><span class="cl">        return err
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>直接把error抛给了上层，这时候上下文是不带堆栈信息的，因而上层打印时只有错误信息的字符串，而pkg/erros使用时是这样的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">err := callF()
+</span></span><span class="line"><span class="cl">if err != nil {
+</span></span><span class="line"><span class="cl">        return errors.Wrap(err, &#34;faile when use&#34;)
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过Wrap方法，附加了额外的错误信息。同时，但使用<code>fmt.Printf(&quot;%+v\n&quot;, err)</code>时，可以查看调用堆栈。如下为本机测试调用栈内容</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/007-golang-error/errors_demo.jpeg"
+        data-srcset="/007-golang-error/errors_demo.jpeg, /007-golang-error/errors_demo.jpeg 1.5x, /007-golang-error/errors_demo.jpeg 2x"
+        data-sizes="auto"
+        alt="/007-golang-error/errors_demo.jpeg"
+        title="/007-golang-error/errors_demo.jpeg" width="1232" height="294" /></p>
+<p>官方的demo还展示了如何获取原始error以及获取调用栈的方式，这里不再赘述。下面主要介绍下pkg/errors的具体实现。</p>
+<p>下面是整个包的结构关系，使用了<a href="https://github.com/jfeliu007/goplantuml" target="_blank" rel="noopener noreffer ">https://github.com/jfeliu007/goplantuml</a>提供的工具生成。这个工具展示了大致的关系，有些细节没有展示出来，下面会同时说明。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/007-golang-error/pkg_errors.png"
+        data-srcset="/007-golang-error/pkg_errors.png, /007-golang-error/pkg_errors.png 1.5x, /007-golang-error/pkg_errors.png 2x"
+        data-sizes="auto"
+        alt="/007-golang-error/pkg_errors.png"
+        title="/007-golang-error/pkg_errors.png" width="1750" height="962" /></p>
+<p>先简单介绍下各个结构体体</p>
+<ul>
+<li>error就不用说了</li>
+<li>uintptr:是golang的内置类型，是能存储指针的整型，能用于指针运算；	runtime.Callers可用来获取当前goroutine函数调用栈的程序计数器及其相关信息，返回相应函数指针的地址值，结果存在[]uintptr中,可以通过uintptr获得对饮函数指针的函数名、行号、文件名</li>
+<li>Frame:uintptr的别名，由于要存储调用链的函数指针，故名帧，个人觉得只是为了让意思更贴切易懂</li>
+<li>stack:[]uintptr的别名，表示调用栈</li>
+<li>StackTrace:[]Frame的别名，表示栈帧，类似于Frame和uintptr，stack和StackTrace一个用于内部，一个用于外部，同时二者可以相互转换</li>
+<li>withStack:继承自stack和error，用于保留调用链和源头错误信息</li>
+<li>fundamental:继承自stack用于保留调用链，同时有一个string的字段，用于存储错误信息，实现了<code>Error() string</code>方法，因而为一个error实现</li>
+<li>withMessage:持有一个error和string的结构体，可以看做是对error的扩展，用于存储错误信息，它也实现了<code>Error() string</code>方法，因而为一个error实现</li>
+</ul>
+<p>上面提到的各个结构体，除了error和uintptr外，都实现了<code>Format(s fmt.State,verb rune)</code>方法，相当于实现了Formatter接口：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">type Formatter interface {
+</span></span><span class="line"><span class="cl">    Format(f State, c rune)
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>实现了Formatter接口的类型可以定制自己的格式化输出。Format方法的实现内部可以调用Sprint或Fprint等函数来生成自身的输出。当调用fmt包相关的print方法时，可以输出自定义格式，从而实现打印出对应调用栈信息。</p>
+<p>会过头来看Wrap方法，如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">func Wrap(err error, message string) error {
+</span></span><span class="line"><span class="cl">	if err == nil {
+</span></span><span class="line"><span class="cl">		return nil
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">	err = &amp;withMessage{
+</span></span><span class="line"><span class="cl">		cause: err,
+</span></span><span class="line"><span class="cl">		msg:   message,
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">	return &amp;withStack{
+</span></span><span class="line"><span class="cl">		err,
+</span></span><span class="line"><span class="cl">		callers(),
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>方法在传入的error不为nil时，跟传入的message包装为withMessage，然后再包装为withStack返回。其中<code>callers</code>方法返回了当前执行点的调用链，存储在[]uintptr中，即stack。</p>
+<p>再看withStack的Format实现</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">func (w *withStack) Format(s fmt.State, verb rune) {
+</span></span><span class="line"><span class="cl">	switch verb {
+</span></span><span class="line"><span class="cl">	case &#39;v&#39;:
+</span></span><span class="line"><span class="cl">		if s.Flag(&#39;+&#39;) {
+</span></span><span class="line"><span class="cl">			fmt.Fprintf(s, &#34;%+v&#34;, w.Cause())
+</span></span><span class="line"><span class="cl">			w.stack.Format(s, verb)
+</span></span><span class="line"><span class="cl">			return
+</span></span><span class="line"><span class="cl">		}
+</span></span><span class="line"><span class="cl">		fallthrough
+</span></span><span class="line"><span class="cl">	case &#39;s&#39;:
+</span></span><span class="line"><span class="cl">		io.WriteString(s, w.Error())
+</span></span><span class="line"><span class="cl">	case &#39;q&#39;:
+</span></span><span class="line"><span class="cl">		fmt.Fprintf(s, &#34;%q&#34;, w.Error())
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>当以<code>+v</code>格式打印时，先以<code>+v</code>打印内部的error，再打印对应的<code>stack</code>调用链。</p>
+<p>同样的，stack自定义了打印格式，在遇到<code>+v</code>格式时，会遍历函数指针，转为Frame后再执行<code>+v</code>打印</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">func (s *stack) Format(st fmt.State, verb rune) {
+</span></span><span class="line"><span class="cl">	switch verb {
+</span></span><span class="line"><span class="cl">	case &#39;v&#39;:
+</span></span><span class="line"><span class="cl">		switch {
+</span></span><span class="line"><span class="cl">		case st.Flag(&#39;+&#39;):
+</span></span><span class="line"><span class="cl">			for _, pc := range *s {
+</span></span><span class="line"><span class="cl">				f := Frame(pc)
+</span></span><span class="line"><span class="cl">				fmt.Fprintf(st, &#34;\n%+v&#34;, f)
+</span></span><span class="line"><span class="cl">			}
+</span></span><span class="line"><span class="cl">		}
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>而Frame的自定义打印便是根据函数指针打印对应的文件名、方法名和行号。即打印顺序为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">-witchStack
+</span></span><span class="line"><span class="cl">--	error
+</span></span><span class="line"><span class="cl">---		message
+</span></span><span class="line"><span class="cl">--	stack
+</span></span><span class="line"><span class="cl">---		Frame
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里需要注意一点，witchStack打印的时候会调用<code>+v</code>格式打印witchStack中的error，如果该error也为一个witchStack，则会打印两次调用栈。</p>
+<p>为了避免多次打印调用栈，需要保证Wrap只调用一次，可以对最底层的error使用Wrap方法，其他上层使用WithMessage方法，但这个需要自己鉴别什么时候才是底层的error。网上也给出了一个判断当前error是否持有stack的方法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">type stackTracer interface {
+</span></span><span class="line"><span class="cl">    StackTrace() errors.StackTrace
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">func WithStackOnce(err error) error {
+</span></span><span class="line"><span class="cl">    _, ok := err.(stackTracer)
+</span></span><span class="line"><span class="cl">    if ok {
+</span></span><span class="line"><span class="cl">        return err
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    return errors.WithStack(err)
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>witchStack继承自stack，而stack有<code>StackTrace() StackTrace</code>方法，且StackTrace不是私有的，因而可以通过自定义一个interface的方式来实现。但个人觉得这样也是挺麻烦的，每次调用都要先执行这个也是挺麻烦的，套用网上的一句话就是，直接forck源码来改吧</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2022-05-31</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/007-golang-error/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/007-golang-error/" data-title="golang error" data-hashtags="golang"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/007-golang-error/" data-hashtag="golang"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/007-golang-error/" data-title="golang error"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/golang/">Golang</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/03-provider/" class="prev" rel="prev" title="Dubbo Provider启动都做了什么"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>Dubbo Provider启动都做了什么</a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

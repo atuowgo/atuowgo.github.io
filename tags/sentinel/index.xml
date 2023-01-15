@@ -1,0 +1,133 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>Sentinel - 标签 - 程序猿二腊</title>
+        <link>https://atuowgo.github.io/tags/sentinel/</link>
+        <description>Sentinel - 标签 - 程序猿二腊</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 01 Oct 2019 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/sentinel/" rel="self" type="application/rss+xml" /><item>
+    <title>Sentinel Culster流程分析</title>
+    <link>https://atuowgo.github.io/03-module-cluster/</link>
+    <pubDate>Tue, 01 Oct 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/03-module-cluster/</guid>
+    <description><![CDATA[前面介绍了sentinel-core的流程，提到在进行流控判断时，会判断当前是本地限流，还是集群限流，若是集群模式，则会走另一个分支，这节便对集群模式做分析。
+一.基本概念 namespace：限流作用于，用于区分一个规则作用于什么范围
+flowId：代表全局唯一的规则 ID，Sentinel 集群限流服务端通过此 ID 来区分各个规则，因此务必保持全局唯一。一般 flowId 由统一的管控端进行分配，或写入至 DB 时生成。
+thresholdType：代表集群限流阈值模式。其中单机均摊模式下配置的阈值等同于单机能够承受的限额，token server 会根据客户端对应的 namespace（默认为 project.name 定义的应用名）下的连接数来计算总的阈值（比如独立模式下有 3 个 client 连接到了 token server，然后配的单机均摊阈值为 10，则计算出的集群总量就为 30）；而全局模式下配置的阈值等同于整个集群的总阈值。
+二.通信框架 sentinel-cluster基于netty提供了一套远程通信框架，分为客户端和服务，其使用了jdk自带的SPI，提供了一些接口的默认实现。如下图为sentinel-cluster-client客户端模块的默认实现类。
+InitFunc的加载是通过InitExecutor加载的，InitExecutor在sentinel-core模块中。InitExecutor会在全局访问内加载所有InitFunc的实现类，并调用其init方法完成初始化。该模块中配置的InitFunc实现类为DefaultClusterClientInitFunc，该类会初始化通信协议中各种类型的编码和解码处理类。编解码器将调用注册工厂RequestDataWriterRegistry和ResponseDataDecodeRegistry的方法进行注册，供后续使用。系统提供了PING,FLOW（流控）和PARAM_FLOW（热点参数流控）三种编解码器。
+上图为sentinel-cluster的通信协议格式，请求和响应中有个4个字节的消息id和1个字节的消息类型，剩下的就是消息体，对于响应格式，有1个字节的状态信息。需要说明的是，在初始化Netty客户端时，增加了两个filter：
+也就是说在发送一个消息时，会自动加上长度为2个字节的消息长度头部，在读取时也会自动省略2个字节的消息长度头部。 为了解析上面的消息格式，在提供了注册方法之上，sentinel还提供了ClientEntityCodeProvider，统一了报文的处理。
+如上，该类在static静态代码块中进行了初始化，使用SPI，获取RequestEntityWriter和ResponseEntityDecoder的实现类，这两种实现类也在该模块中指定了默认实现：DefaultResponseEntityDecoder和DefaultRequestEntityWriter。即处理过程为
+1 2 3 4 ClientEntityCodecProvider-&gt;ResponseEntityDecoder-&gt;ResponseDataDecodeRegisty-&gt; EntityDecoder ClientEntityCodecProvider-&gt;RequestEntityWriter-&gt;RequestDataWriterRegisty-&gt; EntityWriter 系统还提供了TokenClientHandler类，用于响应数据流，进行相应的处理
+如上只列出了比较重要的属性和方法。该类继承了ChannelInboundHandlerAdapter并实现了对应的方法，currentState属性用于标记客户端当前的状态，disconnectCallback则用于负责在断线时进行重连。TokenClientHandler实现channelActive方法，会在连接建立时会发送PING请求给服务端；实现channelUnregistered方法，会在连接断开时调用disconnectCallback，在一定时间后进行重连，等待时间跟失败次数有关；实现channelRead方法，会在有响应数据时，接收响应内容，并进行处理，处理流程如下：
+在经过Netty处理解析为消息类型对象后，会判断该响应的类型，如果是PING消息的响应，则直接输出日志，否则将从TokenClientPromiseHolder中根据消息id设置对应的响应内容，以便消息发送线程能够获得响应。 上面提到的TokenClientPromiseHolder用于缓存请求消息。如下图，发送消息后，会获取对应的ChannelPromise对象，并根据消息存于TokenClientPromiseHolder中。ChannelPromise会等待Netty请求响应回来，对应的流程如上面InBound流程。在请求正常响应后，会根据消息id再从TokenClientPromiseHolder中获取对应的响应结果。
+Cluster模块的核心接口为TokenService ，ClusterTokenServer和ClusterTokenClient。其中ClusterTokenClient内部主要类为NettyTransportClient，在上面已经进行了说明，下面说下其他两个接口。TokenService ，ClusterTokenServer在模块中的关系如下图：
+其中接口都由SPI给出了默认的实现，如下：
+下面对涉及到的接口和类进行说明。
+TokenService：token服务接口，提供了requestToken和requestParamToken方法，分别表示获取流控令牌和获取热点参数令牌。提供的默认实现为DefaultTokenService，会在TokenServiceProvider初始化时使用SPI进行加载。
+ClusterTokenServer：服务端上层接口，提供了start和stop方法用于服务端的启动和停止。
+NettyTransportServer：ClusterTokenServer的netty实现，同客户端对应，有如下的pipeline配置
+其中编解码器的处理同客户端类似，只是增加了服务端的处理器：TokenServerHandler。TokenServerHandler继承自ChannelInboundHandlerAdapter用以在连接建立和有数据交互时进行相应的处理：
+实现channelActive：在连接建立时将其缓存起来
+实现channelInactive：在连接断开时移除缓存
+实现channelRead：在有数据到来时，进行处理。这里会使用RequestProcessorProvider加载的RequestProcessor实现类，根据请求的类型(type字段)选择相应的处理类进行处理。系统现在提供的处理类有FlowRequestProcessor和ParamFlowRequestProcessor，这两者最后都将通过TokenServiceProvider获得DefaultTokenService对象，调用其来完成请求。
+SentinelDefaultTokenServer：包装了NettyTransportServer方法，增加了ServerTransportConfigObserver用于监听服务端配置项的更改，从而更新自身。
+EmbeddedClusterTokenServer：继承自TokenService和ClusterTokenServer，用于内嵌服务端模式，默认实现为DefaultEmbeddedClusterTokenServer。
+DefaultEmbeddedClusterTokenServer：主要组合了DefaultTokenService和SentinelDefaultTokenServer对象用以实现接口方法。
+结合上面服务端的实现，可以得到客户端请求一个token的流程如下：
+客户端调用DefaultClusterTokenClient的requestToken方法获取token，其内部会委托NettyTransportClient编码后发给服务端 服务端NettyTransportServer收到请求后，由TokenServerHandler的channelRead方法处理这里会根据请求内容中的type，委托给对应的消息处理处理，如FlowRequestProcessor FlowRequestProcessor会调用TokenServiceProvider获取对应的TokenService实现类，默认为DefaultTokenService。然后委托为该类进行处理。 三.统计逻辑 由上可知，cluster模式下，token的获取是由DefaultTokenService来负责的，分为两种：普通流控和热点参数流控。二者的实现基本一致，这里只对普通流控做讲解，即DefaultTokenService中的requestToken方法，如下为处理流程。
+当请求requestToken方法时，请求参数包括:
+ruleId：规则id
+acquireCount：需要获取的token数]]></description>
+</item>
+<item>
+    <title>Sentinel Core流程分析</title>
+    <link>https://atuowgo.github.io/02-module-core/</link>
+    <pubDate>Mon, 30 Sep 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/02-module-core/</guid>
+    <description><![CDATA[上次介绍了Sentinel的基本概念，并在文章的最后介绍了基本的用法。这次将对用法中的主要流程和实现做说明，该部分主要涉及到源码中的sentinel-core模块。
+1.token获取 如上为token获取的主流程，首先会先获取线程的上下文对象Context，然后根据ResourceName查找对应的处理槽链，获得SlotChain后，生成该次调用动作的Entry对象，该对象会关联对应SlotChain。内部会调用SlotChain的entry方法，让entry动作进入每个槽，后续需要调用Entry的exit方法，让exit动作进入SlotChain的每个槽。
+其中第三步生成的Entry对象为CtEntry对象，其模型上是一个链表，会将每次entry动作生成的Entry对象串联起来
+如上图，每new一个CtEntry，都会传入context对象。由于每次操作会将当前Entry赋值context的curEntry，每次new一次时，会检查该属性，如果为空，则是第一个节点，直接复制给curEntry；如果非空，则该值为上一个节点，将该值复制给当前值的parent，并将该值的child指向当前节点。做完这些动作后将context的curEntry指向当前节点。具体过程如上图示。
+执行entry.exit，内部会判断context.curEntry是否是执行时的entry，此举是为了控制exit顺序保持后进先出。如果判断不通过，说明不是按照后进先出的顺序执行exit，会从执行的entry开始，到根节点逐个进行exit，并抛出异常。如果判断通过，则调用对应的SlotChain执行exit，并更改context.curEntry，将其指向当前节点的父节点，但不解除Entry链的关系。
+2.查找处理槽链 执行时会先从本地的缓存中查找是否已经有该资源对应的处理槽链，如果没有，则重新新生成一个。新加载时，使用SPI，查找系统提供的SlotChainBuilder实现，若有除默认的DefaultSlotChainBuilder之外的实现在，则使用第一个，否则使用默认的Builder。默认的Builder提供的处理槽链如下
+3.执行处理槽链 槽的处理过程如下：
+ProcessorSlotChain为一个链表，执行slot的entry方法会进入到Slot的内部，在内部可以通过fireEntry执行链表中下一个slot的entry方法(如果存在)。如上，在fireEntry之前和之后可以有每个slot自己的处理逻辑，从而形成了类似过滤器链的结构。同理，exit过程也类似
+3.1. NodeSelectorSlot 负责收集资源的路径，并将这些资源的调用路径，以树状结构存储起来，用于根据调用路径来限流降级；该动作发生在fireEntry动作前。
+如下代码将构建出相对应的调用路径:
+执行SphU.entry时会先获取线程上下文对应的Context，如果没有则新增一个。对于node1C，直接调用SphU.entry，会自动生成一个默认的Context，内部会调用ContextUtil.enter，并设置EntranceNode(sentinel_default_context)，然后将该EntranceNode接入到虚拟EntranceNode(machine-root)的子节点列表中。对于node2A和node3A，由于调用了ContextUtil.enter，相当于显示指定了Context，并设置了EntraceNode(entrance1)和EntraceNode(entrance2)。SphU.entry在没有指定EntryType时，将设置EntryType为OUT。 实现代码如下：
+实现上，由于同一个资源共享同一个ProcessorSlotChain对象，因而不同Context调用同一个资源时会使用到同一个NodeSelectorSlot对象。代码中直接使用ContextName相当于是使用了ResourceName-ContextName进行判断。为了在对应的Context下构建调用链，内部维护了一个Map&lt;String,DefaultNode&gt;，其中key为对应线程上下文的ContextName,value为该上下文调用链中的各个Node。对于第一次访问的资源，会在对应的Context链下新增一个Node，并将该节点做为子节点链接到链上最近访问的那个节点上，从而完成调用链的构建。对于重复出现的资源，只会使用第一次出现的顺序。在该slot获得的Node节点将传入后续各个槽进行处理。
+3.2.ClusterBuilderSlot 用于存储资源的统计信息以及调用者信息，例如该资源的 RT, QPS, thread count 等等，这些信息将用作为多维度限流，降级的依据；该动作发生在fireEntry动作前。
+上面的例子经过该slot后将新增如下ClusterNode节点
+上面说过，由于同一个资源共享同一个ProcessorSlotChain对象，因而不同Context调用同一个资源时会使用到同一个NodeSelectorSlot对象，为了统计该种资源的Cluster信息，直接使用一个ClusterNode节点表示即可。 实现上，ClusterBuilderSlot还持有一个静态的ClusterNodeMap，用于缓存所有资源的ClusterNode信息。当经过该slot时，会判断Map中是否有该资源的节点信息，没有则新建一个。
+上面还有一段内容是设置节点的Origin信息节点的内容。如下图，ClusterNode统计了同一种资源的统计信息，而不区分不同的Context来源，内部使用originCountMap区分不同的来源的统计情况。 对于默认的sentinel_default_context，其orgin设置为空(&quot;&quot;)，因而Cluster没有该Context的Origin信息
+3.3.LogSlot 用于打印日志，在发生限流或者降级时输出特定日志；该动作发生在fireEntry动作后。
+3.4.StatisticSlot 用于记录、统计不同纬度的 runtime 指标监控信息；该动作发生在fireEntry动作后。
+该Slot的动作发生在fireEntry后，根据上面SlotChain执行图，该动作会在后续Slot检查执行后再执行。后续检查包括了权限检查，系统指标，用户自定义的限流和降级规则。
+如下图，该Slot的动作如下：
+若成功经过后续各个Slot的检查，相当于获得了token，则会更新统计信息，包括增加线程数（ThreadNum），增加通过请求数（PassRequest），涉及的节点包括：
+当前节点；当前节点的Origin节点（若存在）
+全局Entrance_Node节点（若当前节点类型为EntryType.IN）；执行后将调用onPass回调函数。
+其他情况如图示，包括:
+在获取token设置了优先策略，等待超时抛出PriorityWaitExeption（注：为什么只增加ThreadNum但不增加PassRequest，却执行了onPass回调函数？这里PriorityWatitException并不是BlockException，抛出PriorityWaitException时，该请求已经获取了令牌，可以执行后续的操作，只是不在当前窗口，这点后续会说明）
+后续Slot规则不通过，抛出BlockException
+发生其他异常，这时候会设置当前节点的Error值，为exit动作做判断
+退出的动作如下，该行为发生在fireExit前，用于统计成功时的响应时间，减去获取token时的线程数，增加成功请求数（SuccessRequest）
+具体的统计方法，后续会对StatisticNode做说明。
+3.5.SystemSlot 通过系统的状态，例如 load1 等，来控制总的入口流量；
+检查当前系统指标是否正常，只检查入口流量节点。包括全局QPS，全局线程数，全局平均响应时间，系统负载，CPU负载。
+3.6.AuthoritySlot 根据配置的黑白名单和调用来源信息，来做黑白名单控制；
+3.7.FlowSlot 用于根据预设的限流规则以及前面 slot 统计的状态，来进行流量控制；
+首先会根据规则设定的模式，选择处理方式，有Local和Cluster两种，这里先介绍Local方式。
+Local方式时，先选择统计数据的节点，再根据设定的限流器获取token，达到限流的目的。
+3.7.1 选择统计数据的节点 这一步将根据给定设置的应用范围，和限流策略来选择对应的节点。
+这边先介绍默认的应用范围和限流策略，分为：
+应用范围：default，other
+限流策略：DIRECT，RELATE，CHAIN
+选择时，将根据调用方LimitApp来选择对应的节点。若规则作用于origin上且除default和other外,如果是DIRECT策略，返回origin节点；若是作用于default上，如果是DIRECT策略，返回Cluster节点；若是作用于other上，如果是DIRECT策略，返回origin节点。上述其他情况的选择过程都是相同的，即：如果资源名为空，返回空；如果是RELATE策略，使用ClusterNode节点数据；如果是CHIAN策略，且当前节点名同规则名一致，使用当前节点数据，否则返回为空，详情可以看代码。
+获得数据节点后，便可以使用规则中指定的限流器校验节点的数据，以获取token。
+3.7.2 根据限流器获取token 系统提供的限流器包括：]]></description>
+</item>
+<item>
+    <title>Sentinel基本概念</title>
+    <link>https://atuowgo.github.io/01-basic/</link>
+    <pubDate>Sun, 29 Sep 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/01-basic/</guid>
+    <description><![CDATA[Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍。
+这里先介绍下Sentinel中涉及到的基本概念，包括使用上或者实现上。主要是笔者在阅读文档和源码时经常会接触到的对象。
+Resource 资源是整个Sentinel最基本的一个概念。可以是一段代码，一个http请求，一个微服务，总而言之，他是Sentinel需要保证的实体。大部分情况下，我们可以使用方法签名，URL或者是服务名称来作为资源的名称。它在Sentinel中的体现是：ResourceWrapper，他有两个子类：
+StringResourceWrapper 使用string来标识一个资源
+MethodResouceWrapper 使用一个函数签名来标识一个资源
+Node 节点是用来存储统计数据的基本数据单元，Node本身只是一个接口，它有多个实现：
+StatisticNode 唯一的直接实现类，实现了流量统计的基本方法，在StatisticSlot中使用
+ClusterNode 继承自StatisticNode，对于某一个资源的全局统计
+DefaultNode 继承自StatisticNode，对于某一个资源在相应上下文中的实现，保存了一个指向ClusterNode的引用。另外还保存了子节点列表，当在同一个context下多次调用SphU.entry不同资源时会创建子节点
+EntranceNode 继承自DefaultNode，代表一个调用的根节点，一个Context会对应到一个EntranceNode
+Context 上下文是用来保存当前调用的元数据，存储在ThreadLocal中，它包含了几个信息：
+EntranceNode 整个调用树的根节点，即入口
+Entry 当前的调用点
+Node 关联到当前调用点的统计信息
+Origin 通常用来标识调用方，这在我们需要按照调用方来区分流控策略的时候会非常有用
+每当我们调用SphU.entry()或者 SphO.entry()获取访问资源许可的时候都需要当前线程处在某个context中，如果我们没有显式调用ContextUtil.enter()，默认会使用Default context。如果我们在一个上下文中多次调用SphU.entry()来获取多个资源，一个调用树就会被创建出来
+NullContext 超过系统能够创建的最大会话数则返回NullContext，后续不对该会话做过滤校验，直接放过。
+Entry
+每次SphU.entry()调用都会返回一个Entry，Entry保持了所有关于当前资源调用的信息：
+createTime 这个资源调用的创建时间
+currentNode SphU.entry请求进入的资源在当前上下文中的统计数据Node
+originNode SphU.entry请求进入的资源对于特定origin调用方的统计数据node
+Entry的实现类为CtEntry，它其中除了上述信息之外，还保存了额外的信息：
+parent 调用树链条中上一个entry
+child 调用树链条中的下一个entry
+chain 当前调用资源所使用的限流工作责任链，包括各个Slot
+context 当前调用点所属的上下文
+EntryType EntryType 说的是这次请求的流量类型，共有两种类型：IN 和 OUT 。
+IN：是指进入我们系统的入口流量，比如 http 请求或者是其他的 rpc 之类的请求。
+OUT：是指我们系统调用其他第三方服务的出口流量。
+入口、出口流量只有在配置了系统规则时才有效。
+设置Type 为 IN 是为了统计整个系统的流量水平，防止系统被打垮，用以自我保护的一种方式。
+设置Type 为 OUT 一方面是为了保护第三方系统，比如我们系统依赖了一个生成订单号的接口，而这个接口是核心服务，如果我们的服务是非核心应用的话需要对他进行限流保护；另一方面也可以保护自己的系统，假设我们的服务是核心应用，而依赖的第三方应用老是超时，那这时可以通过设置依赖的服务的 rt 来进行降级，这样就不至于让第三方服务把我们的系统拖垮。]]></description>
+</item>
+</channel>
+</rss>

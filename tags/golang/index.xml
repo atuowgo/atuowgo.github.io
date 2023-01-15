@@ -1,0 +1,32 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>Golang - 标签 - 程序猿二腊</title>
+        <link>https://atuowgo.github.io/tags/golang/</link>
+        <description>Golang - 标签 - 程序猿二腊</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 31 May 2022 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/golang/" rel="self" type="application/rss+xml" /><item>
+    <title>golang error</title>
+    <link>https://atuowgo.github.io/007-golang-error/</link>
+    <pubDate>Tue, 31 May 2022 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/007-golang-error/</guid>
+    <description><![CDATA[go error 记录go1.x error相关内容
+1. 原生error error 只是一个普通的interface,在buildin.go 里给出了定义:
+1 2 3 4 5 // The error built-in interface type is the conventional interface for // representing an error condition, with the nil value representing no error. type error interface { Error() string } 当返回值为nil时，表示没有错误，所以调用方需要通过类似err != nil的方式来处理。
+该接口只有一个方法，返回具体消息内容，可以使用errors.New(text string) 来返回一个error对象，入参只有一个string，为具体消息内容。如bufio.go内置的错误
+用该方法返回的对象，即使文本相同，返回的error对象也是不同的，从源码中可以知道原因：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 // New returns an error that formats as the given text.]]></description>
+</item>
+<item>
+    <title>动态路由:Gin vs SpringMVC</title>
+    <link>https://atuowgo.github.io/006-ginvsmvc/</link>
+    <pubDate>Mon, 16 Mar 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/006-ginvsmvc/</guid>
+    <description><![CDATA[这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比。
+1.简介 Gin是使用Go/golang语言实现的HTTP Web框架。接口简洁,性能极高。截止1.4.0版本,包含测试代码,仅14K,其中测试代码9K左右,也就是说框架源码仅5K左右。SpringMVC不用过多介绍，Java市场的一把手。
+Gin支持动态路由，简单示例如下：
+1 2 3 4 5 6 7 8 9 10 11 12 import ( &#34;github.com/gin-gonic/gin&#34; &#34;net/http&#34; ) func main() { r := gin.Default() r.GET(&#34;/hello/:name&#34;, func(context *gin.Context) { context.String(http.StatusOK, &#34;Hello : &#34;+context.Param(&#34;name&#34;)) }) r.Run() } 对比SpringMVC的例子为：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 import org.springframework.web.bind.annotation.PathVariable; import org.springframework.web.bind.annotation.RequestMapping; import org.springframework.web.bind.annotation.RestController; @RestController public class HelloWorldController { @RequestMapping(&#34;/hello/{name}&#34;) public String antUser (@PathVariable(&#34;name&#34;) String name) { return &#34;Hello : &#34; + name; } } 二者有相似的地方。]]></description>
+</item>
+</channel>
+</rss>

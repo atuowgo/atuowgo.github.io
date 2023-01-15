@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Spring启动流程 - 程序猿二腊</title><meta name="Description" content="Spring用了挺久的了，但是没系统做过总结，刚好前段时间在做一个Spring封装的项目，趁机回顾了下，便基于Spring framework 4.3.22做了源码分析"><meta property="og:title" content="Spring启动流程" />
+<meta property="og:description" content="Spring用了挺久的了，但是没系统做过总结，刚好前段时间在做一个Spring封装的项目，趁机回顾了下，便基于Spring framework 4.3.22做了源码分析" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/01-spring-start/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-10-02T00:00:00+00:00" />
+<meta property="article:modified_time" content="2019-10-02T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Spring启动流程"/>
+<meta name="twitter:description" content="Spring用了挺久的了，但是没系统做过总结，刚好前段时间在做一个Spring封装的项目，趁机回顾了下，便基于Spring framework 4.3.22做了源码分析"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/01-spring-start/" /><link rel="prev" href="https://atuowgo.github.io/03-module-cluster/" /><link rel="next" href="https://atuowgo.github.io/02-spring-env/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Spring启动流程",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/01-spring-start\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "spring","wordcount":  110 ,
+        "url": "https:\/\/atuowgo.github.io\/01-spring-start\/","datePublished": "2019-10-02T00:00:00+00:00","dateModified": "2019-10-02T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "Spring用了挺久的了，但是没系统做过总结，刚好前段时间在做一个Spring封装的项目，趁机回顾了下，便基于Spring framework 4.3.22做了源码分析"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Spring启动流程</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2019-10-02">2019-10-02</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 110 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;<span id="/01-spring-start/" class="leancloud_visitors" data-flag-title="Spring启动流程">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#一-启动">一. 启动</a>
+              <ul>
+                <li><a href="#11-try">1.1. try</a>
+                  <ul>
+                    <li><a href="#1preparerefresh">1.prepareRefresh</a></li>
+                    <li><a href="#2obtainfreshbeanfactory">2.obtainFreshBeanFactory</a></li>
+                    <li><a href="#3preparebeanfactory">3.prepareBeanFactory</a></li>
+                    <li><a href="#4postprocessbeanfactory">4.postProcessBeanFactory</a></li>
+                    <li><a href="#5invokebeanfactorypostprocessors">5.invokeBeanFactoryPostProcessors</a></li>
+                    <li><a href="#6registerbeanpostprocessors">6.registerBeanPostProcessors</a></li>
+                    <li><a href="#7initmessagesource">7.initMessageSource</a></li>
+                    <li><a href="#8initapplicationeventmulticaster">8.initApplicationEventMulticaster</a></li>
+                    <li><a href="#9onrefresh">9.onRefresh</a></li>
+                    <li><a href="#10registerlisteners">10.registerListeners</a></li>
+                    <li><a href="#11finishbeanfactoryinitialization">11.finishBeanFactoryInitialization</a></li>
+                  </ul>
+                </li>
+                <li><a href="#12-catch">1.2. catch</a>
+                  <ul>
+                    <li><a href="#1destroybeans">1.destroyBeans</a></li>
+                    <li><a href="#2cancelrefresh">2.cancelRefresh</a></li>
+                  </ul>
+                </li>
+                <li><a href="#13-finally">1.3. finally</a></li>
+              </ul>
+            </li>
+            <li><a href="#二-关闭">二. 关闭</a></li>
+            <li><a href="#三-start-stop方法">三. Start Stop方法</a></li>
+            <li><a href="#四-扩展接口顺序">四. 扩展接口顺序</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> Spring用了挺久的了，但是没系统做过总结，刚好前段时间在做一个Spring封装的项目，趁机回顾了下，便基于Spring framework 4.3.22做了源码分析。</p>
+<p> 刚开始接触Spring时的入门例子大致如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/1.png"
+        data-srcset="/01-spring-start/1.png, /01-spring-start/1.png 1.5x, /01-spring-start/1.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/1.png"
+        title="/01-spring-start/1.png" width="865" height="192" /></p>
+<p> 设置配置文件路径，初始化ApplicationContext然后获取Bean，处理完后关闭context即可。这一节先来了解Spring的启动过程。</p>
+<h4 id="一-启动">一. 启动</h4>
+<p> 跟踪ClassPathXmlApplicationContext的构造方法可以看到如下内容：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/2.png"
+        data-srcset="/01-spring-start/2.png, /01-spring-start/2.png 1.5x, /01-spring-start/2.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/2.png"
+        title="/01-spring-start/2.png" width="865" height="320" /></p>
+<p> 里面设置了配置文件的路径，并且调用了父类AbstractApplicationContext的refresh方法，该方法完成了Spring环境的初始化。如下，为refresh方法的主要过程（为方便排版，去除了原来的注释和空格）：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/3.png"
+        data-srcset="/01-spring-start/3.png, /01-spring-start/3.png 1.5x, /01-spring-start/3.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/3.png"
+        title="/01-spring-start/3.png" width="865" height="908" /></p>
+<p> 下面将介绍各个方法步骤的内容，但不进行过多的深入，后面会单独对每个深入的细节进行详细的介绍，这节先介绍大概过程。</p>
+<h5 id="11-try">1.1. try</h5>
+<h6 id="1preparerefresh">1.prepareRefresh</h6>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/4.png"
+        data-srcset="/01-spring-start/4.png, /01-spring-start/4.png 1.5x, /01-spring-start/4.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/4.png"
+        title="/01-spring-start/4.png" width="865" height="297" /></p>
+<p> PrepareRefresh的内容如上，该方法主要进行环境的准备，包括Context的启动时间，活动状态，然后会设置context中的配置数据源，使用默认的StandardEnvironment对象，该对象添加了System.env()属性和System.properties()属性。initPropertySources方法用于初始化context 中 environment的属性源。在AbstractApplicationContext中为空实现。其他子类的实现如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/5.png"
+        data-srcset="/01-spring-start/5.png, /01-spring-start/5.png 1.5x, /01-spring-start/5.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/5.png"
+        title="/01-spring-start/5.png" width="865" height="150" /></p>
+<p> 对于GenericWebApplicationContext和AbstractRefreshableWebApplicationContext的实现大致一致，都是:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/6.png"
+        data-srcset="/01-spring-start/6.png, /01-spring-start/6.png 1.5x, /01-spring-start/6.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/6.png"
+        title="/01-spring-start/6.png" width="865" height="179" /></p>
+<p> 通过在getEnvironment方法中，重写createEnvironment方法，将默认的StandardEnvironment替换为StandardServletEnvironment， Environment的关系图为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/7.png"
+        data-srcset="/01-spring-start/7.png, /01-spring-start/7.png 1.5x, /01-spring-start/7.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/7.png"
+        title="/01-spring-start/7.png" width="748" height="803" /></p>
+<p> 因而会执行该类的initPropertySources方法，为context添加ServletContext和ServletConfig对应的配置属性源。具体的Environment中配置属性源的加载会在后面单独进行介绍。</p>
+<h6 id="2obtainfreshbeanfactory">2.obtainFreshBeanFactory</h6>
+<p> 该方法的实现如下，通过refreshBeanFacotry重置AbstractApplicationContext持有的BeanFacotry，然后通过getBeanFacotry获得该对象再返回。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/8.png"
+        data-srcset="/01-spring-start/8.png, /01-spring-start/8.png 1.5x, /01-spring-start/8.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/8.png"
+        title="/01-spring-start/8.png" width="865" height="275" /></p>
+<p> AbstractApplicationContext中refreshBeanFacoty方法和getBeanFactory方法都是抽象方法，具体实现在AbstractRefreshableApplicationContext上。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/9.png"
+        data-srcset="/01-spring-start/9.png, /01-spring-start/9.png 1.5x, /01-spring-start/9.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/9.png"
+        title="/01-spring-start/9.png" width="865" height="374" /></p>
+<p> 如上，增加了方法的注释，重点在于loadBeanDefinitions方法，该抽象方法在具体实现子类上用于处理不同场景下Bean定义的加载，如Xml配置，注解配置，Web环境等，具体实现会在后面展开。</p>
+<p> 目前，只是完成了Bean定义的加载，没有出现Bean的实例化。</p>
+<h6 id="3preparebeanfactory">3.prepareBeanFactory</h6>
+<p> 为第2步返回的BeanFactory设置基础属性。包括：</p>
+<ol>
+<li>
+<p>设置ClassLoader</p>
+</li>
+<li>
+<p>设置beanFactory的表达式语言处理器，默认使用EL表达式，可以使用#{bean.xxx}的形式来调用相关属性值</p>
+</li>
+<li>
+<p>添加默认的属性编辑器</p>
+</li>
+<li>
+<p>添加后置处理器ApplicationContextAwareProcessor，在Bean初始化后自动执行各Aware接口的set方法，包括ResourceLoaderAware、ApplicationEventPublisherAware、MessageSourceAware、ApplicationContextAware、EnvironmentAware</p>
+</li>
+<li>
+<p>添加需要忽略的依赖注入类型，这些类型会在ApplicationContextAwareProcessor中通过BeanPostProcessor后置处理，包括第（4）点涉及的各内容</p>
+</li>
+<li>
+<p>预先设置用于自动依赖注入的接口对象，包括BeanFactory、ResourceLoader、ApplicationEventPublisher、ApplicationContext</p>
+</li>
+<li>
+<p>如果存在loadTimeWeaver这个Bean，则增加对应的后置处理器</p>
+</li>
+<li>
+<p>如果不存在environment，systemProperties，systemEnvironment这3个默认的环境属性Bean，则注册对应的单例，这3个对象已经在第1步中初始化完成</p>
+</li>
+</ol>
+<p> 具体可以看源码，这步主要预先设置公共的单例Bean并添加一些公共的后置处理动作，主要体现在BeanPostProcessor上。</p>
+<h6 id="4postprocessbeanfactory">4.postProcessBeanFactory</h6>
+<p> 所有Bean的定义已经加载完成，但是没有实例化，这一步可以修改bean定义或者增加自定义的bean，AbstractApplicationContext中为空实现。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/10.png"
+        data-srcset="/01-spring-start/10.png, /01-spring-start/10.png 1.5x, /01-spring-start/10.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/10.png"
+        title="/01-spring-start/10.png" width="865" height="196" /></p>
+<p> 如上，以AbstractRefreshableWebApplicationContext为例，其增加了ServletContextAwareProcessor后置处理器，用于处理ServletContextAware接口和ServletConfigAware接口中相关对象的自动注入。同时新增了Web相关的应用范围，包括：request,session,globalSession和application，并增加了各范围默认的单例对象。最后增加了Web环境相关的环境配置Bean,包括servletContext，servletConfig，contextParameters和contextAttributes。</p>
+<p> 该步骤的功能同第3步类似，都能够增加一些后置处理器。</p>
+<h6 id="5invokebeanfactorypostprocessors">5.invokeBeanFactoryPostProcessors</h6>
+<p> 在Spring容器中找出实现了BeanFactoryPostProcessor接口的Bean并执行。Spring容器会委托给PostProcessorRegistrationDelegate的invokeBeanFactoryPostProcessors方法执行，内容如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/11.png"
+        data-srcset="/01-spring-start/11.png, /01-spring-start/11.png 1.5x, /01-spring-start/11.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/11.png"
+        title="/01-spring-start/11.png" width="865" height="239" /></p>
+<p> invokeBeanFactoryPostProcessors在处理时，将BeanFactoryPostProcessor分为了两类进行处理，BeanFactoryPostProcessor和BeanDefinitionRegistryPostProcessor，其中BeanDefinitionRegistryPostProcessor继承自BeanFactoryPostProcessor。执行的时候，先找出所有的BeanDefinitionRegistryPostProcessor执行再找出所有BeanFactoryPostProcessor执行。因为BeanDefinitionRegistryPostProcessor继承自BeanFactoryPostProcessor，所以执行后者时会过滤掉前者的内容。</p>
+<p> 在执行BeanDefinitionRegistryPostProcessor时，会按照如下的优先级，分类先执行postProcessBeanDefinitionRegistry方法，再统一执行所有的postProcessBeanFactory方法，，规则为：</p>
+<ol>
+<li>
+<p>筛选实现了PriorityOrdered接口的BeanDefinitionRegistryPostProcessor实现</p>
+</li>
+<li>
+<p>筛选实现了Ordered接口的BeanDefinitionRegistryPostProcessor实现，并执行</p>
+</li>
+<li>
+<p>执行其他BeanDefinitionRegistryPostProcessors</p>
+</li>
+</ol>
+<p> 在执行BeanFactoryPostProcessor也会按照如上的规则，执行BeanFactoryPostProcessor方法。</p>
+<p> <em><strong>这里会实例化并初始化实现BeanFactoryPostProcessor接口的类并执行，若存在依赖的的Bean也会被初始化和实例化，具体的过程会在介绍Bean初始化过程时说明。</strong></em></p>
+<h6 id="6registerbeanpostprocessors">6.registerBeanPostProcessors</h6>
+<p> 从Spring容器中找出的BeanPostProcessor接口的Bean，并添加到BeanFactory内部维护的List属性中，以便后续Bean被实例化的时候调用这个BeanPostProcessor进行回调处理。该方法委托给了PostProcessorRegistrationDelegate类的registerBeanPostProcessors方法执行。执行过程同步骤5类似，也是按照优先级进行了筛选，具体顺序为：</p>
+<ol>
+<li>
+<p>将实现PriorityOrdered接口的BeanPostProcessor列表注册到ApplicationContext中</p>
+</li>
+<li>
+<p>将实现Ordered接口的BeanPostProcessor列表注册到ApplicationContext中</p>
+</li>
+<li>
+<p>将剩余的BeanPostProcessor列表注册到ApplicationContext中</p>
+</li>
+<li>
+<p>将实现MergedBeanDefinitionPostProcessor接口的BeanPostProcessor列表注册到ApplicationContext中</p>
+</li>
+</ol>
+<p> 其中MergedBeanDefinitionPostProcessor接口继承自BeanPostProcessor接口，因而，上述第（4）点的列表同头三点的列表式存在交集的。但是，AbstraceApplicationContext在添加BeanPostProcessor时，会先将存在的对象删除，再添加新的，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/12.png"
+        data-srcset="/01-spring-start/12.png, /01-spring-start/12.png 1.5x, /01-spring-start/12.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/12.png"
+        title="/01-spring-start/12.png" width="865" height="419" /></p>
+<p> 因而执行顺序为因而执行顺序为:PriorityOrdered、Ordered、NotOrdered、MergedBeanDefinitionPostProcessor。</p>
+<p> <em><strong>这里会实例化并初始化实现BeanPostProcessor接口的类，但不执行，若存在依赖的的Bean也会被初始化和实例化。</strong></em></p>
+<h6 id="7initmessagesource">7.initMessageSource</h6>
+<p> 在Spring容器中初始化一些国际化相关的属性</p>
+<h6 id="8initapplicationeventmulticaster">8.initApplicationEventMulticaster</h6>
+<p> 在Spring容器中初始化事件广播器对象SimpleApplicationEventMulticaster，并将该对象作为单例applicationEventMulticaster注册到Context中。该广播器用于广播ApplicationEvent事件对应的ApplicationListener接口Bean。</p>
+<p> <em><strong>PS：根据以上的顺序，在这之前实例化的Bean，都不会经过BeanFactoryPostProcessor和BeanPostProcessor的处理，包括因为依赖而实例化的Bean,还有提前通过new注册的Bean（只有直接调用BeanFactory.getBean方法获取的bean才会进行后置回调）。这里需要注意，Context提前将两种后置处理器的所有实现都提前加载了，由于实例化前需要将依赖的Bean提前实例化，所以被这两种后置处理器依赖的Bean的初始化动作，是不会被其监听到的。</strong></em></p>
+<h6 id="9onrefresh">9.onRefresh</h6>
+<p> 模板方法，可用于refresh动作的扩展，默认为空实现。在SpringBoot中主要用于启动内嵌的web服务器。</p>
+<h6 id="10registerlisteners">10.registerListeners</h6>
+<p> 找出系统中的ApplicationListener对象，注册到时间广播器中。如果有需要提前进行广播的时间，则执行广播.</p>
+<h6 id="11finishbeanfactoryinitialization">11.finishBeanFactoryInitialization</h6>
+<p> 实例化BeanFactory中已经被注册但是未实例化的所有实例(懒加载的不需要实例化)，主要操作是BeanFacotry的preInstantiateSingletons方法。该方法分为两部分：</p>
+<ol>
+<li>
+<p>遍历已经解析出来的所有beanDefinitionNames，如果不是抽象类、是单例且没有设置懒加载，则进行实例化和初始化。</p>
+</li>
+<li>
+<p>在spring容器管理的所有单例对象（非懒加载对象）初始化完成之后调用SmartInitializingSingleton回调接口，注意，该回调只会发生在启动阶段，后续懒加载对象再初始化的话，不会再进行回调</p>
+</li>
+<li>
+<p>finishRefresh</p>
+</li>
+</ol>
+<p> 刷新后的其他动作，包括：</p>
+<ol>
+<li>
+<p>初始化生命周期处理器DefaultLifecycleProcessor，该处理器管理所有实现了Lifecycle接口的类</p>
+</li>
+<li>
+<p>通知所有Lifecycle.onRefresh，该方法内部调用LifecycleProcessor.startBeans(false)，这里只会调用实现了SmartLifecycle接口，并且设定了AutoStartup的实例，回调将按照设定的优先级，从第到高执行</p>
+</li>
+<li>
+<p>发布ContextRefreshedEvent通知事件</p>
+</li>
+<li>
+<p>调用LiveBeansView的registerApplicationContext方法</p>
+</li>
+</ol>
+<h5 id="12-catch">1.2. catch</h5>
+<h6 id="1destroybeans">1.destroyBeans</h6>
+<p> 销毁所有已经注册的单例，对于实现了DisposableBean的类，会先单独进行销毁，以便执行回调方法，再清理所有单例的缓存信息和剩余的单例实例</p>
+<h6 id="2cancelrefresh">2.cancelRefresh</h6>
+<p> 将当前的活动状态标识未false</p>
+<h5 id="13-finally">1.3. finally</h5>
+<ol>
+<li>resetCommonCaches</li>
+</ol>
+<p> 清除缓存</p>
+<h4 id="二-关闭">二. 关闭</h4>
+<p> AbstractApplicationContext的close方法如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/13.png"
+        data-srcset="/01-spring-start/13.png, /01-spring-start/13.png 1.5x, /01-spring-start/13.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/13.png"
+        title="/01-spring-start/13.png" width="865" height="520" /></p>
+<p> 主要是调用doClose方法，然后判断是否有shutdownHook，如果有则移除该钩子，避免重复关闭，因为默认的shutdownHook也是调用的doClose方法。</p>
+<p> doClose方法如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/14.png"
+        data-srcset="/01-spring-start/14.png, /01-spring-start/14.png 1.5x, /01-spring-start/14.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/14.png"
+        title="/01-spring-start/14.png" width="865" height="832" /></p>
+<p> 过程为：</p>
+<ol>
+<li>
+<p>去除当前Context的MBean，如果开启了MBean</p>
+</li>
+<li>
+<p>发送ContextClosedEvent通知事件</p>
+</li>
+<li>
+<p>回调声明周期管理器的onClose方法</p>
+</li>
+<li>
+<p>销毁已经实例化的单例，同上面提到的一致</p>
+</li>
+<li>
+<p>重置BeanFacotry id为空</p>
+</li>
+<li>
+<p>调用onClose方法，默认实现为空，对于SpringBoot应用，在前面说过，SpringBoot应用重写了onRefresh方法用于启动web服务器，而在这里，则用于关闭内嵌的web服务器。（<em><strong>PS：注意这里，web服务器的关闭是在所有Bean销毁后再关闭的，因而在关闭服务器前，web还会接收Http请求，有可能导致请求无法处理，官方给了一个解决方法，详见[issue https://github.com/spring-projects/spring-boot/issues/4657](issue <a href="https://github.com/spring-projects/spring-boot/issues/4657" target="_blank" rel="noopener noreffer ">https://github.com/spring-projects/spring-boot/issues/4657</a>)）</strong></em></p>
+</li>
+</ol>
+<h4 id="三-start-stop方法">三. Start Stop方法</h4>
+<p> 这两个方法来自Lifecycle接口，如下，简单的调用了DefaultLifecycleProcessor的start和stop方法，回调Lifecycle的实现类。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/15.png"
+        data-srcset="/01-spring-start/15.png, /01-spring-start/15.png 1.5x, /01-spring-start/15.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/15.png"
+        title="/01-spring-start/15.png" width="544" height="148" /></p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/16.png"
+        data-srcset="/01-spring-start/16.png, /01-spring-start/16.png 1.5x, /01-spring-start/16.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/16.png"
+        title="/01-spring-start/16.png" width="542" height="144" /></p>
+<h4 id="四-扩展接口顺序">四. 扩展接口顺序</h4>
+<p> 我们知道Spring中存在很多预设的接口，用于扩展。通过以上分析，目前得到的回调接口顺序如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/01-spring-start/17.png"
+        data-srcset="/01-spring-start/17.png, /01-spring-start/17.png 1.5x, /01-spring-start/17.png 2x"
+        data-sizes="auto"
+        alt="/01-spring-start/17.png"
+        title="/01-spring-start/17.png" width="865" height="379" /></p>
+<p> 后续对其他细节进行展开时，会看到更多的扩展接口，到时再更新上面的图。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2019-10-02</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/01-spring-start/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/01-spring-start/" data-title="Spring启动流程" data-hashtags="spring"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/01-spring-start/" data-hashtag="spring"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/01-spring-start/" data-title="Spring启动流程"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/03-module-cluster/" class="prev" rel="prev" title="Sentinel Culster流程分析"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>Sentinel Culster流程分析</a>
+            <a href="/02-spring-env/" class="next" rel="next" title="Spring Environment的加载">Spring Environment的加载<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

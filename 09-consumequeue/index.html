@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>RocketMQ消息的存储消费模型 - 程序猿二腊</title><meta name="Description" content="本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡"><meta property="og:title" content="RocketMQ消息的存储消费模型" />
+<meta property="og:description" content="本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/09-consumequeue/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-05-18T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-05-18T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="RocketMQ消息的存储消费模型"/>
+<meta name="twitter:description" content="本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/09-consumequeue/" /><link rel="prev" href="https://atuowgo.github.io/08-mappedfile/" /><link rel="next" href="https://atuowgo.github.io/01-start/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "RocketMQ消息的存储消费模型",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/09-consumequeue\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "rocketmq","wordcount":  278 ,
+        "url": "https:\/\/atuowgo.github.io\/09-consumequeue\/","datePublished": "2020-05-18T00:00:00+00:00","dateModified": "2020-05-18T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">RocketMQ消息的存储消费模型</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2020-05-18">2020-05-18</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 278 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;<span id="/09-consumequeue/" class="leancloud_visitors" data-flag-title="RocketMQ消息的存储消费模型">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-存储消费模型">1. 存储消费模型</a></li>
+            <li><a href="#2-commitlog">2. CommitLog</a></li>
+            <li><a href="#21-追加消息">2.1. 追加消息</a></li>
+            <li><a href="#22-读取消息">2.2. 读取消息</a></li>
+            <li><a href="#23-删除消息">2.3. 删除消息</a></li>
+            <li><a href="#3-consumequeue">3. ConsumeQueue</a></li>
+            <li><a href="#4-indexservice">4. IndexService</a></li>
+            <li><a href="#41-header">4.1. HEADER</a></li>
+            <li><a href="#42-slot">4.2. SLOT</a></li>
+            <li><a href="#43-index">4.3. INDEX</a></li>
+            <li><a href="#5-defaultmessagestore">5. DefaultMessageStore</a></li>
+            <li><a href="#51-读取消息">5.1. 读取消息</a></li>
+            <li><a href="#52-schedulemessageservice">5.2. ScheduleMessageService</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p>这节介绍RocketMQ中消息的存储模型：CommitLog和ConsumeQueue。CommitLog用于存储Producer的消息，ConsumeQueue接受CommitLog分配的消息，等待Consumer消费。</p>
+<h4 id="1-存储消费模型">1. 存储消费模型</h4>
+<p>RocketMQ采用了单一的日志文件，即把同1台机器上面所有topic的所有queue消息都存放在一个文件里面，以避免随机的磁盘写入。其存储结构如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/1.jpg"
+        data-srcset="/09-consumequeue/1.jpg, /09-consumequeue/1.jpg 1.5x, /09-consumequeue/1.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/1.jpg"
+        title="/09-consumequeue/1.jpg" width="2042" height="648" /></p>
+<p>Broker会把所有消息都存在一个单一的CommitLog文件里面，然后由后台线程异步的同步到ConsumeQueue中，再由Consumer进行消费。</p>
+<p>该模型下，ConsumeQueue中并不需要存储消息的内容，而是存储消息在CommitLog中的offset。也就是说，ConsumeQueue其实是CommitLog的一个索引文件。即CommitLog的写入是顺序的，而读取需要支持随机读的，支持该特性的实现就是上一节提到的MappedFileQueue。</p>
+<h4 id="2-commitlog">2. CommitLog</h4>
+<p>CommitLog的很多操作都基于MappedFileQueue来操作，在MappedFileQueue上增加了CR<del>U</del>D操作。CommitLog的调用过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/2.jpg"
+        data-srcset="/09-consumequeue/2.jpg, /09-consumequeue/2.jpg 1.5x, /09-consumequeue/2.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/2.jpg"
+        title="/09-consumequeue/2.jpg" width="2152" height="978" /></p>
+<p>初始化时会初始化相关的组件，包括MappedFileQueue、FlushCommitLogService、AppendMessageCallback等。</p>
+<ol>
+<li>
+<p>MappedFileQueue主要设定了文件的路径位置和每个MappedFile的大小(1024 * 1024 * 1024 = 1G)。</p>
+</li>
+<li>
+<p>FlushCommitLogService的实现类有3个GroupCommitService、FlushRealTimeService和CommitRealTimeService。前两个用于刷盘，如果开启了异步刷盘，则使用GroupCommitService，该实现会将刷盘请求缓存起来，到时间后再执行刷盘；FlushRealTimeService，该实现直接定时刷固定页的数据，如果启用了堆外缓冲区则使用GroupCommitService，否则使用FlushRealTimeService。后面的CommitRealTimeService则用于将堆外缓冲区中的数据写到FileChannel中(如果启用了堆外缓冲，调用MappedFileQueue的commit方法)。</p>
+</li>
+<li>
+<p>AppendMessageCallback主要用于实现具体消息写入ByteBuf的方式。</p>
+</li>
+</ol>
+<p>此外，还缓存了每个topic下每个queue对应的<b>逻辑偏移量</b></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private HashMap&lt;String/* topic-queueid */, Long/* offset */&gt; topicQueueTable = new HashMap&lt;String, Long&gt;(1024);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>加载主要是调用MappedFileQueue的load方法，最后启动FlushCommitLogService服务。</p>
+<p>同时，CommitLog还通过ReputMessageService，将消息offset放到了ConsumeQueue以及IndexService，ReputMessageService的调用在DefaultMessage里。</p>
+<h4 id="21-追加消息">2.1. 追加消息</h4>
+<p>追加消息的大致过程如下，其中写入消息时会加锁，从而保证每个CommitLog文件的写都是顺序写入的。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/3.png"
+        data-srcset="/09-consumequeue/3.png, /09-consumequeue/3.png 1.5x, /09-consumequeue/3.png 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/3.png"
+        title="/09-consumequeue/3.png" width="433" height="928" /></p>
+<p>其中AppendMessageCallback主要完成了对消息写入ByteBuff的处理，包括单笔和批量消息。这里主要介绍单笔消息的写入：计算一条消息每一部分的大小和内容，然后写入到byteBuffer中，byteBuffer是MappedFile slice后的内容，写入每个部分如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/4.jpg"
+        data-srcset="/09-consumequeue/4.jpg, /09-consumequeue/4.jpg 1.5x, /09-consumequeue/4.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/4.jpg"
+        title="/09-consumequeue/4.jpg" width="324" height="798" /></p>
+<p>大部分内容通过字段便能够看出具体的意思，这里不再赘述，只对一些内容进行介绍。</p>
+<ol>
+<li>计算消息的全局ID：MessageId，MessageId由存储的broker机器的ip地址+commitLog中的起始物理offset组成。MessageId会带在返回结果PutMessageResult中返回。</li>
+<li>写入成功后会将topic-queue的逻辑偏移量+1(逻辑偏移量表示消息数量的大小，一条消息进来下标就会长1)</li>
+<li>写入之前会计算消息的大小，如果超过设定的单条消息的大小(默认512K)则拒绝写入</li>
+<li>写入之前会判断当前文件剩余内容是否足够，如果不够则会插入一条空白消息，将剩余部分填满，返回文件已满，上层判断文件满了，会重新生成一个文件，将消息再次写入.空白消息写入的内容为totalSize+magicCode+0值,其中正常消息的magicCode为-626843481，空白消息为-875286124</li>
+</ol>
+<h4 id="22-读取消息">2.2. 读取消息</h4>
+<p>根据所给的起始offset(物理偏移量),确定该offset所在MappedFile后，获取从offset开始到MappedFile当前可读的所有内容。</p>
+<p>MappedFile里会维护一个fileFromOffset属性，标记当前文件存储消息的起始偏移量，该值也是文件的文件名，默认值每个文件为1G=1073741824,即每个文件名的步长为1073741824。对于给定的offset，只要找到符合<code>fileFromOffset &lt;= offset &lt; fileFromOffset + mappedFileSize(1G)</code>的MappedFile即可。找到目标MappedFile后，通过<code>offset%mappedFileSize</code>可以计算出所给的起始offset在当前文件中的位置。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/5.jpg"
+        data-srcset="/09-consumequeue/5.jpg, /09-consumequeue/5.jpg 1.5x, /09-consumequeue/5.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/5.jpg"
+        title="/09-consumequeue/5.jpg" width="1238" height="456" /></p>
+<p>获得ByteBuff内容后，可以调用checkMessageAndReturnSize方法，从ByteBuff中还原消息，返回DispatchRequest(不含消息body内容)。</p>
+<p>前面提到，ReputMessageService会从CommitLog中读取消息，然后用于构建ConsumeQueue和IndexFile，这里传送的内容就是DispatchRequest。DefaultMessageStore会定时从CommitLog中读取消息，并将解析出的DispatchRequest对象传给ConsumeQueue和IndexService。</p>
+<h4 id="23-删除消息">2.3. 删除消息</h4>
+<p>调用MappedFileQueue，按照offset或者过期时间(默认72小时)删除物理文件</p>
+<h4 id="3-consumequeue">3. ConsumeQueue</h4>
+<p>代表一个topic下一个queue的消费队列。ConsumeQueue底层基于MappedFileQueue，存储每个topic-queueId下对应消息的offset，但消息被实际消费时，再通过offset从CommitLog中查找具体的消息内容。</p>
+<p>ConsumeQueue的调用过程和提供方法同CommitLog类似，也是初始化时从指定的路径下重构MappedFileQueue，并提供了CR<del><del>U</del></del>D方法来操作文件。</p>
+<p>ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对应的数据存储路径为</p>
+<p><code>/DirToStore/topic/queueId/ </code></p>
+<p>每次写入的数据格式(数据单元)为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">物理偏移量(long/8)|消息大小(int/4)|逻辑偏移量(long/8) = 20
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/6.jpg"
+        data-srcset="/09-consumequeue/6.jpg, /09-consumequeue/6.jpg 1.5x, /09-consumequeue/6.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/6.jpg"
+        title="/09-consumequeue/6.jpg" width="338" height="138" /></p>
+<p>ConsumeQueue初始化MappedFile的默认大小为 30000 * 20，即每个文件存30万条记录，没个文件名的步长为600000，消费时只要每次读取20个字节便能查找到每个消息的offset。</p>
+<h4 id="4-indexservice">4. IndexService</h4>
+<p>IndexService用于构建消息的索引文件IndexFile。ConsumeQueue中的消息都是通过offset从CommitLog中查到对应消息内容，但不知道消息的offset，又想通过其他特征(key)来查找消息时便没法完成，索引文件IndexFile就是为了支持该功能。</p>
+<p>IndexFile对应的文件名为yyyyMMddHHmmssSSS，即时间戳。IndexFile的结构如下，由3部分组成：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/7.jpg"
+        data-srcset="/09-consumequeue/7.jpg, /09-consumequeue/7.jpg 1.5x, /09-consumequeue/7.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/7.jpg"
+        title="/09-consumequeue/7.jpg" width="580" height="490" /></p>
+<h4 id="41-header">4.1. HEADER</h4>
+<p>头部信息，包括该文件的开始/结束时间，起始/结束物理偏移量以及槽的数量和索引的数量，头部信息的长度是固定的，为40个字节。</p>
+<h4 id="42-slot">4.2. SLOT</h4>
+<p>槽，对于每个key值，通过计算hash值，会对应到一个槽下标slotPos，槽只存储一个int数字，指向INDEX的下标。通过40 + hash(key) * 4 可以定位到槽的物理位置，再读取4个字节可以得到INDEX的下标。hash值的计算如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public int indexKeyHashMethod(final String key) {
+</span></span><span class="line"><span class="cl">    int keyHash = key.hashCode();
+</span></span><span class="line"><span class="cl">    int keyHashPositive = Math.abs(keyHash);
+</span></span><span class="line"><span class="cl">    if (keyHashPositive &lt; 0)
+</span></span><span class="line"><span class="cl">    keyHashPositive = 0;
+</span></span><span class="line"><span class="cl">    return keyHashPositive;
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>当hash值出现冲突时，使用链表法，将冲突的hash内容放到INDEX中，连成链表，在下面会介绍。</p>
+<h4 id="43-index">4.3. INDEX</h4>
+<p>存储消息对应的物理offset的信息，包括Key的hash值、消息在CommitLog的起始物理offset，相对于索引文件开始时间的差值、上一个槽指向的INDEX下标值，长度为20个字节。通过槽获得索引的下标后，可以通过 40 + 槽总数量* 4 + 索引下标 + 20 定位到该索引内容。默认槽的数量为5000000，索引最大的数量为5000000 * 4。</p>
+<p>新加入一条索引后，INDEX里存着上一个槽指向的INDEX下标值，而将SLOT的值设为当前INDEX的下标值，从而将相同hash值的内容组成一条链表。假设一开始的时候连续插入3条带有同一KEY值的消息，则索引的构建过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/8.jpg"
+        data-srcset="/09-consumequeue/8.jpg, /09-consumequeue/8.jpg 1.5x, /09-consumequeue/8.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/8.jpg"
+        title="/09-consumequeue/8.jpg" width="848" height="862" /></p>
+<p>应该查找指定key对应消息的过程为：</p>
+<ol>
+<li>根据key计算出hash值，找到对应的SLOT里的INDEX下标值，该值为链表中的最后一个节点</li>
+<li>根据INDEX下标读取INDEX内容，获得物理offset后，再根据INDEX中存储的上一个INDEX的下标值，找到链表中当前节点的上一个节点获得对应的物理offset。重复该步骤直到结束。</li>
+</ol>
+<p>即根据key查找消息返回的是一个列表。</p>
+<p>介绍完IndexFile，再回过来介绍IndexFileService。IndexFileService底层依赖MappedFile，内部维护这一个MappedFile列表。当接收到一个DisapatchRequest后，会找出该消息里的所有Key值，再将对应的物理offset写到IndexFile中。</p>
+<p>一条消息包含的Key值包含两部分:</p>
+<ol>
+<li>MessageID:根据topic#MessageID的格式拼接成Key值</li>
+<li>自定义Key:找到Message中自定义的MessageConst.PROPERTY_KEYS的内容value，根据topic#value格式拼接成Key值</li>
+</ol>
+<p>即可以根据MessageID随机查找消息，也可以根据自定义ID查找。</p>
+<p>由于一个IndexFile的大小是有限的，因而当一个IndexFile满了后，消息会写到新的索引文件中，从而对于相同hash值的key有可能存在多个IndexFile中。根据Key查找文件的时候需要遍历所有的IndexFile以找到所有的值。为了防止过度扫描文件，根据key值查找索引文件时需要指定时间范围以及符合key的hash值的最大数量。</p>
+<p>综上，可以得到下面的结构图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/9.jpg"
+        data-srcset="/09-consumequeue/9.jpg, /09-consumequeue/9.jpg 1.5x, /09-consumequeue/9.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/9.jpg"
+        title="/09-consumequeue/9.jpg" width="2270" height="876" /></p>
+<p>3个组件的协作由DefaultMessageStore的ReputMessageService串起来。</p>
+<h4 id="5-defaultmessagestore">5. DefaultMessageStore</h4>
+<p>前面说到，Broker接收消息后，会调用MessageStore将接收到的消息进行持久化。消费者在消费消息时，Broker也是根据请求的Offset从MessageStore中读取对应的消息然后返回。结合这两节的内容，可以说MessageStore是RocketMQ解耦的核心所在。</p>
+<p>RocketMQ默认提供的实现为DefaultMessageStore，其启动涉及如下内容：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/10.png"
+        data-srcset="/09-consumequeue/10.png, /09-consumequeue/10.png 1.5x, /09-consumequeue/10.png 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/10.png"
+        title="/09-consumequeue/10.png" width="814" height="331" /></p>
+<p>初始化主要是初始化相关联的其他组件，包括：</p>
+<ol>
+<li>AllocateMappedFileService</li>
+<li>CommitLog</li>
+<li>FlushConsumeQueueService:定时执行ConsumeQueue flush,写入checkpoint</li>
+<li>IndexService</li>
+<li>HAService:高可用服务</li>
+<li>TransientStorePool:对外内存管理，用于池化管理多个ByteBuffer对象,进行借与还的操作。启动时会申请poolSize*fileSize份堆外内存，关联到DirectBuffer，存在队列中</li>
+<li>ScheduleMessageService:定时消费服务，定时从对应的延迟队列中消费延迟消息</li>
+</ol>
+<p>等。初始化完后便会执行load动作，调用相关组件的load方法，包括ScheduleMessageService、CommitLog、ConsumeQueue、IndexService等。同样，load完后便会调用相关组件的start方法以启动各个组件。</p>
+<p>下面介绍消息的消费过程以及定时投递(延迟消费消费)服务ScheduleMessageService。</p>
+<h4 id="51-读取消息">5.1. 读取消息</h4>
+<p>DefaultMessageStore内部维护着该Broker管理的queue跟ConsumeQueue映射关系</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private final ConcurrentMap&lt;String/* topic */, ConcurrentMap&lt;Integer/* queueId */, ConsumeQueue&gt;&gt; consumeQueueTable;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>获取消息的定义如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public GetMessageResult getMessage(
+</span></span><span class="line"><span class="cl">final String group,
+</span></span><span class="line"><span class="cl">final String topic,
+</span></span><span class="line"><span class="cl">final int queueId,
+</span></span><span class="line"><span class="cl">/*逻辑偏移量*/ final long offset,
+</span></span><span class="line"><span class="cl">final int maxMsgNums,
+</span></span><span class="line"><span class="cl">final MessageFilter messageFilter) {
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>为了找到该偏移量在CommitLog中的内容，DefaultMessage会根据offset现在对应topic、queue的ConsumeQueu中找到元数据，以获得该offset在CommitLog中的物理偏移量和大小，然后再从CommitLog中读出具体的消息内容。注意DefaultMessage在这里提供给上层的offset为逻辑偏移量，使用该offset在ConsumeQueue中查找元数据时需要先乘以20(ConsumeQueue中每个消存储单元为20字节)。</p>
+<h4 id="52-schedulemessageservice">5.2. ScheduleMessageService</h4>
+<p>ScheduleMessageService内部持有如下属性</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private final ConcurrentMap&lt;Integer /* level */, Long/* delay timeMillis */&gt; delayLevelTable =
+</span></span><span class="line"><span class="cl">new ConcurrentHashMap&lt;Integer, Long&gt;(32);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">private final ConcurrentMap&lt;Integer /* level */, Long/* offset */&gt; offsetTable =
+</span></span><span class="line"><span class="cl">new ConcurrentHashMap&lt;Integer, Long&gt;(32);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>代表不同延迟级别待处理的消息偏移量。</p>
+<p>在应用停止时会将未处理的延迟消息持久化为json文件进行存储，启动时会在当前步骤再次加载进内存。</p>
+<p>延迟级别包括</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>级别逐级递增。</p>
+<p>对于每个级别的延迟队列，ScheduleMessageService会对应的启动一个Timer定时器在后台处理。当定时器到点时，会从<code>SCHEDULE_TOPIC_XXXX</code>队列中读取延迟的消息并通过消息头里的<code>MessageConst.PROPERTY_REAL_TOPIC</code>属性获得原Topic，并将消息重新放回原消息队列中等待Consumer消费。等定时器处理完后会计算下一个待处理的偏移量，并重新设定定时器等待触发下一次操作。</p>
+<p><code>SCHEDULE_TOPIC_XXXX</code>队列中的消息主要发生在向CommitLog添加消息的时候，在CommitLog.putMessage方法中有如下内容，</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/11.png"
+        data-srcset="/09-consumequeue/11.png, /09-consumequeue/11.png 1.5x, /09-consumequeue/11.png 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/11.png"
+        title="/09-consumequeue/11.png" width="1694" height="702" /></p>
+<p>当消息设置了延迟级别时，就会将消息的topic设置为<code>SCHEDULE_TOPIC_XXXX</code>，并将原topic放入消息头的<code>MessageConst.PROPERTY_REAL_TOPIC</code>属性中。</p>
+<p>之前介绍Broker讲到，SendMessageProcessor在处理失败消息时，会将消息放入到重试队列（<code>%RETRY%+Group</code>）或者死信队列(<code>%DLQ%+Group</code>)，并根据重试的次数设置对应的延迟级别，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/12.png"
+        data-srcset="/09-consumequeue/12.png, /09-consumequeue/12.png 1.5x, /09-consumequeue/12.png 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/12.png"
+        title="/09-consumequeue/12.png" width="1616" height="676" /></p>
+<p>由于设置了延迟消费时间，因而消息会先被投递到<code>SCHEDULE_TOPIC_XXXX</code>队列中，等延迟时间到了后再由ScheduleMessageService将消息从<code>SCHEDULE_TOPIC_XXXX</code>中取出，再投递到对应的重试队列/死信队列中，等待客户端消费。</p>
+<p>结合之前的内容，可以得到消息的投递消费示意如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/09-consumequeue/13.jpg"
+        data-srcset="/09-consumequeue/13.jpg, /09-consumequeue/13.jpg 1.5x, /09-consumequeue/13.jpg 2x"
+        data-sizes="auto"
+        alt="/09-consumequeue/13.jpg"
+        title="/09-consumequeue/13.jpg" width="1702" height="788" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-05-18</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/09-consumequeue/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/09-consumequeue/" data-title="RocketMQ消息的存储消费模型" data-hashtags="rocketmq"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/09-consumequeue/" data-hashtag="rocketmq"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/09-consumequeue/" data-title="RocketMQ消息的存储消费模型"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/08-mappedfile/" class="prev" rel="prev" title="RocketMQ文件存储的基础:MappedFile和MappedFileQueue"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>RocketMQ文件存储的基础:MappedFile和MappedFileQueue</a>
+            <a href="/01-start/" class="next" rel="next" title="JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;">JVM层面的切面实现 : jvm-sandbox 之 <应用启动><i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

@@ -1,0 +1,242 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>程序猿二腊</title>
+        <link>https://atuowgo.github.io/</link>
+        <description>知其然而后知其所以然</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 31 May 2022 00:00:00 &#43;0000</lastBuildDate>
+            <atom:link href="https://atuowgo.github.io/index.xml" rel="self" type="application/rss+xml" />
+        <item>
+    <title>golang error</title>
+    <link>https://atuowgo.github.io/007-golang-error/</link>
+    <pubDate>Tue, 31 May 2022 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/007-golang-error/</guid>
+    <description><![CDATA[go error 记录go1.x error相关内容
+1. 原生error error 只是一个普通的interface,在buildin.go 里给出了定义:
+1 2 3 4 5 // The error built-in interface type is the conventional interface for // representing an error condition, with the nil value representing no error. type error interface { Error() string } 当返回值为nil时，表示没有错误，所以调用方需要通过类似err != nil的方式来处理。
+该接口只有一个方法，返回具体消息内容，可以使用errors.New(text string) 来返回一个error对象，入参只有一个string，为具体消息内容。如bufio.go内置的错误
+用该方法返回的对象，即使文本相同，返回的error对象也是不同的，从源码中可以知道原因：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 // New returns an error that formats as the given text.]]></description>
+</item>
+<item>
+    <title>Dubbo Provider启动都做了什么</title>
+    <link>https://atuowgo.github.io/03-provider/</link>
+    <pubDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/03-provider/</guid>
+    <description><![CDATA[这节介绍Provider的启动过程，既服务发布。
+先从Demo看起：
+1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } 上面Demo主要做了几件事
+新建一个ServiceConfig对象，既服务配置对象 为服务配置设置ApplicationConfig，既服务对应的项目配置 为服务配置设置RegistryConfig，既注册中心配置 指定服务关联的接口DemoService 指定服务关联的实现DemoServiceImpl 调用ServiceConfig的export方法暴露服务 这里重点关注export方法。
+在这之前先说下服务暴露的主要流程：一个应用(ApplicationConfig)包含很多服务，一个服务(ServiceConfig)需要服务提供者(ProviderConfig)通过某种协议(ProtocolConfig)将自身的信息注册到注册中心(RegistriesConfig)，这就是服务暴露主要做的事情。
+export方法主要围绕上面几个组件展开。
+1.设置默认配置 export会先检查当前环境是否准备就绪，主要是检查各组件配置，如ProviderConfig、ProtocolConfig、ApplicationConfig、ModuleConfig、RegistriesConfig、MonitorConfig等。对于某些为空的配置项则会使用默认值，如：
+创建ProviderConfig，设置prefix，如果有传则使用原值，没有则新建一个ProviderConfig，并设置prefix为dubbo.provider 创建ProtocolConfig，设置prefix，如果有则使用原值，如果没有设置则新建一个ProtocolConfig，使用默认协议dubbo,并设置prefix为dubbo.protocol. 以上各配置项都继承自AbstractConfig
+各配置的实例对象会托管到ConfigMananger，同时被ServiceConfig引用。各实例初始化后的主要值如下：
+PS:当id为空时，会设置默认值为default。
+2.暴露服务 ServiceConfig准备完配置后就开始进行服务的暴露，主要内容为doExportUrls方法。
+该方法分为两个过程：
+加载所有的注册中心配置RegistriesConfig 遍历所有的协议配置ProtocolConfig，使用各种协议将服务本身注册到所有的注册中心 2.1 加载注册中心配置 加载ServiceConfig指定的所有注册中心配置对象，并以URL的形式返回。需要提及的一点时，Dubbo中为了增加统一的拦截处理，会把URL的协议改为registry，等拦截处理完后再修改回来。
+如开头例子的URL会从
+1 zookeeper://127.]]></description>
+</item>
+<item>
+    <title>MySQL InnoDB索引那点事儿</title>
+    <link>https://atuowgo.github.io/005-mysql-innodb/</link>
+    <pubDate>Mon, 09 Nov 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/005-mysql-innodb/</guid>
+    <description><![CDATA[总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头。
+1. B+树 我们知道InnoDB的索引是以B+树的形式组织的。B+树是一种树数据结构，是一个n叉树，每个节点通常有多个孩子，一颗B+树包含根节点、内部节点和叶子节点。
+下面是B+树的示例：
+B+树把所有的数据都存储在叶子节点中，内部节点只存放关键字和孩子指针，因此最大化了内部节点的分支因子，所以B+树的遍历也更加高效。
+B+树通常用于数据库和操作系统的文件系统中，其特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度。B+树适合作为数据库的基础结构，完全是因为计算机的内存-机械硬盘两层存储结构。内存可以完成快速的随机访问（随机访问即给出任意一个地址，要求返回这个地址存储的数据）但是容量较小。而硬盘的随机访问要经过机械动作（1磁头移动、2盘片转动），访问效率比内存低几个数量级，但是硬盘容量较大。典型的数据库容量大大超过可用内存大小，这就决定了在B+树中检索一条数据很可能要借助几次磁盘IO操作来完成。
+使用B+树作为索引结构有如下优势：
+1.B+树非叶子节点上是不存储数据的，仅存储键值**（聚集索引）**。
+之所以这么做是因为在数据库中页的大小是固定的，InnoDB中页的默认大小是 16KB。如果不存储数据，那么就会存储更多的键值，相应的树的阶数（节点的子节点树）就会更大，树就会更矮更胖，如此一来查找数据进行磁盘的 IO 次数又会再次减少，数据查询的效率也会更快。
+另外真实数据库中的B+树应该是非常扁平的，其阶数是等于键值的数量的，如果我们的B+树一个节点可以存储1000个键值，那么3层B+树可以存储1000×1000×1000=10亿个数据。一般根节点是常驻内存的，所以一般我们查找10亿数据，只需要2次磁盘IO。
+2.B+树索引的所有数据均存储在叶子节点，而且数据是按照顺序排列的。因而B+树使得范围查找，排序查找，分组查找以及去重查找变得异常简单。
+2.InnoDB页存储结构 2.1 存储结构 存储引擎中所有数据都被存储在表空间中，表又由Segment(段)、Extent(区)、Page(页)组成，如下为MySQL技术内幕中介绍的InnoDB逻辑存储结构：
+1.表空间：在默认情况下，InnoDB存储引擎有一个共享表空间 ibdata1，所有的数据都放在这个表空间内.如果启用了innodb_file_per_table参数，每张表的表空间只存放数据、索引和插入缓冲bitmap页，其他的数据如undo信息、插入缓冲、double write buffer等还是存放在共享表空间中。
+2.段：常见的段有数据段、索引段、回滚段等。数据段是B+树的叶子结点，索引段为B+树的非叶子结点
+3.区：区由连续页组成，每个区大小固定为1MB，为保证区中page的连续性通常InnoDB会一次从磁盘中申请4-5个区。在默认page的大小为16KB的情况下，一个区则由64个连续的page。
+4.页：页是InnoDB磁盘管理的最小单位也叫做块，默认大小为16kB。常见的页有数据页、undo页、系统页等。类型为B-tree Node的页存放的即是表中行的实际数据
+5.行：InnoDB存储引擎中数据是按行进行存放的，每个页中最多存放7992行记录
+2.2 页结构 Page是整个InnoDB存储的最基本构件，也是InnoDB磁盘管理的最小单位，与数据库相关的所有内容都存储在这种Page结构里。每个Page使用一个32位的int值来唯一标识，这也正好对应InnoDB最大64TB的存储容量（16Kib * 2^32 = 64Tib）。一个Page的结构如下所示：
+涉及的内容包括：
+页头(Page Header)：记录页面的控制信息，包括页的左右兄弟页面指针、页面空间使用情况等
+Infimum(最小虚记录)/Supremum(最大虚记录)：两个固定位置存储的虚记录，本身并不存储数据。最小虚记录比任何记录都小，而最大虚记录比任何记录都大。这两个用来代表开头结尾的Record存储在System Records的段里,这个System Records和User Records是两个平行的段。
+记录堆(Record Heap)：也称为User Records,以链表的形式存储一条条行记录，表示页面已分配的记录空间，也是索引数据的真正存储区域。记录堆分为两种，即有效记录(黄色)和已删除记录(紫色)。有效记录就是索引正常使用的记录，而已删除记录表示索引已经删除，不再使用的记录。随着记录的更新和删除越来越频繁，记录堆中已删除记录将会越多，即会出现越来越多的空洞（碎片）。这些已删除记录连接起来，就会成为页面的自由空间链表。
+未分配空间(Free Space)：指页面未使用的存储空间，随着页面不断使用，未分配空间将会越来越小。当新插入一条记录时，首先尝试从自由空间链表中获得合适的存储位置（空间足够），如果没有满足的，就会在未分配空间中申请。
+Slot区：也称为Page Directory，页中某些记录的相对位置，用于提升查询效率。slot是一些页面有效记录的指针，每个slot占两个字节，存储了记录相对页面首地址的偏移。如果页面有n条有效记录，那么slot的数量就在n/8+2~n/4+2之间，它是记录页面有序和二分查找的关键。
+页尾(Page Tailer)：页面最后部分，占8个字节，主要存储页面的校验信息。
+上面提到，页头里包含了唯一id，页的左右兄弟页面指针，从而可以将页抽象为如下结构：
+Page的头部保存了两个指针，分别指向前一个Page和后一个Page，根据这两个指针我们很容易想象出Page链接起来就是一个双向链表的结构。
+InnoDB的行数据和索引的存储都位于User Records，存在4种不同的Record，它们分别是：
+主键索引树非叶节点 主键索引树叶子节点 辅助键索引树非叶节点 辅助键索引树叶子节点 这4种节点的Record格式有一些差异，但是它们都存储着Next指针指向下一个Record。User Record在Page内以单链表的形式存在，最初数据是按照插入的先后顺序排列的，但是随着新数据的插入和旧数据的删除，数据物理顺序会变得混乱，但他们依然保持着逻辑上的先后顺序。
+将该结构扩展到多个页就有如下形式：
+根据最大最小虚记录将多个页内记录的顺序连接起来。
+2.3 页内查询 前面提到User Records中的记录是以单链表的形式存在，这样在插入一条记录时，只要修改前后两条记录的指针就行，这样就可以避免记录的移动同时保证了有序性。但是，带来的问题是，链表是无法在对数时间内使用二分查找，这样的设计会导致查询效率低下。为了高效的在一个页中查找指定的一条记录，InnoDB使用Page Directory提供了解决方案。
+InnoDB会将一个页中的所有记录划分成若干个组，每组4-8个记录。将每个组最后一个记录相对于第一个记录的地址偏移量（可以定位到真实数据记录）提取出来存放在页中一个叫做Page Directory的数组中，数组中的元素就是这些地址偏移量，也称为槽(slot)。]]></description>
+</item>
+<item>
+    <title>常见的分布式唯一ID方案</title>
+    <link>https://atuowgo.github.io/004-distrubte-id/</link>
+    <pubDate>Sun, 20 Sep 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/004-distrubte-id/</guid>
+    <description><![CDATA[最近看一个新系统，发现里面有很多场景用到唯一id，便搜罗了一下常见的方案。
+对于分布式id，需要满足下面的基本要求
+全局唯一 趋势递增 1. UUID UUID（Universally Unique Identifier）全局唯一标识符，定义为一个字符串主键，采用32位数字组成，编码采用16进制，定义了在时间和空间都完全惟一的系统信息。
+UUID的编码规则：
+1~8位采用系统时间，在系统时间上精确到毫秒级保证时间上的惟一性； 9~16位采用底层的IP地址，在服务器集群中的惟一性； 17~24位采用当前对象的HashCode值，在一个内部对象上的惟一性； 25~32位采用调用方法的一个随机数，在一个对象内的毫秒级的惟一性。 通过以上4种策略可以保证惟一性。在系统中需要用到随机数的地方都可以考虑采用UUID算法。
+UUID可能会是大家很快想到的，因为它现成，全球唯一，不需要中心协调器来控制唯一。主流语言中都会有内置现成的api直接生成。但却不推荐，因为它
+无序，没有自增趋势，作为主键插入效率低下（如MySql） 过长，浪费存储空间 无法存储业务逻辑，可读性差，当然如果你的id没有长度限制，可以通过拼接前缀/后缀来增加信息 2. 中心协调器类 可以引入中心协调器类，通过该系统自带的特性来完成id的生成和分配。
+2.1 数据库自增主键 Don&rsquo;t say so match，大家应该都用过，通过DB的auto_increment自增主键来控制id的唯一以及有序，使用简单。当然缺点也是明显的，依赖DB存在单点问题，当然可以通过主从模式来解决单点问题。
+网上还有有人介绍了自增主键的另一种模式，如下
+引入多实例，为每个实例设置初始值以及固定的步长来降低单点的风险，以及分摊DB压力。当然只是降低，单点问题还是存在的，同时还不容易扩容，也需要客户端做支持。对于趋势递增则需要ID服务来维持，它需要轮训访问后端的各个DB实例，以维持趋势递增的特性。
+2.2 Redis Redis提供了incr命令可以实现id的原子性自增，能够达到类似DB的auto_increment的效果。使用Redis需要注意持久化的问题，避免Redis重启后数据丢失导致id重复。
+2.3 ZooKeeper zookeeper自带生成顺序节点的功能，可以使用其生成顺序节点的编号来作为id。客户端创建完节点后，通过解析返回的节点名来获得当前分配的id。
+中心协调器类其实都差不多，将id的生成转到中心协调器上。
+3. 数据库号段 数据库号段的方式如下：
+涉及的表结构如下：
+type字段用来区分不同的业务，隔离不同业务之间的相互影响；max_id字段则表示当前业务类型已经分配的最大id值，下一次分配则从该值开始；step为步长；state用来做锁控制，这里用的是乐观锁，也可以不用该字段，改为行锁(select ... for update)。
+以bizType1为例，数据库中记录着bizType1的下一个id起始值3000，以及对应的步长1000。当应用启动后首次使用时，尝试去获取bizType1这条记录的锁，获取到锁的应用读取max_id和step的值，同步更新到内存，然后将max_id的值加上步长后更新回表中，这个值便是下一个id的起始值。当应用实例内存中的步长没有消耗完前，直接通过应用内部自己自增返回id，避免频繁请求DB。当应用消耗完后则再次访问DB同步更新max_id和step，反复循环下去。
+开头讲到的最近接触的新系统用的就是号段的方式来生成唯一id，但它不是用乐观锁的方式而是用行锁。测试环境给的步长比较小，刚好测试同学在做压测造数据的时候并发开的大，导致抢锁锁频繁抛异常了。当然如果使用乐观锁也会存在饥饿的情况，会导致一直获取不到锁而一直忙等。
+看完上面的过程，其实核心点在于有个第三方系统来提供锁和存储以及应用端的配合，所以其实不用DB也可以实现该功能。
+4. Snowflake雪花算法 相信大家都听过这个算法，都知道这个算法是由Twitter提出来的，既然大家都知道就不多说了，那大家也都看过下面这张图：
+该算法使用一个64 bit的整型数据，包括
+首位不用的1个bit(最高位是标识位，为1表示为负数，不使用) 41个bit的毫秒级时间(41位的长度可以使用69年)， 10个bit的工作机器id，包括5个bit的datacenterId和5个bit的workerId(10位的长度最多支持部署1024个节点） 12个bit的毫秒内的计数（12位的计数顺序号支持每个节点每毫秒产生4096个ID序号） 一共加起来刚好64位，为一个Long型。
+Snowflake算法核心把时间戳，工作机器id，序列号组合在一起。整体上按照时间自增排序，并且整个分布式系统内不会产生ID碰撞（由datacenter和机器ID作区分），并且效率较高，经测试，snowflake每秒能够产生26万id左右，完全满足需要。
+Snowflake算法中41个bit的时间戳完全依赖于时间的，如果有时钟回拨的情况发生，则会生成重复的id。时钟回拨涉及两种情况
+实例停机→时钟回拨→实例重启→计算ID
+实例运行中→时钟回拨→计算ID
+对于时间回拨，网上给出了很多处理方法，包括：
+如果发现有时钟回拨，时间很短比如5毫秒,就等待，然后再生成；或者就直接报错，交给业务层去处理 可以找2bit位作为时钟回拨位，发现有时钟回拨就将回拨位加1，达到最大位后再从0开始进行循环 实例启动后，改用内存生成时间，如百度开源的UidGenerator，该方式可以解决时钟回拨的第2种情况。对于时钟回拨的第1中情况，UidGenerator在实例启动后使用未分配过的工作机器id来解决，当然这样做就得管理工作机器id，因而需要一个外部存储，增加了复杂度。 ]]></description>
+</item>
+<item>
+    <title>Dubbo自适应扩展机制</title>
+    <link>https://atuowgo.github.io/02-extend/</link>
+    <pubDate>Mon, 07 Sep 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/02-extend/</guid>
+    <description><![CDATA[上一节提到过，Dubbo里除了Service和Config层为API，其它各层均为SPI。相比于Java中的SPI仅仅通过接口类名获取所有实现，Dubbo的实现可以通过接口类名和key值来获取一个具体的实现。通过SPI机制，Dubbo实现了面向插件编程，只定义了模块的接口，实现由各插件来完成。
+1. 使用方式 1.1 Java SPI 在扩展类的jar包内，放置扩展点配置文件META-INF/service/接口全限定名，内容为：扩展实现类全限定名，多个实现类用换行符分隔。
+如下为Mysql中Driver接口的实现：
+1 2 3 4 5 6 7 package com.mysql.jdbc; import java.sql.SQLException; public class Driver extends NonRegisteringDriver implements java.sql.Driver { ... } 调用时使用ServiceLoader加载所有的实现并通过循环来找到目标实现类
+1 2 3 4 5 6 7 8 9 ServiceLoader&lt;Driver&gt; loadedDrivers = ServiceLoader.load(Driver.class); Iterator&lt;Driver&gt; driversIterator = loadedDrivers.iterator(); try{ while(driversIterator.hasNext()) { driversIterator.next(); } } catch(Throwable t) { // Do nothing } 1.2 Dubbo SPI 拿Dubbo中Protocol接口来说，Protocol的定义如下：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 package org.]]></description>
+</item>
+<item>
+    <title>Dubbo简介</title>
+    <link>https://atuowgo.github.io/01-introduce/</link>
+    <pubDate>Sun, 30 Aug 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/01-introduce/</guid>
+    <description><![CDATA[这篇是开门贴，内容来自网上。
+Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。(来自百度百科)
+1. 整体架构 Dubbo的整体架构如下：
+涉及到的组件包括：
+Provider：暴露服务的服务提供方 Consumer：调用远程服务的服务消费方 Registry：服务注册与发现的注册中心 Monitor：统计服务的调用次数和调用时间的监控中心 Container：服务运行容器 调用流程为：
+服务容器负责启动，加载，运行服务提供者。服务提供者在启动时，向注册中心注册自己提供的服务。服务消费者在启动时，向注册中心订阅自己所需的服务。注册中心返回服务提供者地址列表给消费者，如果有变更，注册中心将基于长连接推送变更数据给消费者。服务消费者，从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心。(上面内容来自Dubbo官方文档)
+2. 使用demo 2.1 Api方式 纯Api方式调用模式如下：
+Provider：
+1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } Consumer：]]></description>
+</item>
+<item>
+    <title>Socks协议</title>
+    <link>https://atuowgo.github.io/003-socks/</link>
+    <pubDate>Sat, 29 Aug 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/003-socks/</guid>
+    <description><![CDATA[SOCKS：防火墙安全会话转换协议 （Socks: Protocol for sessions traversal across firewall securely） SOCKS协议提供一个框架，为在 TCP和UDP域中的客户机/服务器应用程序能更方便安全地使用网络防火墙所提供的服务。协议工作在OSI参考模型的第5层(会话层)，使用TCP协议传输数据，因而不提供如传递ICMP信息之类的网络层网关服务。
+当防火墙后的客户端要访问外部的服务器时，就跟SOCKS代理服务器连接。这个代理服务器控制客户端访问外网的资格，允许的话，就将客户端的请求发往外部的服务器。Socks不要求应用程序遵循特定的操作系统平台，Socks 代理与应用层代理、 HTTP 层代理不同，Socks代理只是简单地传递数据包，而不必关心是何种应用协议（比如FTP、HTTP和NNTP请求）。所以，Socks代理比其他应用层代理要快得多。它通常绑定在代理服务器的1080端口上。
+这个协议最初由David Koblas开发，而后由NEC的Ying-Da Lee将其扩展到SOCKS4。最新协议是 SOCKS5，与前一版本相比，增加支持UDP、验证，以及IPv6。
+1. Socks4 Socks4的建立过程如下：
+1.客户端先跟代理服务器建立socket连接
+2.客户端向代理服务器发送链接请求包，第一个包的格式为
+3.代理服务器收到第一个包后根据实际情况作出判断，并给客户端发送响应包，格式为：
+4.当代理服务器返回拒绝后则直接断开客户端链接；否则充当客户端与目的主机之间建立连接并进行双向传递，对客户端而言，就如同直接在与目的主机相连。
+2. Socks5 SOCKS5比SOCKS4a多了验证、IPv6、UDP支持。
+Socks5的建立过程如下：
+1.客户端先跟代理服务器建立socket连接
+2.客户端向代理服务器发送链接请求包，该包用来确认协议版本及认证方式，格式为：
+3.代理服务器从客户端提供的方法中选择一个认证方法并通过回包来通知客户端，格式为：
+当返回结果为OXFF(代理服务端无可接受认证方法)时，客户端需要关闭连接，流程结束。
+4.选定认证方法后，客户端和代理服务器需要根据选定的认证方式执行对应的认证。如果认证失败则中断链接。
+5.认证通过后，客户端则向代理服务器发起请求，第一个包格式为：
+6.代理服务器收到包后进行处理，作出判断后发送回包，回包格式为：
+7.当代理服务器返回拒绝后则直接断开客户端链接；否则充当客户端与目的主机之间建立连接并进行双向传递，对客户端而言，就如同直接在与目的主机相连。
+3. Jsocks github上实现socks协议的项目有很多，这里选jsocks()https://github.com/ravn/jsocks)来说明。顾名思义，jsock是用Java写的，项目本身实现了socks4和socks5协议。
+jsocks实现功能同上面大体相同，代码也比较简单，这边不做说明。这里只提一点jsocks里的认证方式，在源码的IdentAuthenticator类里。这个类没有使用用户名密码方式，也没有自定义认证协议，而是直接通过判断协议里的用户名跟客户端的发起方是否是同一个人来进行验证。
+实现上在验证方式上选择无需验证，然后为每个请求方的ip范围分配一个用户，只有对应用户才能继续往下走。jsocks通过访问客户端的113端口来判断发起方同配置中的用户是否一致，只有匹配的用户流程才能继续玩下走。113端口是一个许多计算机上运行的协议，用于鉴别TCP连接的用户。相当于把socks5原来的认证流程换为了代理服务器主动访问客户端进行验证。当验证通过后，jsocks这时候会持有客户端的socket(RemoteSocket)，并代替客户端向目标地址发起socket(OutSocket)连接，后面会循环把RemoteSocket的数据流写入到OutSocket里以完成数据的传输。
+4. 参考资料 https://zh.wikipedia.org/wiki/SOCKS]]></description>
+</item>
+<item>
+    <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;</title>
+    <link>https://atuowgo.github.io/02-event/</link>
+    <pubDate>Sun, 02 Aug 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/02-event/</guid>
+    <description><![CDATA[这节介绍jvm-sandbox的事件机制，事件机制提供了切面通知的核心功能，内部主要结合asm和观察者模式来实现。jvm-sandbox提供的事件包括：
+上面的截图是官网github wiki对事件的介绍，包括提供的事件类型、事件的作用域以及状态机流转。概括的说就是，jvm-sandbox围绕了目标方法这个切面点，提供了多种通知机制。
+1.观察者模式 观察者模式的简单示意如下：
+Observer(观察者)观察Subject(目标)，Subject在发生变化时通知Observer。具体到这里，模型抽象为:
+目标对象为符合条件的类的方法，观察者则为EventListener实现类。一般我们在实现时，
+Subject都会有一个Observer列表，以及提供一个添加观察者的方法(add) 用户通过调用Subject的add方法，触发观察，把Observer添加到Observer列表中 Subject在事件发生时，遍历Observer列表，通知到Observer 以此达到目的。下面来看jvm-sandbox如何实现该过程。
+2. 触发观察DefaultModuleEventWatcher.watch 从官网的例子开始
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 /** * 一个损坏的钟实现 */ static class BrokenClock extends Clock { @Override void checkState() { throw new IllegalStateException(); } @Override void delay() throws InterruptedException { Thread.sleep(10000L); } } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 /** * 修复损坏的钟模块 */ @Information(id = &#34;broken-clock-tinker&#34;) public class BrokenClockTinkerModule implements Module { @Resource private ModuleEventWatcher moduleEventWatcher; @Http(&#34;/repairCheckState&#34;) public void repairCheckState() { moduleEventWatcher.]]></description>
+</item>
+<item>
+    <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;</title>
+    <link>https://atuowgo.github.io/01-start/</link>
+    <pubDate>Fri, 24 Jul 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/01-start/</guid>
+    <description><![CDATA[1. 启动 sandbox源码各模块的结构如下:
+sandbox安装后的目录结构如下:
+按照官方的教程，启动命令如下：
+1 ./sandbox.sh -p 2343 查看对应的脚本，函数定义如下：
+翻译过来就是执行如下命令
+1 java -Xms128M -Xmx128M -Xnoclassgc -ea -jar /xxx/sandbox-core.jar 2342 /xxx/sandbox-agent.jar home=/xxx;token=xxx;server.ip=xxx;service.port=xxx;namespace=xxx 按顺序将参数定义为
+targetJvmPid:目标应用pid agentJarPath:附加的agent包路径 cfg:agent-main的参数,包括home路径;该次唯一标识toke;ip端口以及命名空间 查看sandbox-core模块的pom.xml
+1 2 3 4 5 &lt;archive&gt; &lt;manifest&gt; &lt;mainClass&gt;com.alibaba.jvm.sandbox.core.CoreLauncher&lt;/mainClass&gt; &lt;/manifest&gt; &lt;/archive&gt; 找到启动类 com.alibaba.jvm.sandbox.core.CoreLauncher
+该类存在一个main方法，接收3个参数，并实例化一个CoreLauncher实例，它在构造方法中完成agent的attach动作.
+1 2 3 4 5 6 7 public CoreLauncher(final String targetJvmPid, final String agentJarPath, final String token) throws Exception { attachAgent(targetJvmPid, agentJarPath, token); } 主要是以agent-main的方式执行。
+去到sandbox-agent模块的pom.xml，有如下配置
+1 2 3 4 5 6 7 8 &lt;archive&gt; &lt;manifestEntries&gt; &lt;Premain-Class&gt;com.]]></description>
+</item>
+<item>
+    <title>RocketMQ消息的存储消费模型</title>
+    <link>https://atuowgo.github.io/09-consumequeue/</link>
+    <pubDate>Mon, 18 May 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/09-consumequeue/</guid>
+    <description><![CDATA[这节介绍RocketMQ中消息的存储模型：CommitLog和ConsumeQueue。CommitLog用于存储Producer的消息，ConsumeQueue接受CommitLog分配的消息，等待Consumer消费。
+1. 存储消费模型 RocketMQ采用了单一的日志文件，即把同1台机器上面所有topic的所有queue消息都存放在一个文件里面，以避免随机的磁盘写入。其存储结构如下：
+Broker会把所有消息都存在一个单一的CommitLog文件里面，然后由后台线程异步的同步到ConsumeQueue中，再由Consumer进行消费。
+该模型下，ConsumeQueue中并不需要存储消息的内容，而是存储消息在CommitLog中的offset。也就是说，ConsumeQueue其实是CommitLog的一个索引文件。即CommitLog的写入是顺序的，而读取需要支持随机读的，支持该特性的实现就是上一节提到的MappedFileQueue。
+2. CommitLog CommitLog的很多操作都基于MappedFileQueue来操作，在MappedFileQueue上增加了CRUD操作。CommitLog的调用过程如下：
+初始化时会初始化相关的组件，包括MappedFileQueue、FlushCommitLogService、AppendMessageCallback等。
+MappedFileQueue主要设定了文件的路径位置和每个MappedFile的大小(1024 * 1024 * 1024 = 1G)。
+FlushCommitLogService的实现类有3个GroupCommitService、FlushRealTimeService和CommitRealTimeService。前两个用于刷盘，如果开启了异步刷盘，则使用GroupCommitService，该实现会将刷盘请求缓存起来，到时间后再执行刷盘；FlushRealTimeService，该实现直接定时刷固定页的数据，如果启用了堆外缓冲区则使用GroupCommitService，否则使用FlushRealTimeService。后面的CommitRealTimeService则用于将堆外缓冲区中的数据写到FileChannel中(如果启用了堆外缓冲，调用MappedFileQueue的commit方法)。
+AppendMessageCallback主要用于实现具体消息写入ByteBuf的方式。
+此外，还缓存了每个topic下每个queue对应的逻辑偏移量
+1 private HashMap&lt;String/* topic-queueid */, Long/* offset */&gt; topicQueueTable = new HashMap&lt;String, Long&gt;(1024); 加载主要是调用MappedFileQueue的load方法，最后启动FlushCommitLogService服务。
+同时，CommitLog还通过ReputMessageService，将消息offset放到了ConsumeQueue以及IndexService，ReputMessageService的调用在DefaultMessage里。
+2.1. 追加消息 追加消息的大致过程如下，其中写入消息时会加锁，从而保证每个CommitLog文件的写都是顺序写入的。
+其中AppendMessageCallback主要完成了对消息写入ByteBuff的处理，包括单笔和批量消息。这里主要介绍单笔消息的写入：计算一条消息每一部分的大小和内容，然后写入到byteBuffer中，byteBuffer是MappedFile slice后的内容，写入每个部分如下：
+大部分内容通过字段便能够看出具体的意思，这里不再赘述，只对一些内容进行介绍。
+计算消息的全局ID：MessageId，MessageId由存储的broker机器的ip地址+commitLog中的起始物理offset组成。MessageId会带在返回结果PutMessageResult中返回。 写入成功后会将topic-queue的逻辑偏移量+1(逻辑偏移量表示消息数量的大小，一条消息进来下标就会长1) 写入之前会计算消息的大小，如果超过设定的单条消息的大小(默认512K)则拒绝写入 写入之前会判断当前文件剩余内容是否足够，如果不够则会插入一条空白消息，将剩余部分填满，返回文件已满，上层判断文件满了，会重新生成一个文件，将消息再次写入.空白消息写入的内容为totalSize+magicCode+0值,其中正常消息的magicCode为-626843481，空白消息为-875286124 2.2. 读取消息 根据所给的起始offset(物理偏移量),确定该offset所在MappedFile后，获取从offset开始到MappedFile当前可读的所有内容。
+MappedFile里会维护一个fileFromOffset属性，标记当前文件存储消息的起始偏移量，该值也是文件的文件名，默认值每个文件为1G=1073741824,即每个文件名的步长为1073741824。对于给定的offset，只要找到符合fileFromOffset &lt;= offset &lt; fileFromOffset + mappedFileSize(1G)的MappedFile即可。找到目标MappedFile后，通过offset%mappedFileSize可以计算出所给的起始offset在当前文件中的位置。
+获得ByteBuff内容后，可以调用checkMessageAndReturnSize方法，从ByteBuff中还原消息，返回DispatchRequest(不含消息body内容)。
+前面提到，ReputMessageService会从CommitLog中读取消息，然后用于构建ConsumeQueue和IndexFile，这里传送的内容就是DispatchRequest。DefaultMessageStore会定时从CommitLog中读取消息，并将解析出的DispatchRequest对象传给ConsumeQueue和IndexService。
+2.3. 删除消息 调用MappedFileQueue，按照offset或者过期时间(默认72小时)删除物理文件
+3. ConsumeQueue 代表一个topic下一个queue的消费队列。ConsumeQueue底层基于MappedFileQueue，存储每个topic-queueId下对应消息的offset，但消息被实际消费时，再通过offset从CommitLog中查找具体的消息内容。
+ConsumeQueue的调用过程和提供方法同CommitLog类似，也是初始化时从指定的路径下重构MappedFileQueue，并提供了CRUD方法来操作文件。
+ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对应的数据存储路径为
+/DirToStore/topic/queueId/ 每次写入的数据格式(数据单元)为：
+1 物理偏移量(long/8)|消息大小(int/4)|逻辑偏移量(long/8) = 20 ConsumeQueue初始化MappedFile的默认大小为 30000 * 20，即每个文件存30万条记录，没个文件名的步长为600000，消费时只要每次读取20个字节便能查找到每个消息的offset。]]></description>
+</item>
+</channel>
+</rss>

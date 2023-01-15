@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Spring GetBean的流程 - 程序猿二腊</title><meta name="Description" content="讲解BAbstractBeanFactory的getBean方法"><meta property="og:title" content="Spring GetBean的流程" />
+<meta property="og:description" content="讲解BAbstractBeanFactory的getBean方法" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/04-spring-getbean/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-10-06T00:00:00+00:00" />
+<meta property="article:modified_time" content="2019-10-06T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Spring GetBean的流程"/>
+<meta name="twitter:description" content="讲解BAbstractBeanFactory的getBean方法"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/04-spring-getbean/" /><link rel="prev" href="https://atuowgo.github.io/03-spring-bean-load/" /><link rel="next" href="https://atuowgo.github.io/05-spring-destorybean/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Spring GetBean的流程",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/04-spring-getbean\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "spring","wordcount":  775 ,
+        "url": "https:\/\/atuowgo.github.io\/04-spring-getbean\/","datePublished": "2019-10-06T00:00:00+00:00","dateModified": "2019-10-06T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "讲解BAbstractBeanFactory的getBean方法"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Spring GetBean的流程</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2019-10-06">2019-10-06</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 775 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 4 分钟&nbsp;<span id="/04-spring-getbean/" class="leancloud_visitors" data-flag-title="Spring GetBean的流程">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#一getbean">一、getBean</a></li>
+            <li><a href="#二createbean">二、createBean</a></li>
+            <li><a href="#三回调接口顺序">三、回调接口顺序</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 第一节讲解Spring启动（链接）的时候说到，Spring内部先解析了所有的配置，加载所有的Bean定义后，再根据需要对Bean进行实例化和初始化。除开Spring自己主动新建的对象，第一次根据Bean定义加载对象的动作出现在AbstractApplicationContext的invokeBeanFactoryPostProcessors方法，该方法会在Spring容器中找出实现了BeanFactoryPostProcessor接口的bean列表并执行。根据之前介绍的内容，内部主要调用了AbstractBeanFactory的getBean方法，这节将对该方法进行讲解。</p>
+<h4 id="一getbean">一、getBean</h4>
+<p> 在这之前，先介绍BeanFactory的层次结构，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/1.png"
+        data-srcset="/04-spring-getbean/1.png, /04-spring-getbean/1.png 1.5x, /04-spring-getbean/1.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/1.png"
+        title="/04-spring-getbean/1.png" width="574" height="419" /></p>
+<p>涉及到的接口和实现类为：</p>
+<p> AliasRegistry：别名管理接口，定义了别名管理的功能</p>
+<p> SimpleAliasRegistry：AliasRegistry的默认实现，内部用一个</p>
+<p> ConcurrentHashMap：管理别名</p>
+<p> SingletonBeanRegistry：单例实例管理接口，定义了单例管理的功能</p>
+<p> DefaultSingletonBeanRegistry：单例管理实现类，内部用Map维护着被实例化后的所有单例、单例工厂等相关信息。Map的键为bean的唯一标识，Spring内部成为raw name，一般等同于Bean定义中的id或者name或者别名等，具体规则可以从上节BeanDefinition的加载查看（链接），值为相应的对象实例。这边需要指出的一点时，对于bean定义中具有别名意义的字段，如一定情况下的name以及alias字段，只存在于SimpleAliasRegistry维护的内部Map中，通过递归查询的方式可以从一个给定的别名查找到指定的id。</p>
+<p> 如下，DefaultSingletonBeanRegistry维护的Map中存在key为testBean，value为TestBean的对象，SimpleAliasRegistry维护的Map中存在Key为testBeanAlias1，value为testBean的记录。当通过testBeanAlias1查找bean时，会先通过AliasRegistry查找到testBean，再从通过BeanRegistry查找到对应的Bean实例。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/2.png"
+        data-srcset="/04-spring-getbean/2.png, /04-spring-getbean/2.png 1.5x, /04-spring-getbean/2.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/2.png"
+        title="/04-spring-getbean/2.png" width="787" height="219" /></p>
+<p> FactoryBeanRegistrySupport：增加缓存FactoryBean实例功能，DefaultSingleBeanRegistry在生成单例后便不再持有对应的FactoryBean</p>
+<p> BeanFactory：定义了Bean容器的基本查询接口，同时设定了以&amp;前缀来区别工厂Bean，即如果beanName前面有&amp;则返回对应Bean的工厂Bean对象而不是该Bean对象。</p>
+<p> HierarchicalBeanFactory：在BeanFactory接口上增加了父子层级关系，以实现双亲委托。</p>
+<p> ConfigurableBeanFactory：按照规矩，增加了修改功能的接口，同时增加了Scope特性，默认分为single单例和prototype多例。</p>
+<p> AbstractBeanFactory：BeanFacoty的基本实现。</p>
+<p> AbstractBeanFactory的getBean方法内部调用了doGetBean，该方法提供了根据beanName获取实例的具体实现，代码如下(删除了相关的注释和空格)：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">protected</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">doGetBean</span><span class="o">(</span>
+</span></span><span class="line"><span class="cl">			<span class="kd">final</span> <span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">requiredType</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">typeCheckOnly</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">			<span class="kd">throws</span> <span class="n">BeansException</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="cm">/*(1)*/</span>
+</span></span><span class="line"><span class="cl">		<span class="kd">final</span> <span class="n">String</span> <span class="n">beanName</span> <span class="o">=</span> <span class="n">transformedBeanName</span><span class="o">(</span><span class="n">name</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">		<span class="n">Object</span> <span class="n">bean</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">		<span class="cm">/*(2)*/</span>
+</span></span><span class="line"><span class="cl">		<span class="n">Object</span> <span class="n">sharedInstance</span> <span class="o">=</span> <span class="n">getSingleton</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">		<span class="cm">/*(3)*/</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="n">sharedInstance</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">args</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="o">(</span><span class="n">logger</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="k">if</span> <span class="o">(</span><span class="n">isSingletonCurrentlyInCreation</span><span class="o">(</span><span class="n">beanName</span><span class="o">))</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Returning eagerly cached instance of singleton bean &#39;&#34;</span> <span class="o">+</span> <span class="n">beanName</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">							<span class="s">&#34;&#39; that is not fully initialized yet - a consequence of a circular reference&#34;</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="k">else</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Returning cached instance of singleton bean &#39;&#34;</span> <span class="o">+</span> <span class="n">beanName</span> <span class="o">+</span> <span class="s">&#34;&#39;&#34;</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="n">bean</span> <span class="o">=</span> <span class="n">getObjectForBeanInstance</span><span class="o">(</span><span class="n">sharedInstance</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="cm">/*(4)*/</span>
+</span></span><span class="line"><span class="cl">		<span class="k">else</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="cm">/*(5)*/</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="o">(</span><span class="n">isPrototypeCurrentlyInCreation</span><span class="o">(</span><span class="n">beanName</span><span class="o">))</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="k">throw</span> <span class="k">new</span> <span class="n">BeanCurrentlyInCreationException</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="cm">/*(6)*/</span>
+</span></span><span class="line"><span class="cl">			<span class="n">BeanFactory</span> <span class="n">parentBeanFactory</span> <span class="o">=</span> <span class="n">getParentBeanFactory</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="o">(</span><span class="n">parentBeanFactory</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">containsBeanDefinition</span><span class="o">(</span><span class="n">beanName</span><span class="o">))</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="n">String</span> <span class="n">nameToLookup</span> <span class="o">=</span> <span class="n">originalBeanName</span><span class="o">(</span><span class="n">name</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="k">if</span> <span class="o">(</span><span class="n">args</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="k">return</span> <span class="o">(</span><span class="n">T</span><span class="o">)</span> <span class="n">parentBeanFactory</span><span class="o">.</span><span class="na">getBean</span><span class="o">(</span><span class="n">nameToLookup</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="k">else</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="k">return</span> <span class="n">parentBeanFactory</span><span class="o">.</span><span class="na">getBean</span><span class="o">(</span><span class="n">nameToLookup</span><span class="o">,</span> <span class="n">requiredType</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="cm">/*(7)*/</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="o">(!</span><span class="n">typeCheckOnly</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="n">markBeanAsCreated</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="cm">/*(8)*/</span>
+</span></span><span class="line"><span class="cl">				<span class="kd">final</span> <span class="n">RootBeanDefinition</span> <span class="n">mbd</span> <span class="o">=</span> <span class="n">getMergedLocalBeanDefinition</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="n">checkMergedBeanDefinition</span><span class="o">(</span><span class="n">mbd</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="cm">/*(9)*/</span>
+</span></span><span class="line"><span class="cl">				<span class="n">String</span><span class="o">[]</span> <span class="n">dependsOn</span> <span class="o">=</span> <span class="n">mbd</span><span class="o">.</span><span class="na">getDependsOn</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">				<span class="k">if</span> <span class="o">(</span><span class="n">dependsOn</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">dep</span> <span class="o">:</span> <span class="n">dependsOn</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">						<span class="k">if</span> <span class="o">(</span><span class="n">isDependent</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="n">dep</span><span class="o">))</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">							<span class="k">throw</span> <span class="k">new</span> <span class="n">BeanCreationException</span><span class="o">(</span><span class="n">mbd</span><span class="o">.</span><span class="na">getResourceDescription</span><span class="o">(),</span> <span class="n">beanName</span><span class="o">,</span>
+</span></span><span class="line"><span class="cl">									<span class="s">&#34;Circular depends-on relationship between &#39;&#34;</span> <span class="o">+</span> <span class="n">beanName</span> <span class="o">+</span> <span class="s">&#34;&#39; and &#39;&#34;</span> <span class="o">+</span> <span class="n">dep</span> <span class="o">+</span> <span class="s">&#34;&#39;&#34;</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">						<span class="o">}</span>
+</span></span><span class="line"><span class="cl">						<span class="n">registerDependentBean</span><span class="o">(</span><span class="n">dep</span><span class="o">,</span> <span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">						<span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">							<span class="n">getBean</span><span class="o">(</span><span class="n">dep</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">						<span class="o">}</span>
+</span></span><span class="line"><span class="cl">						<span class="k">catch</span> <span class="o">(</span><span class="n">NoSuchBeanDefinitionException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">							<span class="k">throw</span> <span class="k">new</span> <span class="n">BeanCreationException</span><span class="o">(</span><span class="n">mbd</span><span class="o">.</span><span class="na">getResourceDescription</span><span class="o">(),</span> <span class="n">beanName</span><span class="o">,</span>
+</span></span><span class="line"><span class="cl">									<span class="s">&#34;&#39;&#34;</span> <span class="o">+</span> <span class="n">beanName</span> <span class="o">+</span> <span class="s">&#34;&#39; depends on missing bean &#39;&#34;</span> <span class="o">+</span> <span class="n">dep</span> <span class="o">+</span> <span class="s">&#34;&#39;&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">						<span class="o">}</span>
+</span></span><span class="line"><span class="cl">					<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="cm">/*(10)*/</span>
+</span></span><span class="line"><span class="cl">				<span class="k">if</span> <span class="o">(</span><span class="n">mbd</span><span class="o">.</span><span class="na">isSingleton</span><span class="o">())</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="n">sharedInstance</span> <span class="o">=</span> <span class="n">getSingleton</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="k">new</span> <span class="n">ObjectFactory</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">						<span class="nd">@Override</span>
+</span></span><span class="line"><span class="cl">						<span class="kd">public</span> <span class="n">Object</span> <span class="nf">getObject</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">BeansException</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">							<span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">								<span class="k">return</span> <span class="n">createBean</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="n">mbd</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">							<span class="o">}</span>
+</span></span><span class="line"><span class="cl">							<span class="k">catch</span> <span class="o">(</span><span class="n">BeansException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">								<span class="n">destroySingleton</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">								<span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">							<span class="o">}</span>
+</span></span><span class="line"><span class="cl">						<span class="o">}</span>
+</span></span><span class="line"><span class="cl">					<span class="o">});</span>
+</span></span><span class="line"><span class="cl">					<span class="n">bean</span> <span class="o">=</span> <span class="n">getObjectForBeanInstance</span><span class="o">(</span><span class="n">sharedInstance</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">mbd</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="cm">/*(11)*/</span>
+</span></span><span class="line"><span class="cl">				<span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">mbd</span><span class="o">.</span><span class="na">isPrototype</span><span class="o">())</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="n">Object</span> <span class="n">prototypeInstance</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">					<span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">						<span class="n">beforePrototypeCreation</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">						<span class="n">prototypeInstance</span> <span class="o">=</span> <span class="n">createBean</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="n">mbd</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">					<span class="o">}</span>
+</span></span><span class="line"><span class="cl">					<span class="k">finally</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">						<span class="n">afterPrototypeCreation</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">					<span class="o">}</span>
+</span></span><span class="line"><span class="cl">					<span class="n">bean</span> <span class="o">=</span> <span class="n">getObjectForBeanInstance</span><span class="o">(</span><span class="n">prototypeInstance</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">mbd</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="cm">/*(12)*/</span>
+</span></span><span class="line"><span class="cl">				<span class="k">else</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="n">String</span> <span class="n">scopeName</span> <span class="o">=</span> <span class="n">mbd</span><span class="o">.</span><span class="na">getScope</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">					<span class="kd">final</span> <span class="n">Scope</span> <span class="n">scope</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">scopes</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">scopeName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">					<span class="k">if</span> <span class="o">(</span><span class="n">scope</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">						<span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;No Scope registered for scope name &#39;&#34;</span> <span class="o">+</span> <span class="n">scopeName</span> <span class="o">+</span> <span class="s">&#34;&#39;&#34;</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">					<span class="o">}</span>
+</span></span><span class="line"><span class="cl">					<span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">						<span class="n">Object</span> <span class="n">scopedInstance</span> <span class="o">=</span> <span class="n">scope</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="k">new</span> <span class="n">ObjectFactory</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">							<span class="nd">@Override</span>
+</span></span><span class="line"><span class="cl">							<span class="kd">public</span> <span class="n">Object</span> <span class="nf">getObject</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">BeansException</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">								<span class="n">beforePrototypeCreation</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">								<span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">									<span class="k">return</span> <span class="n">createBean</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="n">mbd</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">								<span class="o">}</span>
+</span></span><span class="line"><span class="cl">								<span class="k">finally</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">									<span class="n">afterPrototypeCreation</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">								<span class="o">}</span>
+</span></span><span class="line"><span class="cl">							<span class="o">}</span>
+</span></span><span class="line"><span class="cl">						<span class="o">});</span>
+</span></span><span class="line"><span class="cl">						<span class="n">bean</span> <span class="o">=</span> <span class="n">getObjectForBeanInstance</span><span class="o">(</span><span class="n">scopedInstance</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">mbd</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">					<span class="o">}</span>
+</span></span><span class="line"><span class="cl">					<span class="k">catch</span> <span class="o">(</span><span class="n">IllegalStateException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">						<span class="k">throw</span> <span class="k">new</span> <span class="n">BeanCreationException</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span>
+</span></span><span class="line"><span class="cl">								<span class="s">&#34;Scope &#39;&#34;</span> <span class="o">+</span> <span class="n">scopeName</span> <span class="o">+</span> <span class="s">&#34;&#39; is not active for the current thread; consider &#34;</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">								<span class="s">&#34;defining a scoped proxy for this bean if you intend to refer to it from a singleton&#34;</span><span class="o">,</span>
+</span></span><span class="line"><span class="cl">								<span class="n">ex</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">					<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="k">catch</span> <span class="o">(</span><span class="n">BeansException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="cm">/*(13)*/</span>
+</span></span><span class="line"><span class="cl">				<span class="n">cleanupAfterBeanCreationFailure</span><span class="o">(</span><span class="n">beanName</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="n">requiredType</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">bean</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">requiredType</span><span class="o">.</span><span class="na">isInstance</span><span class="o">(</span><span class="n">bean</span><span class="o">))</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="k">return</span> <span class="n">getTypeConverter</span><span class="o">().</span><span class="na">convertIfNecessary</span><span class="o">(</span><span class="n">bean</span><span class="o">,</span> <span class="n">requiredType</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			<span class="k">catch</span> <span class="o">(</span><span class="n">TypeMismatchException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="k">if</span> <span class="o">(</span><span class="n">logger</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">					<span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Failed to convert bean &#39;&#34;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&#34;&#39; to required type &#39;&#34;</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">							<span class="n">ClassUtils</span><span class="o">.</span><span class="na">getQualifiedName</span><span class="o">(</span><span class="n">requiredType</span><span class="o">)</span> <span class="o">+</span> <span class="s">&#34;&#39;&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">				<span class="o">}</span>
+</span></span><span class="line"><span class="cl">				<span class="k">throw</span> <span class="k">new</span> <span class="n">BeanNotOfRequiredTypeException</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">requiredType</span><span class="o">,</span> <span class="n">bean</span><span class="o">.</span><span class="na">getClass</span><span class="o">());</span>
+</span></span><span class="line"><span class="cl">			<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="o">(</span><span class="n">T</span><span class="o">)</span> <span class="n">bean</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>先说下入参：</p>
+<ol>
+<li>
+<p>name：要查找的bean名，可以为raw name，也可以为alias name或者factoryBean name，Spring内部会自行进行转换。</p>
+</li>
+<li>
+<p>requiredType：要返回的对象类型</p>
+</li>
+<li>
+<p>args：对象实例化时需要用到的构造参数</p>
+</li>
+<li>
+<p>typeCheckOnly：该对象只是用来进行类型检查，而不会真正的进行使用，可以避免实例化和初始化对象</p>
+</li>
+</ol>
+<p>具体过程为：</p>
+<ol>
+<li>
+<p>获取raw name</p>
+<p>计算所给name对应的内部beanName，具体为循环去除name前面的&amp;，再根据之前的介绍的，如果传入的是别名，会查找到对应的raw name</p>
+</li>
+<li>
+<p>尝试获取bean实例</p>
+<p>使用上面获得的beanName，调用内部的getSingleton方法，获取对应的对象实例，赋值给sharedInstance。getSingleton方法来自于DefaultSingletonBeanRegistry，即这步尝试直接从内部维护的单例Map中获取实例。这步可以检测到手工注入的singleton，如第一节提到的ApplicationContext对象，就是Spring自己手动注册的。</p>
+</li>
+<li>
+<p>bean实例已经存在</p>
+<p>若sharedInstance不为空，且args参数为空，说明该对象已经存在，不需要再进行实例化和初始化。由于在(1)的时候对所传的name去除了&amp;，需要判断返回的对象是否符合要求。这时候，会使用getObjectForBeanInstance方法，对sharedInstance和name进行判断，返回对应的实例，该方法主要内容如下：</p>
+<ol>
+<li>
+<p>若name以&amp;开头，但sharedInstance没有实现FactoryBean接口，则抛出异常</p>
+</li>
+<li>
+<p>若sharedInstance没有实现FactoryBean接口，或者name以&amp;开头，则直接将sharedInstance对象返回。即sharedInstace本身是从name对应的FactoryBean获取的对象。</p>
+</li>
+<li>
+<p>若前面2个条件都不符合，则sharedInstance本身实现了FactoryBean接口,name也是以&amp;开头，这时候会尝试从FactoryBeanRegistrySupport中根据beanName(raw name)获取已经实例化的对象。若对象为空，即首次获取，则将sharedInstace转为FactoryBean,并调用该工厂方法获取对象。这里涉及到FactoryBeanRegistrySupport的getObjectFromFactoryBean方法，该方法在使用FactoryBean获得对象后，会调用上下文中已有的BeanPostProcessor对象列表，逐个执行postProcessAfterInitialization方法，当遇到处理后的结果为空，则直接返回，否则继续遍历执行，如下，出现在AbstractAutowireCapableBeanFactory中：</p>
+</li>
+</ol>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/3.png"
+        data-srcset="/04-spring-getbean/3.png, /04-spring-getbean/3.png 1.5x, /04-spring-getbean/3.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/3.png"
+        title="/04-spring-getbean/3.png" width="670" height="268" /></p>
+</li>
+<li>
+<p>Bean实例不存在</p>
+<p>如果没有找到beanName对应的实例，即不存在对应的单例实例，则转入实例化该对象的流程，注意单例或者多例都需要实例化。</p>
+</li>
+<li>
+<p>如果该beanName有对应的在初始化中的多例对象，则抛出异常。</p>
+<p>AbstractBeanFactory内部维护了一个ThreadLocal对象，用于维护当前线程正在初始化的多例对象。</p>
+</li>
+<li>
+<p>启用双亲委托机制</p>
+<p>如果存在父容器，且父容器存在该beanName的定义，则委托给父容器完成。</p>
+</li>
+<li>
+<p>如果本次调用不单是为了类型检查，则标记该beanName在创建中</p>
+<p>AbstractBeanFactory内部维护了一个Set<String>集合alreadyCreated，用于存储已经创建好或者正在创建的bean</p>
+</li>
+<li>
+<p>获取该beanName对应的BeanDefinition,包装为RootBeanDefinition返回。</p>
+<p>AbstractBeanFactory内部维护了一个Map&lt;String, RootBeanDefinition&gt;集合mergedBeanDefinitions，用于维护当前已经加载的各个bean定义bd。在加载该bean定义时，如果存在父定义pdb，则会将pdb包装为一个RootBeanDefinition，然后将当前的bd覆盖掉父定义的内容，包括scope、lazyInit、dependsOn等属性，达到继承的效果。获得RootBeanDefinition后，如果最后的定义中scope为空，则会默认赋值为single。此外还有一个containingBd的概念，这个是相对于bd来说的，指的是包含bd的外部bean定义，主要用于inner bean的情况。如果包含containingBd不为空，且不是单例，但是bd为单例，则bd的scope需要设置为containingBd的值，直白点说就是包含被非单例bean包含的bean本身不能为单例（这段有点绕，还没找到实际的例子，直接按照代码里的直译过来）。</p>
+</li>
+<li>
+<p>处理依赖的bean</p>
+<p>获取该bean依赖的bean列表dependsOn值，对每个依赖的bean进行逐一操作，先检查该bean是否存在循环依赖，若不存在循环依赖，则将依赖关系缓存起来，最后先实例化依赖的bean。其中检查循环依赖很重要，如果没有该步，最后实例化依赖的bean时会导致死循环。为此AbstractBeanFacotry内部维护了两个Map&lt;String, Set<String>&gt;属性dependentBeanMap和dependenciesForBeanMap，分别用于缓存bean的依赖关系。前者表示bean从属关系的缓存，缓存依赖于key所表示的bean的所有bean name，举例来讲，如果beanB的一个属性是beanA,则beanA为key是被依赖方，beanB则为value是依赖方(从属方)的一员；后者标识bean依赖关系的缓存，缓存key所表示的bean依赖的所有bean name,举例来讲，如果beanB的一个属性是beanA,则beanB是key从属方，beanA则是value被依赖方的一员。如下为Spring检查循环依赖的过程：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/4.png"
+        data-srcset="/04-spring-getbean/4.png, /04-spring-getbean/4.png 1.5x, /04-spring-getbean/4.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/4.png"
+        title="/04-spring-getbean/4.png" width="699" height="642" /></p>
+<p>其中beanName为当前bean,dependentBeanName为当前bean所依赖的bean。大致过程为找出所有依赖beanName的bean列表transitiveDependency，递归判断transitiveDependency是否也依赖dependentBeanNam，即如果 beanName依赖于 dependentBeanName ，而且 transitiveDependency依赖于 beanName, 如果transitiveDependency 依赖于dependentBeanName，即出现了环，则存在循环依赖。</p>
+</li>
+<li>
+<p>如果该bean为单例，则转入初始化单例流程</p>
+<p>调用父类DefaultSingletonBeanRegistry的getSingleton模板方法，该模板方法会保证该单例只有被创建一次，创建完成后将对象缓存在内部。真正实例化和初始化的过程在createBean方法中，其中如果该bean实例化失败，则会调用destroySingleton方法进行回收，这两个方法在后面会进行重点讲解。同第二步类似，获取该对象后，会再调用getObjectForBeanInstance检查FactoryBean。</p>
+</li>
+<li>
+<p>如果该bean为多例，则转入初始化多例流程</p>
+<p>第（5）步讲过，内部有一个ThreadLocal，保证多例在当前线程创建时是唯一的，重点方法也是createBean。需要注意的是，如果是多例，创建失败是不会进行回收的。</p>
+</li>
+<li>
+<p>如果该bean为其他scope，则转入对应的初始化流程</p>
+<p>具体过程同(10)一致，只是调用的模板委托给了具体的Scope对象。</p>
+</li>
+<li>
+<p>初始化失败，则清理相关内容</p>
+<p>将该beanName从alreadyCreated移除，标识该beanName还未创建。</p>
+</li>
+</ol>
+<h4 id="二createbean">二、createBean</h4>
+<p> createBean方法主要用于完成bean的实例化和初始化过程，该方法在AbstractFactory中为抽象方法，具体实现是在AbstractAutowireCapableBeanFactory类中。如下为核心操作：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/5.png"
+        data-srcset="/04-spring-getbean/5.png, /04-spring-getbean/5.png 1.5x, /04-spring-getbean/5.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/5.png"
+        title="/04-spring-getbean/5.png" width="687" height="389" /></p>
+<ol>
+<li>
+<p>resolveBeforeInstantiation</p>
+<p>创建对象前的代理口子，能够拦截创建过程，使用自定义的代理对象来替换Spring内部正常创建的对象，即上面判断的，如果该方法返回对象不为空，则直接使用返回的对象返回。实现上， 会逐一遍历所有的BeanPostProcessor，找出InstantiationAwareBeanPostProcessor对象，并执行postProcessBeforeInstantiation方法，若返回结果不为空，则直接使用该方法返回，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/6.png"
+        data-srcset="/04-spring-getbean/6.png, /04-spring-getbean/6.png 1.5x, /04-spring-getbean/6.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/6.png"
+        title="/04-spring-getbean/6.png" width="719" height="265" /></p>
+<p>该方法主要用在AOP实现上，上节提到的CommonAnnotationBeanPostProcessor和PersistenceAnnotationBeanPostProcessor类虽然实现了该接口，但是postProcessBeforeInstantiation方法为空实现。</p>
+<p>若该方法返回对象不为空，则会逐一执行BeanPostProcessor列表的postProcessAfterInitialization方法，以完成回调。</p>
+</li>
+<li>
+<p>doCreateBean</p>
+<p>该方法的主要过程如下，省略了提前暴露bean实例的部分内容。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/7.png"
+        data-srcset="/04-spring-getbean/7.png, /04-spring-getbean/7.png 1.5x, /04-spring-getbean/7.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/7.png"
+        title="/04-spring-getbean/7.png" width="275" height="305" /></p>
+<p>由上图可知，该过程完成了bean的实例化和初始化以及调用各回调接口的过程。具体为：</p>
+<ol>
+<li>根据BeanDefinition实例化bean</li>
+</ol>
+<p>主要尝试从各种方法进行实例化，包括：</p>
+<p>a. 使用工厂方法进行实例化</p>
+<p>b.	使用bean定义的构造方法或者可用的构造方法进行实例化</p>
+<p>c.	使用默认的构造方法进行实例化</p>
+<ol start="2">
+<li>回调MergedBeanDefinitionPostProcessor的postProcessMergedBeanDefinition方法</li>
+</ol>
+<p>如下，遍历各个MergedBeanDefinitionPostProcessor实例，回调postProcessMergedBeanDefinition方法</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/8.png"
+        data-srcset="/04-spring-getbean/8.png, /04-spring-getbean/8.png 1.5x, /04-spring-getbean/8.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/8.png"
+        title="/04-spring-getbean/8.png" width="829" height="177" /></p>
+</li>
+<li>
+<p>初始化对象，填充各属性</p>
+<p>执行初始化，实现属性的依赖注入，在自动进行依赖注入前， 会先调用一个回调接口，以判断是否需要自动依赖注入，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/9.png"
+        data-srcset="/04-spring-getbean/9.png, /04-spring-getbean/9.png 1.5x, /04-spring-getbean/9.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/9.png"
+        title="/04-spring-getbean/9.png" width="698" height="365" /></p>
+<p>通过回调InstantiationAwareBeanPostProcessor的postProcessAfterInstantiation方法来判断。</p>
+<p>若需要进行依赖注入，则会根据依赖策略：根据autowireByName或者autowireByType，为属性字段找到符合定义的bean实例（会通过getBean方法调用）。在真正将值赋值给属性前， 还会再次执行回调接口，如下，回调InstantiationAwareBeanPostProcessor的postProcessPropertyValues方法，这里也可以进行拦截。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/10.png"
+        data-srcset="/04-spring-getbean/10.png, /04-spring-getbean/10.png 1.5x, /04-spring-getbean/10.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/10.png"
+        title="/04-spring-getbean/10.png" width="748" height="423" /></p>
+<p>若前面都没被拦截到，则会真正将bean值复制给对应的属性，最终会通过反射设置field的accessable，然后将bean实例设置进去。</p>
+</li>
+<li>
+<p>执行各回调接口</p>
+<ol>
+<li>
+<p>执行Aware接口，包括BeanNameAware、BeanClassLoaderAware和BeanFactoryAware</p>
+</li>
+<li>
+<p>执行BeanPostProcessor的postProcessBeforeInitialization（InitDestroyAnnotationBeanPostProcessor类实现了该方法，用以回调@PostConstruct注解的方法，CommonAnnotationBeanPostProcessor继承自该类，设置了initAnnotationType为PostConstruct.class）方法</p>
+</li>
+<li>
+<p>如果该Bean实现了InitializingBean接口，则调用afterPropertiesSet方法</p>
+</li>
+<li>
+<p>如果设置了init-method,则执行init-method指定的方法</p>
+</li>
+<li>
+<p>执行BeanPostProcessor的postProcessAfterInitialization方法</p>
+</li>
+</ol>
+</li>
+<li>
+<p>判断是否有销毁接口，并添加到列表中</p>
+<p>如下，为处理过程，会先判断当前bean定义不是多例，且需要进行销毁回调，才会进行处理。如果是单例，则直接将其添加到响应列表列表中进行缓存，存储在内部维护的disposableBeans列表中；如果是其他socpe，则将其委托给对应的Scope对象实现。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/04-spring-getbean/11.png"
+        data-srcset="/04-spring-getbean/11.png, /04-spring-getbean/11.png 1.5x, /04-spring-getbean/11.png 2x"
+        data-sizes="auto"
+        alt="/04-spring-getbean/11.png"
+        title="/04-spring-getbean/11.png" width="795" height="462" /></p>
+<p>这里有几个条件：</p>
+<ol>
+<li>
+<p>必须为非prototy</p>
+</li>
+<li>
+<p>该bean存在销毁方法，满足一下条件之一即是</p>
+</li>
+</ol>
+<p>a. 该bean实现了DisposableBean接口</p>
+<p>b. 该bean实现了AutoCloseable接口</p>
+<p>c.该bean实现了Closeable接口</p>
+<p>d.该bean定义的destory-method不为空</p>
+<p>e.该bean符合DestructionAwareBeanPostProcessor.requiresDestruction方法的过滤条件</p>
+<p>只要符合以上条件，就会新建一个DisposableBeanAdapter对象进行存储，并在销毁时进行相应的接口回调。</p>
+</li>
+</ol>
+<h4 id="三回调接口顺序">三、回调接口顺序</h4>
+<p> 结合之前几节内容，可以得到如下的回调顺序：</p>
+<table border="1" cellspacing="0" cellpadding="0">
+  <thead>
+    <tr>
+      <td>阶段</td>
+      <td>动作</td>
+      <td>回调接口</td>
+      <td>备注</td>
+    </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td rowspan="3">启动</td>
+    <td rowspan="3">Context执行invokeBeanFactoryPostProcessors</td>
+    <td>BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry</td>
+    <td>继承自BeanFactoryPostProcessor</td>
+  </tr>
+  <tr>
+    <td>BeanFactoryPostProcessor.postProcessBeanFactory</td>
+    <td rowspan="2">按照PriorityOrdered、Ordered、一般执行；不重复执行</td>
+  </tr>
+  <tr>
+    <td>BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry</td>
+  </tr>
+  <tr>
+    <td rowspan="14">实例化</td>
+    <td>从FactoryBean中获取实例</td>
+    <td>BeanPostProcessor.postProcessAfterInitialization</td>
+    <td>从FactoryBean获取Bean的话不会执行下面的初始化回调</td>
+  </tr>
+  <tr>
+    <td rowspan="2">resolveBeforeInstantiation（代理口子）</td>
+    <td>InstantiationAwareBeanPostProcessor.postProcessBeforeInstantiation</td>
+    <td>继承自BeanPostProcessor</td>
+  </tr>
+  <tr>
+    <td>BeanPostProcessor.postProcessAfterInitialization</td>
+    <td>这里返回对象非空不会执行下面的初始化回调</td>
+  </tr>
+  <tr>
+    <td rowspan="11">doCreateBean</td>
+    <td>MergedBeanDefinitionPostProcessor.postProcessMergedBeanDefinition</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>InstantiationAwareBeanPostProcessor.postProcessAfterInstantiation</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>InstantiationAwareBeanPostProcessor.postProcessPropertyValues</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>BeanNameAware.setBeanName</td>
+    <td rowspan="3">初始化后执行invokeAwareMethods</td>
+  </tr>
+  <tr>
+    <td>BeanClassLoaderAware.setBeanClassLoader</td>
+  </tr>
+  <tr>
+    <td>BeanFactoryAware.setBeanFactory</td>
+  </tr>
+  <tr>
+    <td>BeanPostProcessor.postProcessBeforeInitialization</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>InitializingBean.afterPropertiesSet</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>init-method</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>BeanPostProcessor.postProcessAfterInitialization</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>DestructionAwareBeanPostProcessor.requiresDestruction</td>
+    <td>销毁方法检查</td>
+  </tr>
+  <tr>
+    <td>初始化后</td>
+    <td>preInstantiateSingletons</td>
+    <td>SmartInitializingSingleton.afterSingletonsInstantiated</td>
+    <td></td>
+  </tr>
+  </tbody>
+</table>
+<p> 以上为大致的过程，不含其它的回调接口，若有其它回调接口可以按照顺序依次加入。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2019-10-06</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/04-spring-getbean/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/04-spring-getbean/" data-title="Spring GetBean的流程" data-hashtags="spring"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/04-spring-getbean/" data-hashtag="spring"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/04-spring-getbean/" data-title="Spring GetBean的流程"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/03-spring-bean-load/" class="prev" rel="prev" title="Spring BeanDefinition的加载"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>Spring BeanDefinition的加载</a>
+            <a href="/05-spring-destorybean/" class="next" rel="next" title="Spring DestroySingleton流程">Spring DestroySingleton流程<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

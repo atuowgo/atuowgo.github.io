@@ -1,0 +1,228 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>RocketMQ - 标签 - 程序猿二腊</title>
+        <link>https://atuowgo.github.io/tags/rocketmq/</link>
+        <description>RocketMQ - 标签 - 程序猿二腊</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Mon, 18 May 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/rocketmq/" rel="self" type="application/rss+xml" /><item>
+    <title>RocketMQ消息的存储消费模型</title>
+    <link>https://atuowgo.github.io/09-consumequeue/</link>
+    <pubDate>Mon, 18 May 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/09-consumequeue/</guid>
+    <description><![CDATA[这节介绍RocketMQ中消息的存储模型：CommitLog和ConsumeQueue。CommitLog用于存储Producer的消息，ConsumeQueue接受CommitLog分配的消息，等待Consumer消费。
+1. 存储消费模型 RocketMQ采用了单一的日志文件，即把同1台机器上面所有topic的所有queue消息都存放在一个文件里面，以避免随机的磁盘写入。其存储结构如下：
+Broker会把所有消息都存在一个单一的CommitLog文件里面，然后由后台线程异步的同步到ConsumeQueue中，再由Consumer进行消费。
+该模型下，ConsumeQueue中并不需要存储消息的内容，而是存储消息在CommitLog中的offset。也就是说，ConsumeQueue其实是CommitLog的一个索引文件。即CommitLog的写入是顺序的，而读取需要支持随机读的，支持该特性的实现就是上一节提到的MappedFileQueue。
+2. CommitLog CommitLog的很多操作都基于MappedFileQueue来操作，在MappedFileQueue上增加了CRUD操作。CommitLog的调用过程如下：
+初始化时会初始化相关的组件，包括MappedFileQueue、FlushCommitLogService、AppendMessageCallback等。
+MappedFileQueue主要设定了文件的路径位置和每个MappedFile的大小(1024 * 1024 * 1024 = 1G)。
+FlushCommitLogService的实现类有3个GroupCommitService、FlushRealTimeService和CommitRealTimeService。前两个用于刷盘，如果开启了异步刷盘，则使用GroupCommitService，该实现会将刷盘请求缓存起来，到时间后再执行刷盘；FlushRealTimeService，该实现直接定时刷固定页的数据，如果启用了堆外缓冲区则使用GroupCommitService，否则使用FlushRealTimeService。后面的CommitRealTimeService则用于将堆外缓冲区中的数据写到FileChannel中(如果启用了堆外缓冲，调用MappedFileQueue的commit方法)。
+AppendMessageCallback主要用于实现具体消息写入ByteBuf的方式。
+此外，还缓存了每个topic下每个queue对应的逻辑偏移量
+1 private HashMap&lt;String/* topic-queueid */, Long/* offset */&gt; topicQueueTable = new HashMap&lt;String, Long&gt;(1024); 加载主要是调用MappedFileQueue的load方法，最后启动FlushCommitLogService服务。
+同时，CommitLog还通过ReputMessageService，将消息offset放到了ConsumeQueue以及IndexService，ReputMessageService的调用在DefaultMessage里。
+2.1. 追加消息 追加消息的大致过程如下，其中写入消息时会加锁，从而保证每个CommitLog文件的写都是顺序写入的。
+其中AppendMessageCallback主要完成了对消息写入ByteBuff的处理，包括单笔和批量消息。这里主要介绍单笔消息的写入：计算一条消息每一部分的大小和内容，然后写入到byteBuffer中，byteBuffer是MappedFile slice后的内容，写入每个部分如下：
+大部分内容通过字段便能够看出具体的意思，这里不再赘述，只对一些内容进行介绍。
+计算消息的全局ID：MessageId，MessageId由存储的broker机器的ip地址+commitLog中的起始物理offset组成。MessageId会带在返回结果PutMessageResult中返回。 写入成功后会将topic-queue的逻辑偏移量+1(逻辑偏移量表示消息数量的大小，一条消息进来下标就会长1) 写入之前会计算消息的大小，如果超过设定的单条消息的大小(默认512K)则拒绝写入 写入之前会判断当前文件剩余内容是否足够，如果不够则会插入一条空白消息，将剩余部分填满，返回文件已满，上层判断文件满了，会重新生成一个文件，将消息再次写入.空白消息写入的内容为totalSize+magicCode+0值,其中正常消息的magicCode为-626843481，空白消息为-875286124 2.2. 读取消息 根据所给的起始offset(物理偏移量),确定该offset所在MappedFile后，获取从offset开始到MappedFile当前可读的所有内容。
+MappedFile里会维护一个fileFromOffset属性，标记当前文件存储消息的起始偏移量，该值也是文件的文件名，默认值每个文件为1G=1073741824,即每个文件名的步长为1073741824。对于给定的offset，只要找到符合fileFromOffset &lt;= offset &lt; fileFromOffset + mappedFileSize(1G)的MappedFile即可。找到目标MappedFile后，通过offset%mappedFileSize可以计算出所给的起始offset在当前文件中的位置。
+获得ByteBuff内容后，可以调用checkMessageAndReturnSize方法，从ByteBuff中还原消息，返回DispatchRequest(不含消息body内容)。
+前面提到，ReputMessageService会从CommitLog中读取消息，然后用于构建ConsumeQueue和IndexFile，这里传送的内容就是DispatchRequest。DefaultMessageStore会定时从CommitLog中读取消息，并将解析出的DispatchRequest对象传给ConsumeQueue和IndexService。
+2.3. 删除消息 调用MappedFileQueue，按照offset或者过期时间(默认72小时)删除物理文件
+3. ConsumeQueue 代表一个topic下一个queue的消费队列。ConsumeQueue底层基于MappedFileQueue，存储每个topic-queueId下对应消息的offset，但消息被实际消费时，再通过offset从CommitLog中查找具体的消息内容。
+ConsumeQueue的调用过程和提供方法同CommitLog类似，也是初始化时从指定的路径下重构MappedFileQueue，并提供了CRUD方法来操作文件。
+ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对应的数据存储路径为
+/DirToStore/topic/queueId/ 每次写入的数据格式(数据单元)为：
+1 物理偏移量(long/8)|消息大小(int/4)|逻辑偏移量(long/8) = 20 ConsumeQueue初始化MappedFile的默认大小为 30000 * 20，即每个文件存30万条记录，没个文件名的步长为600000，消费时只要每次读取20个字节便能查找到每个消息的offset。]]></description>
+</item>
+<item>
+    <title>RocketMQ文件存储的基础:MappedFile和MappedFileQueue</title>
+    <link>https://atuowgo.github.io/08-mappedfile/</link>
+    <pubDate>Thu, 14 May 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/08-mappedfile/</guid>
+    <description><![CDATA[RocketMQ文件存储的基础:MappedFile和MappedFileQueue RocketMQ中的MappedFile类对应一个文件的mmap映射,是RocketMQ实现高效存储的基础。本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡。
+1. 零拷贝 零拷贝（zero copy）指的是当拷贝发生时，CPU并不参与实际的拷贝过程。CPU可以切换到其他线程，数据的拷贝过程异步进行，异步过程通常要由硬件DMA实现。常用的零拷贝有 mmap 和 sendFile。
+采用传统的读写操作将磁盘中的数据发送到网络中，通常经历2次用户态/内核态的切换，并且读和写操作CPU分别要参与一次拷贝过程。
+我们知道，操作系统设置了用户态和内核态两种状态，用户态想要获取系统资源(例如访问硬盘), 必须通过系统调用进入到内核态, 由内核态获取到系统资源,再切换回用户态返回应用程序。同时，操作系统在内核态中也增加了一个&quot;内核缓冲区&quot;(kernel buffer)，读取数据时并不是直接把数据读取到应用程序的缓存区(app buffer), 而是先读取到内核缓冲区, 再由内核缓冲区复制到应用程序的缓存区。
+传统的IO读写过程，数据会在用户态和内核态之间发送多次复制和多次上下文切换，如下：
+主要流程为：
+硬盘拷贝到内核缓冲区(DMA COPY) 内核缓冲区拷贝到应用程序缓冲区(CPU COPY) 应用程序缓冲区拷贝到socket缓冲区(CPU COPY) socket buf拷贝到网卡的buf(DMA COPY) 即一次读写过程涉及到2次cpu copy, 还有4次的上下文切换。
+很明显,第2次和第3次的copy只是把数据复制到app buffer又原封不动的复制回来, 为此带来了两次的cpu copy和两次上下文切换, 是完全没有必要的。
+1.1 PageCache pagecache是文件系统层级的缓存，从磁盘里读取的内容是存储到这里，这样程序读取磁盘内容就会非常快。page cache的大小为一页，通常为4K。
+Java里的写操作都是写到PageCache里便认为逻辑落盘成功，后续操作是通过操作系统把它刷到磁盘文件上。
+1.2. sendfile linux内核2.1开始引入一个叫sendFile系统调用
+1 ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count); 这个系统调用可以在内核态内把数据从内核缓冲区直接复制到套接字(SOCKET)缓冲区内, 从而可以减少上下文的切换和不必要数据的复制,如下：
+涉及到数据拷贝变成:
+硬盘拷贝到内核缓冲区(DMA COPY) 内核缓冲区拷贝到socket缓冲区(CPU COPY) socket缓冲区拷贝到网卡的buf(DMA COPY) sendfile只能将数据从文件传递到套接字上，反之则不行。 使用sendfile不仅减少了数据拷贝的次数，还减少了上下文切换。
+Java类库通过java.nio.channels.FileChannel的transgerTo方法支持零拷贝。而在Netty中也通过在FileRegion中包装了NIO的FileChannel.transferTo()方法实现了零拷贝。RocketMQ在涉及到网络传输的地方也使用了该方法。
+FileChannel本身不是基于零拷贝实现的，而是是基于块来实现的。FileChannel配合着ByteBuffer，将读写的数据缓存到内存中，然后以批量/缓存的方式read/write，省去了非批量操作时的重复中间操作，操纵大文件时可以显著提高效率。FileChannel的write方法将数据写入PageCache后就认为落盘了，最终还是要操作系统完成PageCache到磁盘的最终写入。FileChannel的force方法则是用于通知操作系统进行及时的刷盘。
+1.3. mmap mmap也是零拷贝实现的一种，它利用共享内存空间的方式, 把文件映射到用户空间里的虚拟内存，省去了从内核缓冲区复制到用户空间的过程。]]></description>
+</item>
+<item>
+    <title>RocketMQ的心脏:Broker</title>
+    <link>https://atuowgo.github.io/07-broker/</link>
+    <pubDate>Mon, 04 May 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/07-broker/</guid>
+    <description><![CDATA[RocketMQ的心脏:Broker 这节介绍下RocketMQ中最后的一个部分，也是内容较多的一部分：Broker。
+Broker的启动同其他几个组件一样，从XXXStartup(BrokerStartup)类的main方法开始，首先加载对应的配置文件XXXConfig(BrokerConfig、NettyServerConfig、NettyClientConfig、MessageStoreConfig)，然后实例化XXXController(BrokerController)，接着调用Controller的initialize方法，最后注册ShutdownHook。
+Broker在构造方法中，会进行如下的实例化动作：
+包括：
+配置类：BrokerConfig、NettyServerConfig、NettyClientConfig、MessageStoreConfig 管理类：ConsumerOffsetManager(偏移量管理)、TopicConfigManager(topic配置管理)、ConsumerManager(消费者管理)、ConsumerFilterManager(消费者过滤管理)、ProducerManager(生产者管理)、SubscriptionGroupManager(订阅组管理)、FilterServerManager(服务端过滤管理)、BrokerStatsManager(broker状态管理) 服务类：PullMessageProcessor(拉取消息处理器)、PullRequestHoldService(拉取请求缓存服务)、ClientHousekeepingService(客户端长连接服务)、SlaveSynchronize(slave同步) 监听类：NotifyMessageArrivingListener(通知消息到达监听器)、DefaultConsumerIdsChangeListener(客户端id改变监听器) 工具类：Broker2Client、BrokerOuterAPI 线程队列类：发送线程、拉取线程、查询线程、客户端管理线程、消费者管理线程、心跳线程、事务线程 Broker的初始化和启动过程如下：
+初始化的步骤为：
+加载配置文件,由TopicConfigManager处理:存储每个topic的配置信息；ConsumerOffsetManager:缓存所有topic@group对应的queue的偏移量；SubscriptionGroupManager:存储每个group的配置信息；ConsumerFilterManager:Topic的过滤表达式信息 加载消息存储内容,由MessageStore处理 注册请求处理器，由NettyRequestProcesser处理，根据RequestCode，分发远程请求给对应的Processer，包括SendMessageProcessor、QueryMessageProcessor、ClientManageProcessor、ConsumerManageProcessor、AdminBrokerProcessor 每隔一天记录broker状态，BrokerStats会打印当天接受/处理的消息总数 每一段时间（默认5s）记录消费者消费的偏移量，ConsumerOffsetManager会将缓存topic下每个q对应的消费偏移量进行持久化存储为json 每10s记录消费者过滤情况，ConsumerFilterManager会将缓存topic的过滤表达式持久化存储为json 每3min“保护”broker，BrokerStatsManager会每秒/分钟/小时记录各字表的次数和消费消息的大小，如果记录的客户端消费失败字节数大于配置的参数，会将该topic设置为不可消费 每1s打印打印消息队列水位线，包括发送Queue数量、拉取Queue数量、查询Queue数量 每1分钟打印处理的消息量 同步namesrv地址列表，由BrokerOutterAPI处理，如果指定了namesrv地址，则使用该列表；否则从配置的网络路径上同步 (slave)每1min同步slave，SlaveSynchronize会通过BrokerOutterApi向master请求数据同步 (master)每1min打印slave比master落后的消息数，MessageStore会打印最大的消费偏移量-已经同步给slave的偏移量 初始化事务服务 启动步骤包括：
+启动消息存储服务MessageStore 启动Netty服务RemotingServer 启动文件监听服务FileWatchService，监听tls证书，在发生变化时重新加载 启动API服务BrokerOuterAPI 启动缓存pull请求处理服务PullRequestHoldService，对每个topic下的q的pull请求，定时再次执行 启动客户端连接服务ClientHouseKeepingService，每10s清除超时没有消息的客户端连接 启动服务端过滤服务FilterServerManager，每30s执行本地脚本 注册broker，后面每一段时间(不超过1分钟)注册broker，首次启动会向所有namesrv同步broker信息和所持有的topic信息，后面每隔一段时间同步一次 启动broker状态管理BrokerStatsManager 启动请求过期清理任务BrokerFastFailure，如果开启了快速失效的配置，会定时清理缓存中的过期请求 启动事务消息检查服务TransactionalMessageCheckService 下面将介绍其中几块内容。
+1. SendMessageProcessor 消息发送处理器，主要处理Producer发送的消息和Consumer的重试消息。
+1.1. 处理发送消息请求 主要过程为：
+解析请求头，得到SendMessageRequestHeader 构建上下文对象，SendMessageContext 执行前置hook，调用SendMessageHook的sendMessageBefore方法 执行核心处理逻辑，分为单消息和批量消息的处理，主要是先进行前置检查，如判断MesageStore是否已经启动、Queue是否正确等，然后将请求内容包装为Broker内部处理的形式，交由MessageStore处理放入CommitLog中。其中单消息包装为MessageExtBrokerInner、批量消息包装为MessageExtBatch 执行后置hook，调用SendMessageHook的sendMessageAfter方法 1.2. 处理Consumer的重试消息 在介绍Consumer消费消息过程时提到过，在Push模式下，如果消息消费失败，可以将消息重新返回Consumer实例的内存缓存队里中等待消费，也可以由Consumer模拟Producer角色，将消息发送到Broker，等待再次消费。
+主要过程为：
+解析请求头，得到ConsumerSendMsgBackRequestHeader 如果原消息Id不为空，执行消费后置hook，调用ConsumeMessageHook.consumeMessageAfter 检查前置判断条件，包括所在Group是否存在、是否有权限等 默认放到Retry重试队列中，分配新的topic，格式为 ``%RETRY%+Group```` 检查重试队列配置，包括重试队列配置是否为空、重置队列是否可写等 根据原消息的偏移量offset在CommitLog中查找原消息内容(MessageExt格式) 判断该消息的重试次数是否已经超过设定的最大值(默认16次)，如果是，则将放到DLQ死信队列中，将topic格式更新为``%DLQ%+Group```` 将原消息重新包装为MessageExtBrokerInner对象，并调用MessageStore放到CommitLog中 2. PullMessageProcessor 消息拉取处理器，在介绍消费者消费消息过程时提到过，RocketMQ内部都是通过Pull方式从Broker拉取消息的，Push模式是通过包装Pull方式，由RocketMQ定时发起，并自动处理offset、消息重试动作。
+PullMessageProcessor主要的工作是根据客户端提供的offset，从ConsumeQueue中获取到该topic-queueId在CommitLog中的起始位置，每次读取消息都会从ConsumeQueue中尽可能多的读取消息，并计算出客户端下次的offset,把结果返回。如果提供的offset过大，会将请求暂缓，在超时时间内或者ConsumeQueue的数据符合后，再次处理请求。
+具体的处理流程如下：
+上面过程比较清晰，大多是前置检查，主要看&quot;判断GetMessageResult&quot;的过程，如下：
+该过程主要是设置返回结果RemotingCommand的值，包括：]]></description>
+</item>
+<item>
+    <title>轻量级注册中心：RocketMQ NameServer</title>
+    <link>https://atuowgo.github.io/06-nameserver/</link>
+    <pubDate>Wed, 15 Apr 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/06-nameserver/</guid>
+    <description><![CDATA[NameServer实现比较简单，主要包括配置管理、路由管理两块。其主要功能是为整个MQ集群提供服务协调与治理，具体就是记录维护Topic、Broker的信息，及监控Broker的运行状态，为client提供路由能力。NameServer是一个几乎无状态节点，可集群部署，节点之间无任何信息同步。
+NameServer为生产者和消费者提供Meta数据，以确定消息该发往哪个Broker或者该从哪个Broker拉取消息。有了Meta数据后，生产者和消费者就可以直接和 Broker交互了。这种点对点的交互方式最大限度降低了消息传递的中间环节，缩短了链路耗时。
+1. 启动 NameServer的启动过程如下：
+加载本地的备份文件，载入k-v对，有KVConfigManager持有，格式如下 1 HashMap&lt;String/* Namespace */, HashMap&lt;String/* Key */, String/* Value */&gt;&gt; configTable = new HashMap&lt;String, HashMap&lt;String, String&gt;&gt;(); 在有值发生变化的时候就会执行一次持久化 2. 初始化NettyRemotingServer，传入BrokerHousekeepingService，会在客户端连接发生变化的时候进行路由管理的变更 3. 初始化线程池，用于NettyRemotingServer分发请求，详见上一节关于Netty的介绍 4. 注册请求处理器，NameServer的实现为DefaultRequestProcessor，提供了包括PUT_KV_CONFIG、GET_KV_CONFIG等管理功能的CRUD远程调用入口 5. 启动定时器，每5秒扫描超时的broker连接并移除 6. 启动定时器，每10分钟打印一次kv对信息
+2. 服务管理 NameServer的对外服务入口由DefaultRequestProcessor提供，主要包括配置管理和路由管理，分别由KVConfigManager和RouteInfoManager实现。
+2.1. KVConfigManager 比较简单，中规中矩的一个类，内部有一个configTable按照命名空间管理配置键值对，除了put和get操作外，还有持久化为json以及加载持久化文件的操作。
+2.2. RouteInfoManager RouteInfoManager主要用来管理Broker及Topic对应的路由信息，类关系如下：
+包括：
+Topic对应的Queue列表 Queue所在的Broker，以及Queue对应的属性 Broker对应的集群信息、集群中的实例地址信息 每个Broker实例对应的存活信息，包括最后更新时间、版本号、Netty io连接、HA地址 集群对应的Broker列表 主要用于管理Broker和Topic的路由信息。
+2.2.1. 注册Broker(registerBroker) 方法定义如下：
+1 2 3 4 5 6 7 8 9 public RegisterBrokerResult registerBroker( /*集群名*/final String clusterName, /*broker地址*/final String brokerAddr, /*broker名*/final String brokerName, /*brokerId*/final long brokerId, /*ha地址*/final String haServerAddr, /*broker上对应的topic配置项*/final TopicConfigSerializeWrapper topicConfigWrapper, /*需要过滤的server列表*/final List&lt;String&gt; filterServerList, /*broker对应的channel*/final Channel channel) 过程如下：]]></description>
+</item>
+<item>
+    <title>Netty-RocketMQ底层通信的利器</title>
+    <link>https://atuowgo.github.io/05-netty/</link>
+    <pubDate>Mon, 30 Mar 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/05-netty/</guid>
+    <description><![CDATA[这节介绍RocketMQ底层通信的原理
+在之前的内容中有介绍过RocketMQ底层用了Netty来进行通信，下图为RocketMQ通信的大致过程，主要分为Server端和Client端。
+客户端通过invokeSyncImpl、invokeAsyncImpl、invokeOnewayImpl这几个方法同服务端交互。
+1. NettyRemotingServer Server启动主要是初始化ServerBootstrap，主要配置如下：
+设置tcp的参数，包括SO_BACKLOG、SO_REUSEADDR、SO_KEEPALIVE、TCP_NODELAY等。 设置pipeline处理链，包括编码、解码、空闲处理、连接管理、请求分发。 启动完ServerBootstrap后会启动一个定时器，每3秒清除超时的请求。
+这里介绍下面几个处理器：
+NettyEncoder NettyDecoder NettyConnectManageHandler NettyServerHandler 1.1. NettyEncoder NettyEncoder继承自LengthFieldBasedFrameDecoder，主要有用于解码入站数据流，并将数据流解码为RemotingCommand对象。
+LengthFieldBasedFrameDecoder（自定义长度解码器）的构造器，涉及5个参数，都与长度域（数据包中的长度字段）相关，具体介绍如下：
+maxFrameLength：发送的数据包最大长度；
+lengthFieldOffset：长度域偏移量，指的是长度域位于整个数据包字节数组中的下标；
+lengthFieldLength：长度域的自己的字节数长度。
+lengthAdjustment：长度域的偏移量矫正。 如果长度域的值，除了包含有效数据域的长度外，还包含了其他域（如长度域自身）长度，那么，就需要进行矫正。矫正的值为：包长 - 长度域的值 – 长度域偏移 – 长度域长。
+initialBytesToStrip：丢弃的起始字节数。丢弃处于有效数据前面的字节数量。比如前面有4个节点的长度域，则它的值为4。
+以NettyEncoder为例，器构造构造方法为
+1 2 3 public NettyDecoder() { super(FRAME_MAX_LENGTH, 0, 4, 0, 4); } 即数据流中前4个字节的值表示有效数据域的长度，除开前4个字节外的内容都是有效数据域的内容，不存在偏移量。
+接收到数据域的内容后，便会调用RemotingCommand.decode方法，将数据流转为RemotingCommand对象。
+RemotingCommand对象分为Header部分和Body部分。Header部分包括固定的一组字段，已经长度不定的扩展字段；Body部分为byte[]，不进行具体的细分。
+数据域的解析过程同上面的类似，数据域中前4个自己为Header域的长度，取到Header长度后便能计算出Body长度，从而进行读取。RemotingCommand的内容如下：
+根据serializerType的不同，Header的编码会分为Json或者二进制的方式。
+1.2. NettyDecoder NettyEncoder的反过程，将RemotingCommand对象序列化为ByteBuffer对象。根据serializerType的不同，Header会编码为JSON或者二进制。
+1.3. NettyConnectManageHandler NettyConnectManageHandler继承自ChannelDuplexHandler，用于监听pipeline中入站/出站的事件，主要进行日志记录。
+1.4. NettyServerHandler NettyServerHandler继承自SimpleChannelInboundHandler，重写了channelRead0方法，在里面调用了父类NettyRemotingAbstract的processMessageReceived方法，如下：
+该方法定义了请求和响应的处理过程。
+1.processRequestCommand
+处理请求过程，先根据RemotingCommand中的code值判断当前请求是否能够处理，如果不能处理则直接响应不支持。如果可以支持，则会找到对应的处理器，新起线程来处理当前请求。需要说明的是，NettyRemotingServer内部维护这一个processorTable，表示该server可以处理的command，对应的Processor以及对应的线程池。
+1 2 protected final HashMap&lt;Integer/* request code */, Pair&lt;NettyRequestProcessor, ExecutorService&gt;&gt; processorTable = new HashMap&lt;Integer, Pair&lt;NettyRequestProcessor, ExecutorService&gt;&gt;(64); Processor的定义如下，对于具体的command，会由对应的Processor来处理]]></description>
+</item>
+<item>
+    <title>RocketMQ Consumer接收消息流程</title>
+    <link>https://atuowgo.github.io/04-consumer/</link>
+    <pubDate>Tue, 25 Feb 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/04-consumer/</guid>
+    <description><![CDATA[这节介绍Consumer接收消息的流程，分为Pull和Push模式。
+1. 初始化 上一节讲Rebalance时提到，Consumer接受客户端有两种方式：
+Broker发现客户端列表有变化，通知所有Consumer执行Rebalance Consumer定时没20秒自动执行Rebalance 其中1.的通知到达Consumer后，会立即触发Rebalance，然后会重置2.的定时器等待时间。二者最后通知Consumer的方式为
+Push模式：当有新的Queue分配给客户端时，会新包装一个PullRequest，用于后续自动拉取消息，具体到DefaultMQPushConsumerImpl的executePullRequestImmediately方法 Pull模式：回调DefaultMQPullConsumerImpl的MessageQueueListener有Queue发生改变 2. Push模式 executePullRequestImmediately的内容为：
+1 2 3 public void executePullRequestImmediately(final PullRequest pullRequest) { this.mQClientFactory.getPullMessageService().executePullRequestImmediately(pullRequest); } 即将PullRequest对象传给了PullMessageService的executePullRequestImmediately方法：
+1 2 3 4 5 6 7 public void executePullRequestImmediately(final PullRequest pullRequest) { try { this.pullRequestQueue.put(pullRequest); } catch (InterruptedException e) { log.error(&#34;executePullRequestImmediately pullRequestQueue.put&#34;, e); } } PullMessageService的结构如下：
+内部维护着一个LinkedBlockingQueue属性pullRequestQueue，用于存储待处理的PullRequest;还有一个ScheduledExecutorService，用于延期处理PullRequest。具体流程如下：
+RebalanceImpl调用DefaultMQPushConsumerImpl的executePullRequestImmediately方法，传入PullRequest DefaultMQPushConsumerImpl内部调用PullMessageService的executePullRequestImmediately方法，该方法会把传入的PullRequest对象放到LinkedBlockingQueue中进行存储，等待后续处理。 PullMessageService会循环从队列中出队一个PullRequest，并调用自身的pullMessage用于后续处理。该动作会从MQClientInstance中选择对应的客户端实例DefaultMQPushConsumerImpl，并委托给它的pullMessage方法。 DefaultMQPushConsumerImpl会先判断当前请求是否满足条件，如果不满足条件，会调用PullMessage的executePullRequestLater方法，将当前请求延后处理。如果满足条件，会封装一个PullCallback对象用于处理异步消息，并调用PullAPIWrapper异步请求Broker拉取消息。 从上面的过程可以看出，Push模式内部还是客户端主动去拉取的，即所谓的封装拉模式以实现推模式,简单示意图如下：
+内部通过PullMessageService循环的从PullRequest对应MessageQueue中主动拉取数据。
+2.1. DefaultMQPushConsumerImpl.pullMessage(PullRequest) 该方法用于完成从MessageQueue拉取消息的过程，主要过程如下：
+判断该MessageQueue对应的PullRequest是否已经标记为drop，如果是则直接返回
+进行一系列的检查，如果检查不通过，则等待一定时间后再放回PullMessageService的待处理队列中，主要是通过PullMessageService中的ScheduledExecutorService来做到延迟执行，涉及的情况包括：
+如果客户端未准备就绪(DefaultMQPushCOnsumerImpl执行start后status为RUNNING)，则延迟PULL_TIME_DELAY_MILLS_WHEN_EXCEPTION(3000)后再放回PullMessage的队列中 如果是暂停状态，则延迟PULL_TIME_DELAY_MILLS_WHEN_SUSPEND(1000)后再放回PullMessageService的等待队列中 如果缓存的消息数大于配置的拉取线程数阈值(默认1000)，则等待PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL(50)后再返回等待队列中处理 如果缓存的消息大小大于配置的拉取大小阈值(默认100M)，则等待PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL(50)后再返回等待队列中处理 缓存的数据offset相差的偏移量超过设定值(默认2000)，则等待PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL(50)后再返回等待队列中处理 如果没有订阅MessageQueue对应的topic，则等待PULL_TIME_DELAY_MILLS_WHEN_EXCEPTION(3000)后再返回队列中处理 包装PullCallback对象，并调用PullAPIWrapper发起异步请求拉取消息]]></description>
+</item>
+<item>
+    <title>RocketMQ RocketMQ Rebalance流程分析</title>
+    <link>https://atuowgo.github.io/03-rebalance/</link>
+    <pubDate>Sat, 22 Feb 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/03-rebalance/</guid>
+    <description><![CDATA[这节介绍Rebalance流程。在介绍Consumer消费消息流程前，先介绍Rebalance得流程，该过程涉及到Consumer的启动。
+之前介绍过，Topic是一个逻辑概念，Topic下可以划分多个Queue以增加Consumer消费的并行度。在一个Consumer Group内，Queue和Consumer之间的对应关系是一对多的关系：一个Queue最多只能分配给一个Consumer，一个Cosumer可以分配得到多个Queue，如下图
+而Rebalance是一种协议，规定了一个 Consumer Group 下的所有 consumer如何达成一致来分配Queue。当Consumer订阅的Topic发生变化，或者Consumer Group内的Consumer实例发送变化时便会触发Rebalance以重新分配每个实例对应的Queue。
+1.RebalanceService 前面介绍客户端启动流程时提到，MQClientInstance在start方法中会启动一系列后台任务，其中就包括Rebalance任务，主要调用了RebalanceService的start方法。RebalanceService继承自ServiceThread，start方法会启动一个后台线程，确保每隔一段时间（默认20秒）会调用一次MQClientInstance的doRebalance方法。如下图：
+MQClientInstance.doRebalance会调用MQConsumerInner.doRebalance。MQConsumerInner是DefaultMQPullConsumerImpl和DefaultMQPushConsumerImp的父接口，如下，即MQClientInstance将doRebalance方法交给了Consumer实例处理。
+接着Consumer实例会调用内部RebalnaceImpl的doRebalance方法完成真正的，动作。
+这里提一点，RebalanceService被MQClientInstane持有，一个MQClientInstance只有一个Rebalance实例，之前在讲客户端启动时提到，MQClientInstance由MQClientManager管理，跟本机ip,进程pid有关。RebalanceImpl跟Consumer实例相关，一个Consumer实例对应一个RebalanceImpl对象。
+2.RebalanceImpl 先介绍该类的基本情况
+1.属性
+1 2 3 4 5 6 7 8 9 10 11 12 13 protected final ConcurrentMapConcurrentMap&lt;/*Queue*/MessageQueue, /*Queue消费进度镜像*/ProcessQueue&gt; processQueueTable = new ConcurrentHashMap&lt;MessageQueue, ProcessQueue&gt;(64); //DefaultMQXxxxConsumerImpl updateTopicSubscribeInfo时添加 protected final ConcurrentMap&lt;String/* topic */, Set&lt;MessageQueue&gt;&gt; topicSubscribeInfoTable = new ConcurrentHashMap&lt;String, Set&lt;MessageQueue&gt;&gt;(); //DefaultMQXxxxConsumerImpl subscript时会添加 protected final ConcurrentMap&lt;String /* topic */, /*消息的过滤条件*/SubscriptionData&gt; subscriptionInner = new ConcurrentHashMap&lt;String, SubscriptionData&gt;(); protected String consumerGroup;//Consumer实例所在的ConsumerGroup protected MessageModel messageModel;//消息消费模式 protected AllocateMessageQueueStrategy allocateMessageQueueStrategy;//Queue分配策略，默认为AllocateMessageQueueAveragely 2.]]></description>
+</item>
+<item>
+    <title>RocketMQ Producer发送消息流程</title>
+    <link>https://atuowgo.github.io/02-producer/</link>
+    <pubDate>Wed, 05 Feb 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/02-producer/</guid>
+    <description><![CDATA[这节介绍Producer发送消息的流程。
+接上一节开头的Demo，发送消息的写法如下：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 public class SyncProducer { public static void main (String[] args) throws Exception { // 实例化消息生产者Producer DefaultMQProducer producer = new DefaultMQProducer (&#34;GroupTest&#34;); // 设置NameServer的地址 producer.setNamesrvAddr (&#34;localhost:9876&#34;); // 启动Producer实例 producer.start (); for (int i = 0; i &lt; 100; i++) { // 创建消息，并指定Topic，Tag和消息体 Message msg = new Message (&#34;TopicTest&#34; /* Topic */, &#34;TagA&#34; /* Tag */, (&#34;Hello RocketMQ &#34; + i).]]></description>
+</item>
+<item>
+    <title>RocketMQ客户端加载流程</title>
+    <link>https://atuowgo.github.io/01-client-start/</link>
+    <pubDate>Wed, 08 Jan 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/01-client-start/</guid>
+    <description><![CDATA[这节介绍RocketMQ客户端的启动流程，即Consumer和Producer的启动流程。
+1. 客户端demo 首先先看下客户端的demo
+Producer:
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 public class SyncProducer { public static void main (String[] args) throws Exception { // 实例化消息生产者Producer DefaultMQProducer producer = new DefaultMQProducer (&#34;GroupTest&#34;); // 设置NameServer的地址 producer.setNamesrvAddr (&#34;localhost:9876&#34;); // 启动Producer实例 producer.start (); for (int i = 0; i &lt; 100; i++) { // 创建消息，并指定Topic，Tag和消息体 Message msg = new Message (&#34;TopicTest&#34; /* Topic */, &#34;TagA&#34; /* Tag */, (&#34;Hello RocketMQ &#34; + i).]]></description>
+</item>
+<item>
+    <title>RocketMQ介绍</title>
+    <link>https://atuowgo.github.io/00-basic/</link>
+    <pubDate>Sat, 28 Dec 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/00-basic/</guid>
+    <description><![CDATA[ 消息队列是分布式系统中重要的组件，使用消息队列主要是为了通过异步处理提高系统性能和削峰、降低系统耦合性。Apache RocketMQ是由阿里巴巴开源的可支撑万亿级数据洪峰的分布式消息和流计算平台，于2016年捐赠给Apache Software Foundation，2017年9月25日成为Apache 顶级项目。由于其高稳定性、低延时、高吞吐量等特点，被大规模应用于金融、互联网、物流公司的核心交易支付、实时位置追踪、大数据分析等场景，同时也被电力、交通、汽车、零售等十几个行业的数万家企业广泛使用，是企业数字化转型的核心基础性软件。​
+网上对RocketMQ的介绍很多，还有中文开发者网站http://rocketmq.cloud/zh-cn/index.html，大家可以自行搜索。本章结合网上的各种介绍（内容均来自网上），只对相关的内容、概念进行说明，为后续文章做准备。
+工作中也比较多的接触RocketMQ，之前看过RocketMQ的源码，梳理过流程，但是没有输出文档。为此，这边将以RocketMQ 4.4.0版本为例，重新整理源码中相应的流程。
+1. 总体架构 如下为RocketMQ的总体架构：
+这里涉及到的角色包括：
+NameServer:NameServer是一个非常简单的Topic路由注册中心，其角色类似Dubbo中的zookeeper，支持Broker的动态注册与发现。主要包括两个功能： Broker管理，NameServer接受Broker集群的注册信息并且保存下来作为路由信息的基本数据。然后提供心跳检测机制，检查Broker是否还存活 路由信息管理，每个NameServer将保存关于Broker集群的整个路由信息和用于客户端查询的队列信息。然后Producer和Conumser通过NameServer就可以知道整个Broker集群的路由信息，从而进行消息的投递和消费。 NameServer通常也是集群的方式部署，各实例间相互不进行信息通讯。Broker是向每一台NameServer注册自己的路由信息，所以每一个NameServer实例上面都保存一份完整的路由信息。当某个NameServer因某种原因下线了，Broker仍然可以向其它NameServer同步其路由信息，Producer,Consumer仍然可以动态感知Broker的路由的信息。
+Broker:Broker主要负责消息的存储、投递和查询以及服务高可用保证。Broker部署相对复杂，Broker分为Master与Slave，一个Master可以对应多个Slave，但是一个Slave只能对应一个Master，Master与Slave 的对应关系通过指定相同的BrokerName，不同的BrokerId 来定义，BrokerId为0表示Master，非0表示Slave。Master也可以部署多个。每个Broker与NameServer集群中的所有节点建立长连接，定时注册Topic信息到所有NameServer。
+Producer:消息发布的角色，支持分布式集群方式部署。
+Producer通过MQ的负载均衡模块选择相应的Broker集群队列进行消息投递，投递的过程支持快速失败并且低延迟。
+Producer与NameServer集群中的其中一个节点（随机选择）建立长连接，定期从NameServer获取Topic路由信息，并向提供Topic 服务的Master建立长连接，且定时向Master发送心跳。Producer完全无状态，可集群部署。
+Producer Group:一类 Producer 的集合名称，这类 Producer 通常发送一类消息，且消费逻辑一致。
+Consumer:消息消费的角色，支持分布式集群方式部署。支持以push推，pull拉两种模式对消息进行消费。同时也支持集群方式和广播方式的消费，它提供实时消息订阅机制，可以满足大多数用户的需求。
+Consumer既可以从Master订阅消息，也可以从Slave订阅消息，消费者在向Master拉取消息时，Master服务器会根据拉取偏移量与最大偏移量的距离（判断是否读老消息，产生读I/O），以及从服务器是否可读等因素建议下一次是从Master还是Slave拉取。
+Consumer与NameServer集群中的其中一个节点（随机选择）建立长连接，定期从NameServer获取Topic路由信息，并向提供Topic服务的Master、Slave建立长连接，且定时向Master、Slave发送心跳。
+Consumer Group:一类 Consumer 的集合名称，这类 Consumer 通常消费一类消息，且消费逻辑一致。
+2. 工作流程 结合部署架构图，描述集群工作流程：
+启动NameServer，NameServer起来后监听端口，等待Broker、Producer、Consumer连上来，相当于一个路由控制中心。 Broker启动，跟所有的NameServer保持长连接，定时发送心跳包。心跳包中包含当前Broker信息(IP+端口等)以及存储所有Topic信息。注册成功后，NameServer集群中就有Topic跟Broker的映射关系。 收发消息前，先创建Topic，创建Topic时需要指定该Topic要存储在哪些Broker上，也可以在发送消息时自动创建Topic。 Producer发送消息，启动时先跟NameServer集群中的其中一台建立长连接，并从NameServer中获取当前发送的Topic存在哪些Broker上，轮询从队列列表中选择一个队列，然后与队列所在的Broker建立长连接从而向Broker发消息。 Consumer跟Producer类似，跟其中一台NameServer建立长连接，获取当前订阅Topic存在哪些Broker上，然后直接跟Broker建立连接通道，开始消费消息。 如下图示：
+Producer会向一些队列轮流发送消息，这些队列集合称为Topic。Consumer可以做广播消费，也可以做集群消费，如果做广播消费，则一个Consumer实例消费这个Topic对应的所有队列，如果做集群消费，则多个Consumer 实例平均消费这个Topic对应的队列集合。
+Topic是逻辑概念，对于RocketMQ，一个Topic可以分布在各个Broker上，把一个Topic分布在一个Broker上的子集定义为一个Topic分片，其实就是在某一broke上一个topic的部分数据
+对应上图，TopicA有3个Topic分片，分布在Broker1,Broker2和Broker3上，TopicB有2个Topic分片，分布在Broker1和Broker2上，TopicC有2个Topic分片，分布在Broker2和Broker3上。
+将Topic分片再切分为若干等分，其中的一份就是一个Queue（队列）。每个Topic分片等分的Queue的数量可以不同，由用户在创建Topic时指定。每个Topic分片等分的Queue的数量可以不同，由用户在创建Topic时指定, 是消费负载均衡过程中资源分配的基本单元。需要指出的是，在一个Consumer Group内，Queue和Consumer之间的对应关系是一对多的关系：一个Queue最多只能分配给一个Consumer，一个Cosumer可以分配得到多个Queue。这样的分配规则，每个Queue只有一个消费者，可以避免消费过程中的多线程处理和资源锁定，有效提高各Consumer消费的并行度和处理效率。即是负载均衡过程中资源分配的基本单元，同Kafaka相同。
+3. 消息 消息(Message)是系统所传输信息的物理载体，生产和消费数据的最小单位，每条消息必须属于一个Topic。RocketMQ中每个消息拥有唯一的Message ID，且可以携带具有业务标识的Key。系统提供了通过Message ID和Key查询消息的功能。
+可以为消息设置标志（Tag），用于同一Topic下区分不同类型的消息。来自同一业务单元的消息，可以根据不同业务目的在同一Topic下设置不同标签。标签能够有效地保持代码的清晰度和连贯性，并优化RocketMQ提供的查询系统。消费者可以根据Tag实现对不同子主题的不同消费逻辑，实现更好的扩展性。
+消息的消费可以分为集群消费和广播消费
+集群消费（Clustering）：集群消费模式下,相同Consumer Group的每个Consumer实例平均分摊消息。 广播消费（Broadcasting）：广播消费模式下，相同Consumer Group的每个Consumer实例都接收全量的消息。 ]]></description>
+</item>
+</channel>
+</rss>

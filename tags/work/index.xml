@@ -1,0 +1,145 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>日常记录 - 标签 - 程序猿二腊</title>
+        <link>https://atuowgo.github.io/tags/work/</link>
+        <description>日常记录 - 标签 - 程序猿二腊</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Mon, 09 Nov 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/work/" rel="self" type="application/rss+xml" /><item>
+    <title>MySQL InnoDB索引那点事儿</title>
+    <link>https://atuowgo.github.io/005-mysql-innodb/</link>
+    <pubDate>Mon, 09 Nov 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/005-mysql-innodb/</guid>
+    <description><![CDATA[总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头。
+1. B+树 我们知道InnoDB的索引是以B+树的形式组织的。B+树是一种树数据结构，是一个n叉树，每个节点通常有多个孩子，一颗B+树包含根节点、内部节点和叶子节点。
+下面是B+树的示例：
+B+树把所有的数据都存储在叶子节点中，内部节点只存放关键字和孩子指针，因此最大化了内部节点的分支因子，所以B+树的遍历也更加高效。
+B+树通常用于数据库和操作系统的文件系统中，其特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度。B+树适合作为数据库的基础结构，完全是因为计算机的内存-机械硬盘两层存储结构。内存可以完成快速的随机访问（随机访问即给出任意一个地址，要求返回这个地址存储的数据）但是容量较小。而硬盘的随机访问要经过机械动作（1磁头移动、2盘片转动），访问效率比内存低几个数量级，但是硬盘容量较大。典型的数据库容量大大超过可用内存大小，这就决定了在B+树中检索一条数据很可能要借助几次磁盘IO操作来完成。
+使用B+树作为索引结构有如下优势：
+1.B+树非叶子节点上是不存储数据的，仅存储键值**（聚集索引）**。
+之所以这么做是因为在数据库中页的大小是固定的，InnoDB中页的默认大小是 16KB。如果不存储数据，那么就会存储更多的键值，相应的树的阶数（节点的子节点树）就会更大，树就会更矮更胖，如此一来查找数据进行磁盘的 IO 次数又会再次减少，数据查询的效率也会更快。
+另外真实数据库中的B+树应该是非常扁平的，其阶数是等于键值的数量的，如果我们的B+树一个节点可以存储1000个键值，那么3层B+树可以存储1000×1000×1000=10亿个数据。一般根节点是常驻内存的，所以一般我们查找10亿数据，只需要2次磁盘IO。
+2.B+树索引的所有数据均存储在叶子节点，而且数据是按照顺序排列的。因而B+树使得范围查找，排序查找，分组查找以及去重查找变得异常简单。
+2.InnoDB页存储结构 2.1 存储结构 存储引擎中所有数据都被存储在表空间中，表又由Segment(段)、Extent(区)、Page(页)组成，如下为MySQL技术内幕中介绍的InnoDB逻辑存储结构：
+1.表空间：在默认情况下，InnoDB存储引擎有一个共享表空间 ibdata1，所有的数据都放在这个表空间内.如果启用了innodb_file_per_table参数，每张表的表空间只存放数据、索引和插入缓冲bitmap页，其他的数据如undo信息、插入缓冲、double write buffer等还是存放在共享表空间中。
+2.段：常见的段有数据段、索引段、回滚段等。数据段是B+树的叶子结点，索引段为B+树的非叶子结点
+3.区：区由连续页组成，每个区大小固定为1MB，为保证区中page的连续性通常InnoDB会一次从磁盘中申请4-5个区。在默认page的大小为16KB的情况下，一个区则由64个连续的page。
+4.页：页是InnoDB磁盘管理的最小单位也叫做块，默认大小为16kB。常见的页有数据页、undo页、系统页等。类型为B-tree Node的页存放的即是表中行的实际数据
+5.行：InnoDB存储引擎中数据是按行进行存放的，每个页中最多存放7992行记录
+2.2 页结构 Page是整个InnoDB存储的最基本构件，也是InnoDB磁盘管理的最小单位，与数据库相关的所有内容都存储在这种Page结构里。每个Page使用一个32位的int值来唯一标识，这也正好对应InnoDB最大64TB的存储容量（16Kib * 2^32 = 64Tib）。一个Page的结构如下所示：
+涉及的内容包括：
+页头(Page Header)：记录页面的控制信息，包括页的左右兄弟页面指针、页面空间使用情况等
+Infimum(最小虚记录)/Supremum(最大虚记录)：两个固定位置存储的虚记录，本身并不存储数据。最小虚记录比任何记录都小，而最大虚记录比任何记录都大。这两个用来代表开头结尾的Record存储在System Records的段里,这个System Records和User Records是两个平行的段。
+记录堆(Record Heap)：也称为User Records,以链表的形式存储一条条行记录，表示页面已分配的记录空间，也是索引数据的真正存储区域。记录堆分为两种，即有效记录(黄色)和已删除记录(紫色)。有效记录就是索引正常使用的记录，而已删除记录表示索引已经删除，不再使用的记录。随着记录的更新和删除越来越频繁，记录堆中已删除记录将会越多，即会出现越来越多的空洞（碎片）。这些已删除记录连接起来，就会成为页面的自由空间链表。
+未分配空间(Free Space)：指页面未使用的存储空间，随着页面不断使用，未分配空间将会越来越小。当新插入一条记录时，首先尝试从自由空间链表中获得合适的存储位置（空间足够），如果没有满足的，就会在未分配空间中申请。
+Slot区：也称为Page Directory，页中某些记录的相对位置，用于提升查询效率。slot是一些页面有效记录的指针，每个slot占两个字节，存储了记录相对页面首地址的偏移。如果页面有n条有效记录，那么slot的数量就在n/8+2~n/4+2之间，它是记录页面有序和二分查找的关键。
+页尾(Page Tailer)：页面最后部分，占8个字节，主要存储页面的校验信息。
+上面提到，页头里包含了唯一id，页的左右兄弟页面指针，从而可以将页抽象为如下结构：
+Page的头部保存了两个指针，分别指向前一个Page和后一个Page，根据这两个指针我们很容易想象出Page链接起来就是一个双向链表的结构。
+InnoDB的行数据和索引的存储都位于User Records，存在4种不同的Record，它们分别是：
+主键索引树非叶节点 主键索引树叶子节点 辅助键索引树非叶节点 辅助键索引树叶子节点 这4种节点的Record格式有一些差异，但是它们都存储着Next指针指向下一个Record。User Record在Page内以单链表的形式存在，最初数据是按照插入的先后顺序排列的，但是随着新数据的插入和旧数据的删除，数据物理顺序会变得混乱，但他们依然保持着逻辑上的先后顺序。
+将该结构扩展到多个页就有如下形式：
+根据最大最小虚记录将多个页内记录的顺序连接起来。
+2.3 页内查询 前面提到User Records中的记录是以单链表的形式存在，这样在插入一条记录时，只要修改前后两条记录的指针就行，这样就可以避免记录的移动同时保证了有序性。但是，带来的问题是，链表是无法在对数时间内使用二分查找，这样的设计会导致查询效率低下。为了高效的在一个页中查找指定的一条记录，InnoDB使用Page Directory提供了解决方案。
+InnoDB会将一个页中的所有记录划分成若干个组，每组4-8个记录。将每个组最后一个记录相对于第一个记录的地址偏移量（可以定位到真实数据记录）提取出来存放在页中一个叫做Page Directory的数组中，数组中的元素就是这些地址偏移量，也称为槽(slot)。]]></description>
+</item>
+<item>
+    <title>常见的分布式唯一ID方案</title>
+    <link>https://atuowgo.github.io/004-distrubte-id/</link>
+    <pubDate>Sun, 20 Sep 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/004-distrubte-id/</guid>
+    <description><![CDATA[最近看一个新系统，发现里面有很多场景用到唯一id，便搜罗了一下常见的方案。
+对于分布式id，需要满足下面的基本要求
+全局唯一 趋势递增 1. UUID UUID（Universally Unique Identifier）全局唯一标识符，定义为一个字符串主键，采用32位数字组成，编码采用16进制，定义了在时间和空间都完全惟一的系统信息。
+UUID的编码规则：
+1~8位采用系统时间，在系统时间上精确到毫秒级保证时间上的惟一性； 9~16位采用底层的IP地址，在服务器集群中的惟一性； 17~24位采用当前对象的HashCode值，在一个内部对象上的惟一性； 25~32位采用调用方法的一个随机数，在一个对象内的毫秒级的惟一性。 通过以上4种策略可以保证惟一性。在系统中需要用到随机数的地方都可以考虑采用UUID算法。
+UUID可能会是大家很快想到的，因为它现成，全球唯一，不需要中心协调器来控制唯一。主流语言中都会有内置现成的api直接生成。但却不推荐，因为它
+无序，没有自增趋势，作为主键插入效率低下（如MySql） 过长，浪费存储空间 无法存储业务逻辑，可读性差，当然如果你的id没有长度限制，可以通过拼接前缀/后缀来增加信息 2. 中心协调器类 可以引入中心协调器类，通过该系统自带的特性来完成id的生成和分配。
+2.1 数据库自增主键 Don&rsquo;t say so match，大家应该都用过，通过DB的auto_increment自增主键来控制id的唯一以及有序，使用简单。当然缺点也是明显的，依赖DB存在单点问题，当然可以通过主从模式来解决单点问题。
+网上还有有人介绍了自增主键的另一种模式，如下
+引入多实例，为每个实例设置初始值以及固定的步长来降低单点的风险，以及分摊DB压力。当然只是降低，单点问题还是存在的，同时还不容易扩容，也需要客户端做支持。对于趋势递增则需要ID服务来维持，它需要轮训访问后端的各个DB实例，以维持趋势递增的特性。
+2.2 Redis Redis提供了incr命令可以实现id的原子性自增，能够达到类似DB的auto_increment的效果。使用Redis需要注意持久化的问题，避免Redis重启后数据丢失导致id重复。
+2.3 ZooKeeper zookeeper自带生成顺序节点的功能，可以使用其生成顺序节点的编号来作为id。客户端创建完节点后，通过解析返回的节点名来获得当前分配的id。
+中心协调器类其实都差不多，将id的生成转到中心协调器上。
+3. 数据库号段 数据库号段的方式如下：
+涉及的表结构如下：
+type字段用来区分不同的业务，隔离不同业务之间的相互影响；max_id字段则表示当前业务类型已经分配的最大id值，下一次分配则从该值开始；step为步长；state用来做锁控制，这里用的是乐观锁，也可以不用该字段，改为行锁(select ... for update)。
+以bizType1为例，数据库中记录着bizType1的下一个id起始值3000，以及对应的步长1000。当应用启动后首次使用时，尝试去获取bizType1这条记录的锁，获取到锁的应用读取max_id和step的值，同步更新到内存，然后将max_id的值加上步长后更新回表中，这个值便是下一个id的起始值。当应用实例内存中的步长没有消耗完前，直接通过应用内部自己自增返回id，避免频繁请求DB。当应用消耗完后则再次访问DB同步更新max_id和step，反复循环下去。
+开头讲到的最近接触的新系统用的就是号段的方式来生成唯一id，但它不是用乐观锁的方式而是用行锁。测试环境给的步长比较小，刚好测试同学在做压测造数据的时候并发开的大，导致抢锁锁频繁抛异常了。当然如果使用乐观锁也会存在饥饿的情况，会导致一直获取不到锁而一直忙等。
+看完上面的过程，其实核心点在于有个第三方系统来提供锁和存储以及应用端的配合，所以其实不用DB也可以实现该功能。
+4. Snowflake雪花算法 相信大家都听过这个算法，都知道这个算法是由Twitter提出来的，既然大家都知道就不多说了，那大家也都看过下面这张图：
+该算法使用一个64 bit的整型数据，包括
+首位不用的1个bit(最高位是标识位，为1表示为负数，不使用) 41个bit的毫秒级时间(41位的长度可以使用69年)， 10个bit的工作机器id，包括5个bit的datacenterId和5个bit的workerId(10位的长度最多支持部署1024个节点） 12个bit的毫秒内的计数（12位的计数顺序号支持每个节点每毫秒产生4096个ID序号） 一共加起来刚好64位，为一个Long型。
+Snowflake算法核心把时间戳，工作机器id，序列号组合在一起。整体上按照时间自增排序，并且整个分布式系统内不会产生ID碰撞（由datacenter和机器ID作区分），并且效率较高，经测试，snowflake每秒能够产生26万id左右，完全满足需要。
+Snowflake算法中41个bit的时间戳完全依赖于时间的，如果有时钟回拨的情况发生，则会生成重复的id。时钟回拨涉及两种情况
+实例停机→时钟回拨→实例重启→计算ID
+实例运行中→时钟回拨→计算ID
+对于时间回拨，网上给出了很多处理方法，包括：
+如果发现有时钟回拨，时间很短比如5毫秒,就等待，然后再生成；或者就直接报错，交给业务层去处理 可以找2bit位作为时钟回拨位，发现有时钟回拨就将回拨位加1，达到最大位后再从0开始进行循环 实例启动后，改用内存生成时间，如百度开源的UidGenerator，该方式可以解决时钟回拨的第2种情况。对于时钟回拨的第1中情况，UidGenerator在实例启动后使用未分配过的工作机器id来解决，当然这样做就得管理工作机器id，因而需要一个外部存储，增加了复杂度。 ]]></description>
+</item>
+<item>
+    <title>Socks协议</title>
+    <link>https://atuowgo.github.io/003-socks/</link>
+    <pubDate>Sat, 29 Aug 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/003-socks/</guid>
+    <description><![CDATA[SOCKS：防火墙安全会话转换协议 （Socks: Protocol for sessions traversal across firewall securely） SOCKS协议提供一个框架，为在 TCP和UDP域中的客户机/服务器应用程序能更方便安全地使用网络防火墙所提供的服务。协议工作在OSI参考模型的第5层(会话层)，使用TCP协议传输数据，因而不提供如传递ICMP信息之类的网络层网关服务。
+当防火墙后的客户端要访问外部的服务器时，就跟SOCKS代理服务器连接。这个代理服务器控制客户端访问外网的资格，允许的话，就将客户端的请求发往外部的服务器。Socks不要求应用程序遵循特定的操作系统平台，Socks 代理与应用层代理、 HTTP 层代理不同，Socks代理只是简单地传递数据包，而不必关心是何种应用协议（比如FTP、HTTP和NNTP请求）。所以，Socks代理比其他应用层代理要快得多。它通常绑定在代理服务器的1080端口上。
+这个协议最初由David Koblas开发，而后由NEC的Ying-Da Lee将其扩展到SOCKS4。最新协议是 SOCKS5，与前一版本相比，增加支持UDP、验证，以及IPv6。
+1. Socks4 Socks4的建立过程如下：
+1.客户端先跟代理服务器建立socket连接
+2.客户端向代理服务器发送链接请求包，第一个包的格式为
+3.代理服务器收到第一个包后根据实际情况作出判断，并给客户端发送响应包，格式为：
+4.当代理服务器返回拒绝后则直接断开客户端链接；否则充当客户端与目的主机之间建立连接并进行双向传递，对客户端而言，就如同直接在与目的主机相连。
+2. Socks5 SOCKS5比SOCKS4a多了验证、IPv6、UDP支持。
+Socks5的建立过程如下：
+1.客户端先跟代理服务器建立socket连接
+2.客户端向代理服务器发送链接请求包，该包用来确认协议版本及认证方式，格式为：
+3.代理服务器从客户端提供的方法中选择一个认证方法并通过回包来通知客户端，格式为：
+当返回结果为OXFF(代理服务端无可接受认证方法)时，客户端需要关闭连接，流程结束。
+4.选定认证方法后，客户端和代理服务器需要根据选定的认证方式执行对应的认证。如果认证失败则中断链接。
+5.认证通过后，客户端则向代理服务器发起请求，第一个包格式为：
+6.代理服务器收到包后进行处理，作出判断后发送回包，回包格式为：
+7.当代理服务器返回拒绝后则直接断开客户端链接；否则充当客户端与目的主机之间建立连接并进行双向传递，对客户端而言，就如同直接在与目的主机相连。
+3. Jsocks github上实现socks协议的项目有很多，这里选jsocks()https://github.com/ravn/jsocks)来说明。顾名思义，jsock是用Java写的，项目本身实现了socks4和socks5协议。
+jsocks实现功能同上面大体相同，代码也比较简单，这边不做说明。这里只提一点jsocks里的认证方式，在源码的IdentAuthenticator类里。这个类没有使用用户名密码方式，也没有自定义认证协议，而是直接通过判断协议里的用户名跟客户端的发起方是否是同一个人来进行验证。
+实现上在验证方式上选择无需验证，然后为每个请求方的ip范围分配一个用户，只有对应用户才能继续往下走。jsocks通过访问客户端的113端口来判断发起方同配置中的用户是否一致，只有匹配的用户流程才能继续玩下走。113端口是一个许多计算机上运行的协议，用于鉴别TCP连接的用户。相当于把socks5原来的认证流程换为了代理服务器主动访问客户端进行验证。当验证通过后，jsocks这时候会持有客户端的socket(RemoteSocket)，并代替客户端向目标地址发起socket(OutSocket)连接，后面会循环把RemoteSocket的数据流写入到OutSocket里以完成数据的传输。
+4. 参考资料 https://zh.wikipedia.org/wiki/SOCKS]]></description>
+</item>
+<item>
+    <title>扩展阿里p3c实现自定义代码规范检查</title>
+    <link>https://atuowgo.github.io/002-p3c/</link>
+    <pubDate>Fri, 25 Oct 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/002-p3c/</guid>
+    <description><![CDATA[前段时间fastjson报出了漏洞，只要打开setAutoType特性就会存在风险，自己测试环境的一个项目被揪出来了-_-!。虽然改动很小，但就是觉得憋屈。fastjson还是挺好的，想着禁用的话太可惜，用的话又要注意安全，就想着找款工具提示下在用fastjson的时候不要打开这个特性。刚好阿里开源了p3c（https://github.com/alibaba/p3c），一款代码规范的检查工具，有对应的ide插件，能在编码过程中对设置的规则进行提示，便打算对它进行拓展，增加对fastjson检查是否打开setAutoType特性的检查。
+p3c主要包括3部分：
+PMD实现(p3c-pmd)：使用PMDhttps://pmd.github.io/来实现代码规范检查 Intellij IDEA插件 Eclipse插件 《阿里巴巴Java开发手册》中的大部分规则都是在p3c-pmd模块中实现的，该部分也是这节研究的主要部分。
+1. PMD p3c使用了PMD。PMD是一款静态代码扫描工具，该工具可以做到检查Java代码中是否含有未使用的变量、是否含有空的抓取块、是否含有不必要的对象等。PMD使用JavaCC生成解析器来解析源代码并生成AST(抽象语法树)，通过对AST的检查可以直接从源代码文本层面来对代码进行检查，在PMD内部称为规则。即是否符合规则指的是，穷举源码各种可能的写法，然后在AST上检查是否出现。而规则的实现，重点便在对AST的处理上。
+1.1. AST 关于AST的介绍网上有很多，可以直接搜索，这里重要提两点：
+AST是源代码的抽象语法结构的树状表示 抽象语法树并不依赖于原语言的语法，也就是说同语法分析阶段所采用的上下文无关 PMD使用JavaCC来生成AST。关于JavaCC也可以在网上查看相关资料，这里不多介绍，只要知道JavaCC是一个词法分析生成器和语法分析生成器便行。
+1.2. 自定义规则 PMD官方文档介绍了自定义规则的实现步骤，过程比较清晰，这里不赘述，只介绍下本文需要设计的步骤。
+1.2.1. 定义规则集 PMD的规则需要配置在XML文件中
+新建如下的空文件表示规则集
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 &lt;?xml version=&#34;1.0&#34;?&gt; &lt;ruleset name=&#34;Custom Rules&#34; xmlns=&#34;http://pmd.sourceforge.net/ruleset/2.0.0&#34; xmlns:xsi=&#34;http://www.w3.org/2001/XMLSchema-instance&#34; xsi:schemaLocation=&#34;http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd&#34;&gt; &lt;description&gt; My custom rules &lt;/description&gt; &lt;!-- Your rules will come here --&gt; &lt;/ruleset&gt; 在上面的ruleset 标签中引用自定义规则
+1 &lt;rule ref=&#34;pathToYourOwnClass&#34; /&gt; 配置规则集
+1.2.2. 配置规则 可以在 rule 标签中对某一规则进行配置]]></description>
+</item>
+<item>
+    <title>Java的EOF标识？</title>
+    <link>https://atuowgo.github.io/001-java-eof/</link>
+    <pubDate>Sat, 28 Sep 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/001-java-eof/</guid>
+    <description><![CDATA[这篇是关于JAVA中EOF标识的讲解，之前在工作上碰到过一个问题，有人问过，不能通过判断EOF来知道文件有没有读取完毕吗？其实，还真不能。
+直接从JDK接口文档入手，以FileInputStream为例，JDK接口文档给出了明确的说明：
+使用FileInputStream的read方法读取文件时，当返回-1就表明读到了文件末尾，如果期间出现IO异常，则会抛出一个IOException。而对于EOF文件结束符，其实是不存在的。在Linux系统之中，EOF根本不是一个字符，而是当系统读取到文件结尾，所返回的一个信号值，例如在C语言中，EOF是一个定义在头文件stdio.h的常量，一般等于-1。对于JAVA的实现，我们可以通过查看FileInputStream的源码查看，如下：
+其中read0为native方法，需要查看jvm源码。根据JVM源码定位进去，发现read0调用readSingle方法：
+源码看这FileInputStream.c（http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/5b86f66575b7/src/share/native/java/io/FileInputStream.c）
+而readSingle方法位于io_util.c中：
+搓这里io_util.c（http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/5b86f66575b7/src/share/native/java/io/io_util.c） 跟踪IO_Read方法，可以得到如下源码实现：
+源文件分别位于io_util_md.h(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.h)和io_util_md.c(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.c)
+所以，其实read方法最后还是调用了操作系统的read方法,该方法跟具体的操作系统相关，在linux下，有如下的说明 也就是，当使用read方法去读文件时，如果读到了文件末尾，没有字符返回时，则该方法返回0，如果出现异常，则返回-1.然后，JDK在readSingle方法里进行了包装，如果返回0，则在JDK层面返回-1，如果返回-1，则抛出IOException.因而，JAVA中没有EOF这个标识符，而是使用-1来标识文件结束。]]></description>
+</item>
+</channel>
+</rss>

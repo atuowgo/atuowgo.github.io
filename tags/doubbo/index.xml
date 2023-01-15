@@ -1,0 +1,58 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>doubbo - 标签 - 程序猿二腊</title>
+        <link>https://atuowgo.github.io/tags/doubbo/</link>
+        <description>doubbo - 标签 - 程序猿二腊</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/doubbo/" rel="self" type="application/rss+xml" /><item>
+    <title>Dubbo Provider启动都做了什么</title>
+    <link>https://atuowgo.github.io/03-provider/</link>
+    <pubDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/03-provider/</guid>
+    <description><![CDATA[这节介绍Provider的启动过程，既服务发布。
+先从Demo看起：
+1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } 上面Demo主要做了几件事
+新建一个ServiceConfig对象，既服务配置对象 为服务配置设置ApplicationConfig，既服务对应的项目配置 为服务配置设置RegistryConfig，既注册中心配置 指定服务关联的接口DemoService 指定服务关联的实现DemoServiceImpl 调用ServiceConfig的export方法暴露服务 这里重点关注export方法。
+在这之前先说下服务暴露的主要流程：一个应用(ApplicationConfig)包含很多服务，一个服务(ServiceConfig)需要服务提供者(ProviderConfig)通过某种协议(ProtocolConfig)将自身的信息注册到注册中心(RegistriesConfig)，这就是服务暴露主要做的事情。
+export方法主要围绕上面几个组件展开。
+1.设置默认配置 export会先检查当前环境是否准备就绪，主要是检查各组件配置，如ProviderConfig、ProtocolConfig、ApplicationConfig、ModuleConfig、RegistriesConfig、MonitorConfig等。对于某些为空的配置项则会使用默认值，如：
+创建ProviderConfig，设置prefix，如果有传则使用原值，没有则新建一个ProviderConfig，并设置prefix为dubbo.provider 创建ProtocolConfig，设置prefix，如果有则使用原值，如果没有设置则新建一个ProtocolConfig，使用默认协议dubbo,并设置prefix为dubbo.protocol. 以上各配置项都继承自AbstractConfig
+各配置的实例对象会托管到ConfigMananger，同时被ServiceConfig引用。各实例初始化后的主要值如下：
+PS:当id为空时，会设置默认值为default。
+2.暴露服务 ServiceConfig准备完配置后就开始进行服务的暴露，主要内容为doExportUrls方法。
+该方法分为两个过程：
+加载所有的注册中心配置RegistriesConfig 遍历所有的协议配置ProtocolConfig，使用各种协议将服务本身注册到所有的注册中心 2.1 加载注册中心配置 加载ServiceConfig指定的所有注册中心配置对象，并以URL的形式返回。需要提及的一点时，Dubbo中为了增加统一的拦截处理，会把URL的协议改为registry，等拦截处理完后再修改回来。
+如开头例子的URL会从
+1 zookeeper://127.]]></description>
+</item>
+<item>
+    <title>Dubbo自适应扩展机制</title>
+    <link>https://atuowgo.github.io/02-extend/</link>
+    <pubDate>Mon, 07 Sep 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/02-extend/</guid>
+    <description><![CDATA[上一节提到过，Dubbo里除了Service和Config层为API，其它各层均为SPI。相比于Java中的SPI仅仅通过接口类名获取所有实现，Dubbo的实现可以通过接口类名和key值来获取一个具体的实现。通过SPI机制，Dubbo实现了面向插件编程，只定义了模块的接口，实现由各插件来完成。
+1. 使用方式 1.1 Java SPI 在扩展类的jar包内，放置扩展点配置文件META-INF/service/接口全限定名，内容为：扩展实现类全限定名，多个实现类用换行符分隔。
+如下为Mysql中Driver接口的实现：
+1 2 3 4 5 6 7 package com.mysql.jdbc; import java.sql.SQLException; public class Driver extends NonRegisteringDriver implements java.sql.Driver { ... } 调用时使用ServiceLoader加载所有的实现并通过循环来找到目标实现类
+1 2 3 4 5 6 7 8 9 ServiceLoader&lt;Driver&gt; loadedDrivers = ServiceLoader.load(Driver.class); Iterator&lt;Driver&gt; driversIterator = loadedDrivers.iterator(); try{ while(driversIterator.hasNext()) { driversIterator.next(); } } catch(Throwable t) { // Do nothing } 1.2 Dubbo SPI 拿Dubbo中Protocol接口来说，Protocol的定义如下：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 package org.]]></description>
+</item>
+<item>
+    <title>Dubbo简介</title>
+    <link>https://atuowgo.github.io/01-introduce/</link>
+    <pubDate>Sun, 30 Aug 2020 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/01-introduce/</guid>
+    <description><![CDATA[这篇是开门贴，内容来自网上。
+Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。(来自百度百科)
+1. 整体架构 Dubbo的整体架构如下：
+涉及到的组件包括：
+Provider：暴露服务的服务提供方 Consumer：调用远程服务的服务消费方 Registry：服务注册与发现的注册中心 Monitor：统计服务的调用次数和调用时间的监控中心 Container：服务运行容器 调用流程为：
+服务容器负责启动，加载，运行服务提供者。服务提供者在启动时，向注册中心注册自己提供的服务。服务消费者在启动时，向注册中心订阅自己所需的服务。注册中心返回服务提供者地址列表给消费者，如果有变更，注册中心将基于长连接推送变更数据给消费者。服务消费者，从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心。(上面内容来自Dubbo官方文档)
+2. 使用demo 2.1 Api方式 纯Api方式调用模式如下：
+Provider：
+1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } Consumer：]]></description>
+</item>
+</channel>
+</rss>

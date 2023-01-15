@@ -1,0 +1,57 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>分布式 - 标签 - 程序猿二腊</title>
+        <link>https://atuowgo.github.io/tags/distrubute/</link>
+        <description>分布式 - 标签 - 程序猿二腊</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Fri, 27 Sep 2019 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/distrubute/" rel="self" type="application/rss+xml" /><item>
+    <title>分布式一致性协议</title>
+    <link>https://atuowgo.github.io/000-distrubte-protocol/</link>
+    <pubDate>Fri, 27 Sep 2019 00:00:00 &#43;0000</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/000-distrubte-protocol/</guid>
+    <description><![CDATA[介绍常见的分布式一致性协议
+一．CAP/BASE 1. CAP理论 CAP理论又称之为布鲁尔定理（Brewer’S theorem），认为在设计一个大规模可扩放的网络服务时候不能同时兼容：一致性（consistency）、可用性（Availability）、分区容错（Partition-tolerance）。
+一致性：在分布式系统中的所有数据备份，在同一时刻是否有同样的值。（等同于所有节点访问同一份最新的数据副本）
+可用性：在集群中一部分节点故障后，集群整体是否还能响应客户端的读写请求。
+分区容忍性：以实际效果而言，分区相当于对通信的时限要求。系统如果不能在时限内达成数据一致性，就意味着发生了分区的情况，必须就当前操作在C和A之间做出选择
+CAP理论容易理解，网上也有关于该理论的说明，包括模型的简易证明；弱条件下模型的成立等。
+参考资料：
+http://www.cnblogs.com/mmjx/archive/2011/12/19/2290540.html
+http://nathanmarz.com/blog/how-to-beat-the-cap-theorem.html
+2. BASE理论 BASE是Basically Available（基本可用）、Soft state（软状态）和Eventually consistent（最终一致性）三个短语的简写，BASE是对CAP中一致性和可用性权衡的结果，其来源于对大规模互联网系统分布式实践的结论，是基于CAP定理逐步演化而来的，其核心思想是即使无法做到强一致性（Strong consistency），但每个应用都可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性（Eventual consistency）
+基本可用：分布式系统在出现故障的时候，允许损失部分可用性，即保证核心可用。
+软状态：允许系统存在中间状态，而该中间状态不会影响系统整体可用性
+最终一致性：系统中的所有数据副本经过一定时间后，最终能够达到一致的状态
+二．两阶段提交 两阶段提交(Two-phaseCommit)是指，在计算机网络以及数据库领域内，为了使基于分布式系统架构下的所有节点在进行事务提交时保持一致性而设计的一种算法。
+在分布式系统中，每个节点虽然可以知晓自己的操作时成功或者失败，却无法知道其他节点的操作的成功或失败。当一个事务跨越多个节点时，为了保持事务的ACID特性，需要引入一个作为协调者的组件来统一掌控所有节点(称作参与者)的操作结果并最终指示这些节点是否要把操作结果进行真正的提交。
+如上图示，该协议分为两个阶段：
+请求阶段（commit-request phase，或称表决阶段，voting phase）
+在请求阶段，协调者将通知事务参与者准备提交或取消事务，然后进入表决过程。在表决过程中，参与者将告知协调者自己的决策：同意（事务参与者本地作业执行成功）或取消（本地作业执行故障）。
+提交阶段（commit phase）
+在该阶段，协调者将基于第一个阶段的投票结果进行决策：提交或取消。当且仅当所有的参与者同意提交事务协调者才通知所有的参与者提交事务，否则协调者将通知所有的参与者取消事务。参与者在接收到协调者发来的消息后将执行相应的操作。
+二阶段提交算法的最大缺点就在于它在执行过程中间，节点都处于阻塞态。即节点之间在等待对方的响应消息时，它将什么也做不了。特别是，当一个节点在已经占有了某项资源的情况下，为了等待其他节点的响应消息而陷入阻塞状态时，当第三个节点尝试访问该节点占有的资源时，这个节点也将连带陷入阻塞状态。
+另外，协调者节点指示参与者节点进行提交等操作时，如有参与者节点出现了崩溃等情况而导致协调者始终无法获取所有参与者的响应信息，这时协调者将只能依赖协调者自身的超时机制来生效。但往往超时机制生效时，协调者都会指示参与者进行回滚操作。这样的策略显得比较保守。
+参考资料
+https://en.wikipedia.org/wiki/Two-phase_commit_protocol 三．三阶段提交 与两阶段提交不同的是，三阶段提交是“非阻塞”协议。三阶段提交在两阶段提交的第一阶段与第二阶段之间插入了一个准备阶段，同时对于协调者和参与者都设置了超时机制，使得原先在两阶段提交中，参与者在投票之后，由于协调者发生崩溃或错误，而导致参与者处于无法知晓是否提交或者中止的“不确定状态”所产生的可能相当长的延时的问题得以解决。
+如上图示，该协议分为三个阶段：
+canCommit 协调者向参与者发送commit请求，参与者如果可以提交就返回Yes响应，否则返回No响应。
+preCommit
+协调者根据参与者的反应情况来决定是否可以进行事务的PreCommit操作。根据响应情况，有以下两种可能.
+假如协调者从所有的参与者获得的反馈都是Yes响应，那么就会执行事务的预执行。 发送预提交请求,Coordinator向Cohort发送PreCommit请求，并进入Prepared阶段。
+事务预提交,Cohort接收到PreCommit请求后，会执行事务操作，并将undo和redo信息记录到事务日志中。
+响应反馈,如果Cohort成功的执行了事务操作，则返回ACK响应，同时开始等待最终指令。
+假如有任何一个参与者向协调者发送了No响应，或者等待超时之后，协调者都没有接到参与者的响应，那么就执行事务的中断。 发送中断请求,Coordinator向所有Cohort发送abort请求。
+中断事务,Cohort收到来自Coordinator的abort请求之后（或超时之后，仍未收到Cohort的请求），执行事务的中断。
+doCommit
+该阶段进行真正的事务提交，也可以分为以下两种情况:
+执行提交 A.发送提交请求。Coordinator接收到Cohort发送的ACK响应，那么他将从预提交状态进入到提交状态。并向所有Cohort发送doCommit请求。
+B.事务提交。Cohort接收到doCommit请求之后，执行正式的事务提交。并在完成事务提交之后释放所有事务资源。
+C.响应反馈。事务提交完之后，向Coordinator发送ACK响应。
+D.完成事务。Coordinator接收到所有Cohort的ACK响应之后，完成事务。
+中断事务 协调者没有接收到参与者发送的ACK响应（可能是接受者发送的不是ACK响应，也可能响应超时），那么就会执行中断事务。 参考资料：
+https://en.wikipedia.org/wiki/Three-phase_commit_protocol
+https://my.oschina.net/wangzhenchao/blog/736909
+四. Paxos 1.背景 在常见的分布式系统中，总会发生诸如机器宕机或网络异常等情况。Paxos算法需要解决的问题就是如何在一个可能发生上述异常的分布式系统中，快速且正确地在集群内部对某个数据的值达成一致，并且保证不论发生以上任何异常，都不会破坏整个系统的一致性。这里某个数据的值并不只是狭义上的某个数，它可以是一条日志，也可以是一条命令（command）等，根据应用场景不同，某个数据的值有不同的含义。]]></description>
+</item>
+</channel>
+</rss>

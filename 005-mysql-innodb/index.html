@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>MySQL InnoDB索引那点事儿 - 程序猿二腊</title><meta name="Description" content="总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头"><meta property="og:title" content="MySQL InnoDB索引那点事儿" />
+<meta property="og:description" content="总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/005-mysql-innodb/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-11-09T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-11-09T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="MySQL InnoDB索引那点事儿"/>
+<meta name="twitter:description" content="总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/005-mysql-innodb/" /><link rel="prev" href="https://atuowgo.github.io/004-distrubte-id/" /><link rel="next" href="https://atuowgo.github.io/03-provider/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "MySQL InnoDB索引那点事儿",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/005-mysql-innodb\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "work","wordcount":  119 ,
+        "url": "https:\/\/atuowgo.github.io\/005-mysql-innodb\/","datePublished": "2020-11-09T00:00:00+00:00","dateModified": "2020-11-09T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">MySQL InnoDB索引那点事儿</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2020-11-09">2020-11-09</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 119 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;<span id="/005-mysql-innodb/" class="leancloud_visitors" data-flag-title="MySQL InnoDB索引那点事儿">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-b树">1. B+树</a></li>
+            <li><a href="#2innodb页存储结构">2.InnoDB页存储结构</a></li>
+            <li><a href="#21-存储结构">2.1 存储结构</a></li>
+            <li><a href="#22-页结构">2.2 页结构</a></li>
+            <li><a href="#23-页内查询">2.3 页内查询</a></li>
+            <li><a href="#3-索引结构">3. 索引结构</a></li>
+            <li><a href="#31-聚簇索引">3.1. 聚簇索引</a></li>
+            <li><a href="#32-非聚簇索引">3.2 非聚簇索引</a></li>
+            <li><a href="#33-联合索引">3.3 联合索引</a></li>
+            <li><a href="#4-innodb内存管理">4. InnoDB内存管理</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p>总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头。</p>
+<h4 id="1-b树">1. B+树</h4>
+<p>我们知道InnoDB的索引是以B+树的形式组织的。B+树是一种树数据结构，是一个n叉树，每个节点通常有多个孩子，一颗B+树包含根节点、内部节点和叶子节点。</p>
+<p>下面是B+树的示例：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/B&#43;%E6%A0%91.png"
+        data-srcset="/005-mysql-innodb/B&#43;%E6%A0%91.png, /005-mysql-innodb/B&#43;%E6%A0%91.png 1.5x, /005-mysql-innodb/B&#43;%E6%A0%91.png 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/B&#43;%E6%A0%91.png"
+        title="/005-mysql-innodb/B&#43;%E6%A0%91.png" width="1416" height="314" /></p>
+<p>B+树把所有的数据都存储在叶子节点中，内部节点只存放关键字和孩子指针，因此最大化了内部节点的分支因子，所以B+树的遍历也更加高效。</p>
+<p>B+树通常用于数据库和操作系统的文件系统中，其特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度。B+树适合作为数据库的基础结构，完全是因为计算机的内存-机械硬盘两层存储结构。内存可以完成快速的随机访问（随机访问即给出任意一个地址，要求返回这个地址存储的数据）但是容量较小。而硬盘的随机访问要经过机械动作（1磁头移动、2盘片转动），访问效率比内存低几个数量级，但是硬盘容量较大。典型的数据库容量大大超过可用内存大小，这就决定了在B+树中检索一条数据很可能要借助几次磁盘IO操作来完成。</p>
+<p>使用B+树作为索引结构有如下优势：</p>
+<p>1.B+树非叶子节点上是不存储数据的，仅存储键值**（聚集索引）**。</p>
+<p>之所以这么做是因为在数据库中页的大小是固定的，InnoDB中页的默认大小是 16KB。如果不存储数据，那么就会存储更多的键值，相应的树的阶数（节点的子节点树）就会更大，树就会更矮更胖，如此一来查找数据进行磁盘的 IO 次数又会再次减少，数据查询的效率也会更快。</p>
+<p>另外真实数据库中的B+树应该是非常扁平的，其阶数是等于键值的数量的，如果我们的B+树一个节点可以存储1000个键值，那么3层B+树可以存储1000×1000×1000=10亿个数据。一般根节点是常驻内存的，所以一般我们查找10亿数据，只需要2次磁盘IO。</p>
+<p>2.B+树索引的所有数据均存储在叶子节点，而且数据是按照顺序排列的。因而B+树使得范围查找，排序查找，分组查找以及去重查找变得异常简单。</p>
+<h4 id="2innodb页存储结构">2.InnoDB页存储结构</h4>
+<h4 id="21-存储结构">2.1 存储结构</h4>
+<p>存储引擎中所有数据都被存储在表空间中，表又由Segment(段)、Extent(区)、Page(页)组成，如下为MySQL技术内幕中介绍的InnoDB逻辑存储结构：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/InnoDB%E9%80%BB%E8%BE%91%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png"
+        data-srcset="/005-mysql-innodb/InnoDB%E9%80%BB%E8%BE%91%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png, /005-mysql-innodb/InnoDB%E9%80%BB%E8%BE%91%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png 1.5x, /005-mysql-innodb/InnoDB%E9%80%BB%E8%BE%91%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/InnoDB%E9%80%BB%E8%BE%91%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png"
+        title="/005-mysql-innodb/InnoDB%E9%80%BB%E8%BE%91%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png" width="650" height="454" /></p>
+<p>1.表空间：在默认情况下，InnoDB存储引擎有一个共享表空间 ibdata1，所有的数据都放在这个表空间内.如果启用了innodb_file_per_table参数，每张表的表空间只存放数据、索引和插入缓冲bitmap页，其他的数据如undo信息、插入缓冲、double write buffer等还是存放在共享表空间中。</p>
+<p>2.段：常见的段有数据段、索引段、回滚段等。数据段是B+树的叶子结点，索引段为B+树的非叶子结点</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/B&#43;%E6%A0%912.jpg"
+        data-srcset="/005-mysql-innodb/B&#43;%E6%A0%912.jpg, /005-mysql-innodb/B&#43;%E6%A0%912.jpg 1.5x, /005-mysql-innodb/B&#43;%E6%A0%912.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/B&#43;%E6%A0%912.jpg"
+        title="/005-mysql-innodb/B&#43;%E6%A0%912.jpg" width="1461" height="374" /></p>
+<p>3.区：区由连续页组成，每个区大小固定为1MB，为保证区中page的连续性通常InnoDB会一次从磁盘中申请4-5个区。在默认page的大小为16KB的情况下，一个区则由64个连续的page。</p>
+<p>4.页：页是InnoDB磁盘管理的最小单位也叫做块，默认大小为16kB。常见的页有数据页、undo页、系统页等。类型为B-tree Node的页存放的即是表中行的实际数据</p>
+<p>5.行：InnoDB存储引擎中数据是按行进行存放的，每个页中最多存放7992行记录</p>
+<h4 id="22-页结构">2.2 页结构</h4>
+<p>Page是整个InnoDB存储的最基本构件，也是InnoDB磁盘管理的最小单位，与数据库相关的所有内容都存储在这种Page结构里。每个Page使用一个32位的int值来唯一标识，这也正好对应InnoDB最大64TB的存储容量（16Kib * 2^32 = 64Tib）。一个Page的结构如下所示：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/page.jpg"
+        data-srcset="/005-mysql-innodb/page.jpg, /005-mysql-innodb/page.jpg 1.5x, /005-mysql-innodb/page.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/page.jpg"
+        title="/005-mysql-innodb/page.jpg" width="648" height="292" /></p>
+<p>涉及的内容包括：</p>
+<ol>
+<li>
+<p>页头(Page Header)：记录页面的控制信息，包括页的左右兄弟页面指针、页面空间使用情况等</p>
+</li>
+<li>
+<p>Infimum(最小虚记录)/Supremum(最大虚记录)：两个固定位置存储的虚记录，本身并不存储数据。最小虚记录比任何记录都小，而最大虚记录比任何记录都大。这两个用来代表开头结尾的Record存储在System Records的段里,这个System Records和User Records是两个平行的段。</p>
+</li>
+<li>
+<p>记录堆(Record Heap)：也称为User Records,以链表的形式存储一条条行记录，表示页面已分配的记录空间，也是索引数据的真正存储区域。记录堆分为两种，即有效记录(黄色)和已删除记录(紫色)。有效记录就是索引正常使用的记录，而已删除记录表示索引已经删除，不再使用的记录。随着记录的更新和删除越来越频繁，记录堆中已删除记录将会越多，即会出现越来越多的空洞（碎片）。这些已删除记录连接起来，就会成为页面的自由空间链表。</p>
+</li>
+<li>
+<p>未分配空间(Free Space)：指页面未使用的存储空间，随着页面不断使用，未分配空间将会越来越小。当新插入一条记录时，首先尝试从自由空间链表中获得合适的存储位置（空间足够），如果没有满足的，就会在未分配空间中申请。</p>
+</li>
+<li>
+<p>Slot区：也称为Page Directory，页中某些记录的相对位置，用于提升查询效率。slot是一些页面有效记录的指针，每个slot占两个字节，存储了记录相对页面首地址的偏移。如果页面有n条有效记录，那么slot的数量就在n/8+2~n/4+2之间，它是记录页面有序和二分查找的关键。</p>
+</li>
+<li>
+<p>页尾(Page Tailer)：页面最后部分，占8个字节，主要存储页面的校验信息。</p>
+</li>
+</ol>
+<p>上面提到，页头里包含了唯一id，页的左右兄弟页面指针，从而可以将页抽象为如下结构：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/simplePage.jpg"
+        data-srcset="/005-mysql-innodb/simplePage.jpg, /005-mysql-innodb/simplePage.jpg 1.5x, /005-mysql-innodb/simplePage.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/simplePage.jpg"
+        title="/005-mysql-innodb/simplePage.jpg" width="396" height="139" /></p>
+<p>Page的头部保存了两个指针，分别指向前一个Page和后一个Page，根据这两个指针我们很容易想象出Page链接起来就是一个双向链表的结构。</p>
+<p>InnoDB的行数据和索引的存储都位于User Records，存在4种不同的Record，它们分别是：</p>
+<ol>
+<li>主键索引树非叶节点</li>
+<li>主键索引树叶子节点</li>
+<li>辅助键索引树非叶节点</li>
+<li>辅助键索引树叶子节点</li>
+</ol>
+<p>这4种节点的Record格式有一些差异，但是它们都存储着Next指针指向下一个Record。User Record在Page内以单链表的形式存在，最初数据是按照插入的先后顺序排列的，但是随着新数据的插入和旧数据的删除，数据物理顺序会变得混乱，但他们依然保持着逻辑上的先后顺序。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/pageRecords.jpg"
+        data-srcset="/005-mysql-innodb/pageRecords.jpg, /005-mysql-innodb/pageRecords.jpg 1.5x, /005-mysql-innodb/pageRecords.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/pageRecords.jpg"
+        title="/005-mysql-innodb/pageRecords.jpg" width="396" height="312" /></p>
+<p>将该结构扩展到多个页就有如下形式：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/multiPage.jpg"
+        data-srcset="/005-mysql-innodb/multiPage.jpg, /005-mysql-innodb/multiPage.jpg 1.5x, /005-mysql-innodb/multiPage.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/multiPage.jpg"
+        title="/005-mysql-innodb/multiPage.jpg" width="674" height="180" /></p>
+<p>根据最大最小虚记录将多个页内记录的顺序连接起来。</p>
+<h4 id="23-页内查询">2.3 页内查询</h4>
+<p>前面提到User Records中的记录是以单链表的形式存在，这样在插入一条记录时，只要修改前后两条记录的指针就行，这样就可以避免记录的移动同时保证了有序性。但是，带来的问题是，链表是无法在对数时间内使用二分查找，这样的设计会导致查询效率低下。为了高效的在一个页中查找指定的一条记录，InnoDB使用Page Directory提供了解决方案。</p>
+<p>InnoDB会将一个页中的所有记录划分成若干个组，每组4-8个记录。将每个组最后一个记录相对于第一个记录的地址偏移量（可以定位到真实数据记录）提取出来存放在页中一个叫做Page Directory的数组中，数组中的元素就是这些地址偏移量，也称为槽(slot)。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/pageSearch.jpg"
+        data-srcset="/005-mysql-innodb/pageSearch.jpg, /005-mysql-innodb/pageSearch.jpg 1.5x, /005-mysql-innodb/pageSearch.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/pageSearch.jpg"
+        title="/005-mysql-innodb/pageSearch.jpg" width="453" height="302" /></p>
+<p>所以在一个页中根据主键查找记录是很快的，步骤为：</p>
+<ol>
+<li>二分法确定该记录所在的槽，并找到该槽所在分组中主键值最小的那条记录。</li>
+<li>通过next_record属性遍历单链表找到记录</li>
+</ol>
+<p>对于插入操作，首先通过查询的方式确定插入的位置，在自由空间链表或未分配空间中获得空间并写记录内容，slot所指向的链高度加1，同时维护好原链表的关系。</p>
+<p>插入记录后，如果Slot支链高度超过8，那么就将该支链拆分为两个子链，同时多申请一个slot（平移此slot及其后面的空间）。</p>
+<h4 id="3-索引结构">3. 索引结构</h4>
+<p>MySql提供了两种索引存储方式，一种叫做聚簇索引，一种叫做非聚簇索引。</p>
+<h4 id="31-聚簇索引">3.1. 聚簇索引</h4>
+<p>行数据和主键B+树存储在一起，辅助键B+树只存储辅助键和主键，主键和非主键B+树几乎是两种类型的树。InnoDB使用的是聚簇索引，将主键组织到一棵B+树中，而行数据就储存在叶子节点上。</p>
+<p>考虑如下的数据：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/table.jpg"
+        data-srcset="/005-mysql-innodb/table.jpg, /005-mysql-innodb/table.jpg 1.5x, /005-mysql-innodb/table.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/table.jpg"
+        title="/005-mysql-innodb/table.jpg" width="266" height="144" /></p>
+<p>其中Id作为主索引，Name作为辅助索引，则聚集索引的结构如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/clusterIndex.jpg"
+        data-srcset="/005-mysql-innodb/clusterIndex.jpg, /005-mysql-innodb/clusterIndex.jpg 1.5x, /005-mysql-innodb/clusterIndex.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/clusterIndex.jpg"
+        title="/005-mysql-innodb/clusterIndex.jpg" width="589" height="459" /></p>
+<p>当通过主键索引查找数据时，会连带返回对应的记录。当通过辅助键查找数据时，根据索引找到叶子节点中的主键值，根据主键值再到聚簇索引中得到完整的一行记录，该行为也即我们常说的回表。需要说明一点的是，对于联合主键，当存在辅助索引时，辅助索引也会保留联合主键的多个字段，从而影响到索引文件的大小。</p>
+<p>下面以开头的B+树为例，再结合Page结构，展示其内部组织方式（只展示其中一部分）：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/pageIndex.jpg"
+        data-srcset="/005-mysql-innodb/pageIndex.jpg, /005-mysql-innodb/pageIndex.jpg 1.5x, /005-mysql-innodb/pageIndex.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/pageIndex.jpg"
+        title="/005-mysql-innodb/pageIndex.jpg" width="1015" height="538" /></p>
+<p>注意Page和B+树节点之间并没有一一对应的关系，Page只是作为一个Record的保存容器，它存在的目的是便于对磁盘空间进行批量管理。</p>
+<h4 id="32-非聚簇索引">3.2 非聚簇索引</h4>
+<p>主键B+树在叶子节点存储指向真正数据行的指针，而非主键。MyISAM使用的是非聚簇索引，非聚簇索引的两棵B+树看上去没什么不同，节点的结构完全一致只是存储的内容不同而已，</p>
+<p>对于上面的表数据，非聚集索引的结构如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/secondaryIndex.jpg"
+        data-srcset="/005-mysql-innodb/secondaryIndex.jpg, /005-mysql-innodb/secondaryIndex.jpg 1.5x, /005-mysql-innodb/secondaryIndex.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/secondaryIndex.jpg"
+        title="/005-mysql-innodb/secondaryIndex.jpg" width="589" height="498" /></p>
+<p>非聚集索引中，主键索引B+树的节点存储了主键，辅助键索引B+树存储了辅助键。表数据存储在独立的地方，这两颗B+树的叶子节点都使用一个地址指向真正的表数据，对于表数据来说，这两个键没有任何差别。由于索引树是独立的，通过辅助键检索无需访问主键的索引树。</p>
+<h4 id="33-联合索引">3.3 联合索引</h4>
+<p>联合索引又叫复合索引。对于复合索引，Mysql从左到右的使用索引中的字段，一个查询可以只使用索引中的一部份，但只能是最左侧部分，即我们常说的最左前缀匹配原则。由于联合索引的匹配是从做往右进行，且不能跳过中间列，因而在设计联合索引时最好按照列的索引区分度来排序。</p>
+<h4 id="4-innodb内存管理">4. InnoDB内存管理</h4>
+<p>InnoDB存储引擎的内存管理主要采用预分配内存空间的方式，数据以页为单位加载进内存池，交由后台线程使用并进行维护：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.jpg"
+        data-srcset="/005-mysql-innodb/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.jpg, /005-mysql-innodb/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.jpg 1.5x, /005-mysql-innodb/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.jpg"
+        title="/005-mysql-innodb/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.jpg" width="548" height="386" /></p>
+<p>其中内存池的主要工作包括：</p>
+<ol>
+<li>维护所有进程/线程需要访问的多个内部数据结构</li>
+<li>缓存磁盘上的数据，方便快速读取，同时在对磁盘文件修改之前进行缓存</li>
+<li>缓存重做日志（redo log）</li>
+</ol>
+<p>后台线程的主要工作包括:</p>
+<ol>
+<li>刷新内存池中的数据，保证缓冲池中缓存的数据最新</li>
+<li>将已修改数据文件刷新到磁盘文件</li>
+<li>保证数据库异常时InnoDB能恢复到正常运行状态</li>
+</ol>
+<p>这里主要关注内存池的管理，上图中缓冲池用于存放各种数据的缓存，缓冲池中的页可以分为：空闲页、数据页和脏页，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/pageList.jpg"
+        data-srcset="/005-mysql-innodb/pageList.jpg, /005-mysql-innodb/pageList.jpg 1.5x, /005-mysql-innodb/pageList.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/pageList.jpg"
+        title="/005-mysql-innodb/pageList.jpg" width="683" height="521" /></p>
+<p>Page Hash用于维护内存Page和文件Page的映射关系，同时维护3个列表用于管理空闲页、数据页以及脏页的装载和淘汰。</p>
+<p>1.LRU List</p>
+<p>Innodb总是将磁盘中的数据按页为单位读取到缓冲池，然后按LRU算法来保存缓冲池中的数据，即最频繁使用的页在LRU列表的前端，而最少使用的页在LRU列表的尾端。当缓冲池不能存放新读取到的页时，将首先释放LRU列表中尾端的页。稍有不同的是InnoDB存储引擎对传统的LRU算法做了一些优化。在InnoDB的存储引擎中，LRU列表中还加入了midpoint位置。新读取到的页，虽然是最新访问的页，但并不是直接放入到LRU列表的首部，而是放入到LRU列表的midpoint位置，等待一定时间后再加入到LRU列表的new端成为热点数据。在默认配置下，midpoint在LRU列表长度的5/8处。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/005-mysql-innodb/LRU.jpg"
+        data-srcset="/005-mysql-innodb/LRU.jpg, /005-mysql-innodb/LRU.jpg 1.5x, /005-mysql-innodb/LRU.jpg 2x"
+        data-sizes="auto"
+        alt="/005-mysql-innodb/LRU.jpg"
+        title="/005-mysql-innodb/LRU.jpg" width="511" height="155" /></p>
+<p>这样做的原因在于，若直接将读取到的page放到LRU的首部，那么某些SQL操作可能会使缓冲池中的page被刷出。常见的这类操作为索引或数据的扫描操作。这类操作访问表中的许多页，而这些页通常只是在这次查询中需要，并不是活跃数据。如果直接放入到LRU首部，那么非常可能将真正的热点数据从LRU列表中移除，在下一次需要时，InnoDB需要重新访问磁盘读取，这样性能会低下。</p>
+<p>2.Free List</p>
+<p>LRU列表用来管理已经读取的页，但当数据库刚启动时，LRU列表是空的，即没有任何的页。这时页都存放在Free列表中。当需要从缓冲池中分页时，首先从Free列表中查找是否有可用的空闲页，若有则将该页从Free列表中删除，放入到LRU列表中。否则，根据LRU算法，淘汰LRU列表末尾的页，将该内存空间分配给新的页。</p>
+<p>3.Flush List</p>
+<p>在LRU列表中的页被修改后，称该页为脏页，即缓冲池中的页和磁盘上的页的数据产生了不一致。这时数据库会通过CHECKPOINT机制将脏页刷新回磁盘，而Flush列表中的页即为脏页列表。需要注意的是，脏页既存在于LRU列表中，也存在于Flush列表中。LRU列表用来管理缓冲池中页的可用性，Flush列表用来管理将页刷新回磁盘，二者互不影响。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-11-09</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/005-mysql-innodb/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/005-mysql-innodb/" data-title="MySQL InnoDB索引那点事儿" data-hashtags="work"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/005-mysql-innodb/" data-hashtag="work"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/005-mysql-innodb/" data-title="MySQL InnoDB索引那点事儿"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/work/">日常记录</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/004-distrubte-id/" class="prev" rel="prev" title="常见的分布式唯一ID方案"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>常见的分布式唯一ID方案</a>
+            <a href="/03-provider/" class="next" rel="next" title="Dubbo Provider启动都做了什么">Dubbo Provider启动都做了什么<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Spring MVC - 程序猿二腊</title><meta name="Description" content="这节介绍Spring MVC"><meta property="og:title" content="Spring MVC" />
+<meta property="og:description" content="这节介绍Spring MVC" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/07-spring-mvc/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-01-07T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-01-07T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Spring MVC"/>
+<meta name="twitter:description" content="这节介绍Spring MVC"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/07-spring-mvc/" /><link rel="prev" href="https://atuowgo.github.io/00-basic/" /><link rel="next" href="https://atuowgo.github.io/01-client-start/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Spring MVC",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/07-spring-mvc\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "spring","wordcount":  488 ,
+        "url": "https:\/\/atuowgo.github.io\/07-spring-mvc\/","datePublished": "2020-01-07T00:00:00+00:00","dateModified": "2020-01-07T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍Spring MVC"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Spring MVC</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2020-01-07">2020-01-07</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 488 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 3 分钟&nbsp;<span id="/07-spring-mvc/" class="leancloud_visitors" data-flag-title="Spring MVC">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-mvc">1. MVC</a></li>
+            <li><a href="#2-springmvc流程">2. SpringMVC流程</a></li>
+            <li><a href="#3-springmvc加载流程">3. SpringMVC加载流程</a>
+              <ul>
+                <li><a href="#31-contextloaderlistener的加载">3.1. ContextLoaderListener的加载</a>
+                  <ul>
+                    <li><a href="#311-contextinitialized">3.1.1. contextInitialized</a></li>
+                    <li><a href="#312-contextdestroyed">3.1.2. contextDestroyed</a></li>
+                  </ul>
+                </li>
+                <li><a href="#32-dispatcherservlet的加载">3.2. DispatcherServlet的加载</a>
+                  <ul>
+                    <li><a href="#321--httpservletbean">3.2.1.  HttpServletBean</a></li>
+                    <li><a href="#322-frameworkservlet">3.2.2. FrameworkServlet</a></li>
+                  </ul>
+                </li>
+                <li><a href="#323-dispatchdrservlet">3.2.3. DispatchdrServlet</a></li>
+                <li><a href="#33-mvcannotation-driven">3.3. mvc:annotation-driven</a></li>
+              </ul>
+            </li>
+            <li><a href="#4-webapplicationinitializer">4. WebApplicationInitializer</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 这节介绍SpringMVC，SpringMVC是一种基于Java的实现MVC设计模式的请求驱动类型的轻量级Web框架。本章会介绍相关概念，流程，再从源码进行讲解。</p>
+<h4 id="1-mvc">1. MVC</h4>
+<p> MVC(Model View Controller)是一种软件设计的框架模式，它采用模型(Model)-视图(View)-控制器(controller)的方法把业务逻辑、数据与界面显示分离。MVC框架模式是一种复合模式，MVC的三个核心部件分别是</p>
+<ul>
+<li>
+<p>Model(模型)：所有的用户数据、状态以及程序逻辑，独立于视图和控制器</p>
+</li>
+<li>
+<p>View(视图)：呈现模型，类似于Web程序中的界面，视图会从模型中拿到需要展现的状态以及数据，对于相同的数据可以有多种不同的显示形式(视图)</p>
+</li>
+<li>
+<p>Controller(控制器)：负责获取用户的输入信息，进行解析并反馈给模型，通常情况下一个视图具有一个控制器</p>
+</li>
+</ul>
+<h4 id="2-springmvc流程">2. SpringMVC流程</h4>
+<p> 基本上大家都会在网上看到这张图：
+<img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/1.png"
+        data-srcset="/07-spring-mvc/1.png, /07-spring-mvc/1.png 1.5x, /07-spring-mvc/1.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/1.png"
+        title="/07-spring-mvc/1.png" width="860" height="406" /></p>
+<p>这个图描述了SpringMVC处理一个Http请求的基本流程，对应的流程为：</p>
+<ul>
+<li>用户发送请求至前端控制器DispatcherServlet。</li>
+<li>DispatcherServlet收到请求调用HandlerMapping处理器映射器。</li>
+<li>处理器映射器找到具体的处理器(可以根据xml配置、注解进行查找)，生成处理器对象及处理器拦截器(如果有则生成)一并返回给DispatcherServlet。</li>
+<li>DispatcherServlet调用HandlerAdapter处理器适配器。</li>
+<li>HandlerAdapter经过适配调用具体的处理器(Controller，也叫后端控制器)。</li>
+<li>Controller执行完成返回ModelAndView。</li>
+<li>HandlerAdapter将controller执行结果ModelAndView返回给DispatcherServlet。</li>
+<li>DispatcherServlet将ModelAndView传给ViewReslover视图解析器。</li>
+<li>ViewReslover解析后返回具体View.</li>
+<li>DispatcherServlet根据View进行渲染视图（即将模型数据填充至视图中）。</li>
+<li>DispatcherServlet响应用户。</li>
+</ul>
+<p> 还有大家都会接触到的demo:</p>
+<p>web.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;
+</span></span><span class="line"><span class="cl">&lt;web-app xmlns=&#34;http://xmlns.jcp.org/xml/ns/javaee&#34;
+</span></span><span class="line"><span class="cl">         xmlns:xsi=&#34;http://www.w3.org/2001/XMLSchema-instance&#34;
+</span></span><span class="line"><span class="cl">         xsi:schemaLocation=&#34;http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd&#34;
+</span></span><span class="line"><span class="cl">         version=&#34;4.0&#34;&gt;
+</span></span><span class="line"><span class="cl">    &lt;context-param&gt;
+</span></span><span class="line"><span class="cl">        &lt;param-name&gt;contextConfigLocation&lt;/param-name&gt;
+</span></span><span class="line"><span class="cl">        &lt;param-value&gt;/WEB-INF/applicationContext.xml&lt;/param-value&gt;
+</span></span><span class="line"><span class="cl">    &lt;/context-param&gt;
+</span></span><span class="line"><span class="cl">    &lt;listener&gt;
+</span></span><span class="line"><span class="cl">        &lt;listener-class&gt;org.springframework.web.context.ContextLoaderListener&lt;/listener-class&gt;
+</span></span><span class="line"><span class="cl">    &lt;/listener&gt;
+</span></span><span class="line"><span class="cl">    &lt;servlet&gt;
+</span></span><span class="line"><span class="cl">        &lt;servlet-name&gt;dispatcher&lt;/servlet-name&gt;
+</span></span><span class="line"><span class="cl">        &lt;servlet-class&gt;org.springframework.web.servlet.DispatcherServlet&lt;/servlet-class&gt;
+</span></span><span class="line"><span class="cl">        &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
+</span></span><span class="line"><span class="cl">    &lt;/servlet&gt;
+</span></span><span class="line"><span class="cl">    &lt;servlet-mapping&gt;
+</span></span><span class="line"><span class="cl">        &lt;servlet-name&gt;dispatcher&lt;/servlet-name&gt;
+</span></span><span class="line"><span class="cl">        &lt;url-pattern&gt;/*&lt;/url-pattern&gt;
+</span></span><span class="line"><span class="cl">    &lt;/servlet-mapping&gt;
+</span></span><span class="line"><span class="cl">&lt;/web-app&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在applicationContext.xml，指定包的扫描访问并添加标签</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">&lt;context:component-scan base-package=&#34;xxx&#34; /&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">&lt;mvc:annotation-driven /&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>添加Controller</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">import org.springframework.web.bind.annotation.RequestMapping;
+</span></span><span class="line"><span class="cl">import org.springframework.web.bind.annotation.RestController;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">@RestController
+</span></span><span class="line"><span class="cl">public class HelloController {
+</span></span><span class="line"><span class="cl">    @RequestMapping(&#34;/hello&#34;)
+</span></span><span class="line"><span class="cl">    public String excute() {
+</span></span><span class="line"><span class="cl">        return &#34;hello&#34;;
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>上面表示的意思为：</p>
+<ul>
+<li>开启ContextLoaderListener加载Spring根Context，对应的配置文件为applicationContext.xml</li>
+<li>开启DispatcherServlet监听/*下的所有请求，加载WebContext，对应的配置文件为dispatcher-servlet.xml</li>
+<li>指定扫描包路径，并开启mvc注解支持</li>
+<li>添加对应的Controller，使用@RestController标记为Controller对象并使用@RequestMapping标记处理的请求路径</li>
+</ul>
+<h4 id="3-springmvc加载流程">3. SpringMVC加载流程</h4>
+<p> SpringMVC的加载是依赖Servlet切入的，主要依赖两个技术点：Listener和Servlet。</p>
+<h5 id="31-contextloaderlistener的加载">3.1. ContextLoaderListener的加载</h5>
+<p> 从web.xml中可以知道，ContextLoaderListener依赖于Servlet的Listener技术。Listener是在servlet2.3中加入的，主要用于对session、request、context等进行监控。使用Listener需要实现相应的接口。触发Listener事件的时候，tomcat会自动调用相应的Listener的方法。常用的监听接口包括：</p>
+<ul>
+<li>HttpSessionListener:监听session的创建和销毁。</li>
+<li>ServletRequestListener:监听request的创建和销毁</li>
+<li>ServletContextListener:监听context的创建和销毁。</li>
+</ul>
+<p>这里主要使用了ServletContextListener，用于在Servlet初始化前执行自定义动作。</p>
+<p> ContextLoaderListener的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class ContextLoaderListener extends ContextLoader implements ServletContextListener {
+</span></span><span class="line"><span class="cl">	public ContextLoaderListener() {
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	public ContextLoaderListener(WebApplicationContext context) {
+</span></span><span class="line"><span class="cl">		super(context);
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	@Override
+</span></span><span class="line"><span class="cl">	public void contextInitialized(ServletContextEvent event) {
+</span></span><span class="line"><span class="cl">		initWebApplicationContext(event.getServletContext());
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	@Override
+</span></span><span class="line"><span class="cl">	public void contextDestroyed(ServletContextEvent event) {
+</span></span><span class="line"><span class="cl">		closeWebApplicationContext(event.getServletContext());
+</span></span><span class="line"><span class="cl">		ContextCleanupListener.cleanupAttributes(event.getServletContext());
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该类继承了ContextLoader，并通过contextInitialized方法执行了初始化(传入ServletContext)，通过contextDestroyed方法进行资源销毁回收。重点看ContextLoader方法。</p>
+<p> ContextLoader在初始化时，会先执行内部的一个静态代码块：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private static final Properties defaultStrategies;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">static {
+</span></span><span class="line"><span class="cl">	try {
+</span></span><span class="line"><span class="cl">		ClassPathResource resource = new ClassPathResource(DEFAULT_STRATEGIES_PATH, ContextLoader.class);
+</span></span><span class="line"><span class="cl">		defaultStrategies = PropertiesLoaderUtils.loadProperties(resource);
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">	catch (IOException ex) {
+</span></span><span class="line"><span class="cl">		throw new IllegalStateException(&#34;Could not load &#39;ContextLoader.properties&#39;: &#34; + ex.getMessage());
+</span></span><span class="line"><span class="cl">	}
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这一步会加载classpath下的配置文件ContextLoader.properties，该文件将作为默认配置用于初始化Properties对象defaultStrategies。</p>
+<h6 id="311-contextinitialized">3.1.1. contextInitialized</h6>
+<p> contextInitialized方法的主要内容如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/2.png"
+        data-srcset="/07-spring-mvc/2.png, /07-spring-mvc/2.png 1.5x, /07-spring-mvc/2.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/2.png"
+        title="/07-spring-mvc/2.png" width="1210" height="1388" /></p>
+<p>过程为：</p>
+<p>(1) 判断当前Context是否已经初始化过</p>
+<p> 通过判断ServletContext中是否存在key为org.springframework.web.context.ROOT的值</p>
+<ul>
+<li>初始化WebApplicationContext：从ContextLoader.properties中查找WebApplicationContext的具体实现，如下：</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">org.springframework.web.context.WebApplicationContext=org.springframework.web.context.support.XmlWebApplicationContext
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>即XmlWebApplicationContext，然后初始化该类</p>
+<p>(2) 配置并刷新该XMLWebApplicationContext</p>
+<p> XMLWebApplicationContext继承简图如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/3.png"
+        data-srcset="/07-spring-mvc/3.png, /07-spring-mvc/3.png 1.5x, /07-spring-mvc/3.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/3.png"
+        title="/07-spring-mvc/3.png" width="461" height="481" /></p>
+<p>层级比较明显，本身也是一个RefreshableConfigApplicationContext(具体内容可以看往期内容)。其父类保存了ServletContext和ServletConfig两个Web Context相关的对象，其本身也维持了一些默认属性，如</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">DEFAULT_CONFIG_LOCATION = &#34;/WEB-INF/applicationContext.xml&#34;;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个属性就是默认的Spring配置文件的路径。</p>
+<p> 需要指出的是XMLWebApplicationContext重写了父类的loadBeanDefinitions方法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zed" data-lang="zed"><span class="line"><span class="cl"><span class="err">@</span><span class="n">Override</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">protected</span><span class="w"> </span><span class="n">void</span><span class="w"> </span><span class="n">loadBeanDefinitions</span><span class="p">(</span><span class="n">DefaultListableBeanFactory</span><span class="w"> </span><span class="n">beanFactory</span><span class="p">)</span><span class="w"> </span><span class="n">throws</span><span class="w"> </span><span class="n">BeansException</span><span class="p">,</span><span class="w"> </span><span class="n">IOException</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="c1">// Create a new XmlBeanDefinitionReader for the given BeanFactory.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">	</span><span class="n">XmlBeanDefinitionReader</span><span class="w"> </span><span class="n">beanDefinitionReader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">XmlBeanDefinitionReader</span><span class="p">(</span><span class="n">beanFactory</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="c1">// Configure the bean definition reader with this context&#39;s
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">	</span><span class="c1">// resource loading environment.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">	</span><span class="n">beanDefinitionReader</span><span class="p">.</span><span class="n">setEnvironment</span><span class="p">(</span><span class="n">getEnvironment</span><span class="p">());</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="n">beanDefinitionReader</span><span class="p">.</span><span class="n">setResourceLoader</span><span class="p">(</span><span class="n">this</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="n">beanDefinitionReader</span><span class="p">.</span><span class="n">setEntityResolver</span><span class="p">(</span><span class="n">new</span><span class="w"> </span><span class="n">ResourceEntityResolver</span><span class="p">(</span><span class="n">this</span><span class="p">));</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="c1">// Allow a subclass to provide custom initialization of the reader,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">	</span><span class="c1">// then proceed with actually loading the bean definitions.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">	</span><span class="n">initBeanDefinitionReader</span><span class="p">(</span><span class="n">beanDefinitionReader</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="n">loadBeanDefinitions</span><span class="p">(</span><span class="n">beanDefinitionReader</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">protected</span><span class="w"> </span><span class="n">void</span><span class="w"> </span><span class="n">loadBeanDefinitions</span><span class="p">(</span><span class="n">XmlBeanDefinitionReader</span><span class="w"> </span><span class="n">reader</span><span class="p">)</span><span class="w"> </span><span class="n">throws</span><span class="w"> </span><span class="n">IOException</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="n">String</span><span class="p">[]</span><span class="w"> </span><span class="n">configLocations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getConfigLocations</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="n">if</span><span class="w"> </span><span class="p">(</span><span class="n">configLocations</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="n">for</span><span class="w"> </span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">configLocation</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">configLocations</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">			</span><span class="n">reader</span><span class="p">.</span><span class="n">loadBeanDefinitions</span><span class="p">(</span><span class="n">configLocation</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="err">@</span><span class="n">Override</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">protected</span><span class="w"> </span><span class="n">String</span><span class="p">[]</span><span class="w"> </span><span class="n">getDefaultConfigLocations</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="c1">//Tip:返回配置文件路径
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">	</span><span class="n">if</span><span class="w"> </span><span class="p">(</span><span class="n">getNamespace</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="n">return</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">String</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span><span class="n">DEFAULT_CONFIG_LOCATION_PREFIX</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">getNamespace</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_CONFIG_LOCATION_SUFFIX</span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="n">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="n">return</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">String</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span><span class="n">DEFAULT_CONFIG_LOCATION</span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里用了XmlBeanDefinitionReader来解析Bean定义，且指定了配置文件的加载逻辑，getConfigLocations方法：如果父类的configLocations不为空，则返回该值，否则返回getDefaultConfigLocations的值。而getDefaultConfigLocations方法逻辑为：如果存在命名空间，则返回/WEB_INF/namespace.xml作为配置文件，否则返回/WEB-INF/applicationContext.xml。对应上面的demo，将返回配置中的文件（同默认值相同）。</p>
+<p> XMLWebApplicationContext的初始化步骤为：</p>
+<ul>
+<li>读取contextId配置，进行设置</li>
+<li>读取contextConfigLocation配置，使用指定的配置文件，若没有则使用上面提到的默认配置文件DEFAULT_CONFIG_LOCATION</li>
+<li>加载contextInitializerClasses指定的class，用于在context刷新前执行自定义处理</li>
+<li>调用XMLWebApplicationContext的refresh方法</li>
+</ul>
+<p>(3)标记已经初始化</p>
+<p> 通过将该根Context存在ServletContext中，并设置值为org.springframework.web.context.ROOT，用于第(1)步的判断</p>
+<h6 id="312-contextdestroyed">3.1.2. contextDestroyed</h6>
+<p> 销毁过程比较简单，首先调用WebApplicationContext的close方法销毁该Context，然后移除ServletContex中的org.springframework.web.context.ROOT属性值，最后清除ServletContext中所有org.springframework.开头的属性值。</p>
+<h5 id="32-dispatcherservlet的加载">3.2. DispatcherServlet的加载</h5>
+<p> 同ContextLoaderListener类似，DispatcherServlet依赖于Servlet进行扩展。DispatcherServlet的结构如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/4.png"
+        data-srcset="/07-spring-mvc/4.png, /07-spring-mvc/4.png 1.5x, /07-spring-mvc/4.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/4.png"
+        title="/07-spring-mvc/4.png" width="946" height="782" /></p>
+<p>如上，DispatcherServlet继承自HttpServlet，并重写了doService方法，用于处理http请求，其中：</p>
+<h6 id="321--httpservletbean">3.2.1.  HttpServletBean</h6>
+<p> 在HttpServlet的继承上增加了ConfigurableEnvironment属性，用于存放Servlet的配置项。通过重写init方法，在初始化时将servlet配置项添加到上下文环境变量中，并在该方法中开放了initBeanWrapper和initServletBean方法给子类。</p>
+<h6 id="322-frameworkservlet">3.2.2. FrameworkServlet</h6>
+<p> 基于Servlet实现的Web框架，每个Servlet内部都对应一个XmlWebApplicationContext对象，且namespace格式为ServletName-servlet。上面说了在没显示设定配置文件路径的情况下，且存在namespace时，会使用/WEB-INF/namespace.xml作为Spring配置文件，对应到demo即为/WEB-INF/dispatcher-servlet.xml。FrameworkServlet重写了父类的intServletBean方法，对XmlWebApplicationContext的初始化工作。Servlet在初始化XmlWebApplicationContext时，会尝试从ServletContext中获取根Context(上面提到的，会将根Ccontext放到ServletContext中以标记已经初始化过)并设置为当前Context的父Context，然后再按照雷士根Contextde 的初始化过程对其进行初始化。不同的是，会在refresh前开放口子进行扩展，包括:</p>
+<ul>
+<li>对内通过重写子类的postProcessWebApplicationContext方法</li>
+<li>对外通过加载并执行globalInitializerClasses中配置的ApplicationContextInitializer类</li>
+</ul>
+<p>FrameworkServlet还重写了父类的各doXXX方法，都交给processService方法，以处理Http请求。processService最终委托给了doService方法。</p>
+<h5 id="323-dispatchdrservlet">3.2.3. DispatchdrServlet</h5>
+<p> 是SpringMVC处理Http请求的主要实现，主要完成了两件事：</p>
+<p>3.1. 重写了onRefresh方法</p>
+<p> 初始化时设置了众多默认处理策略，包括：文件处理策略、HandlerMapping处理策略、HandlerAdapter处理策略、HandlerException处理策略、View解析策略等。SpringMVC在处理Http的每个步骤上，都提供了类似filter的机制，每个步骤都能够注册多个策略处理器，按照顺序选择出能够处理当前请求的策略并交给其处理。而大部分的默认策略来至于spring-mvc模块下的org/springframework/web/servlet/DispatcherServlet.properties文件，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/5.png"
+        data-srcset="/07-spring-mvc/5.png, /07-spring-mvc/5.png 1.5x, /07-spring-mvc/5.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/5.png"
+        title="/07-spring-mvc/5.png" width="1038" height="460" /></p>
+<p>下面为本人demo（SpringBoot）运行时DispatcherServlet各属性以及注册的各策略的情况</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/6.png"
+        data-srcset="/07-spring-mvc/6.png, /07-spring-mvc/6.png 1.5x, /07-spring-mvc/6.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/6.png"
+        title="/07-spring-mvc/6.png" width="486" height="571" /></p>
+<p>主要关注handlerMappings中的RequestMappingHandlerMapping和handlerAdapters中的RequestMappingHandlerAdapter。这两个都不是在DispatcherServlet.properties文件中指定的，而是在开启&lt;mvc:annotation-driven /&gt;后自动注册的，这个后面会介绍。</p>
+<p>3.1.1 RequestMappingHandlerMapping初始化</p>
+<p> RequestMappingHandlerMapping主要用于查找@RequestMapping注解的handler，其继承关系如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/7.png"
+        data-srcset="/07-spring-mvc/7.png, /07-spring-mvc/7.png 1.5x, /07-spring-mvc/7.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/7.png"
+        title="/07-spring-mvc/7.png" width="790" height="1152" /></p>
+<ul>
+<li>AbstractHandlerMapping：实现了HandlerMapping接口，提供了获取handler的主要实现。getHandler方法的实现为，将具体handler的查找委托给了子类的getHandlerInternal方法，然后跟当前请求路径相关的interceptor一起包装为一个HandlerExecutionChain返回。interceptor为所有实现了MappedInterceptor接口的bean，会在AbstractHandlerMapping初始化的时候遍历上下文进行查找。</li>
+<li>AbstractHandlerMethodMapping：在AbstractHandlerMapping的基础上，主要提供了根据请求查找对应handler method的实现，即getHandlerInternal方法。该类会在初始化时遍历上下文中所有的Bean，然后符合条件的Bean（通过isHandler方法），遍历当前Bean符合条件的方法（通过getMappingForMethod方法），每个方法都有一个对应的path，称为lookUpPath。getHandlerInternal实现上也是通过请求的HttpServletRequest得到对应的lookUpPath，然后从内存缓存中获取对应的handler。</li>
+<li>RequestMappingHandlerMapping：@RequestMapping的实现，主要实现了 isHandler和getMappingForMethod。</li>
+<li>isHandler：判断是否出现@Controller注解或者@RequestMapping注解</li>
+<li>getMappingForMethod：根据@RequestMapping注解返回RequestMappingInfo实例。
+3.1.2 RequestMappingHandlerAdapter初始化</li>
+</ul>
+<p>  RequestMappingHandlerAdapter主要完成HandlerMethod的执行，，其继承关系如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/8.png"
+        data-srcset="/07-spring-mvc/8.png, /07-spring-mvc/8.png 1.5x, /07-spring-mvc/8.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/8.png"
+        title="/07-spring-mvc/8.png" width="645" height="718" /></p>
+<ul>
+<li>AbstractHandlerMethodAdapter：用于判断是否支持Handler的执行，需要传入的handler是否为HandlerMethod实例，同时将handler的执行委托给子类的handleInternal方法。</li>
+<li>RequestMappingHandlerAdapter：真正执行handler对应的Method对象，会调用各种resolvers解析参数，用于在反射时作为入参传入；调用各种converter用于对结果进行加工等操作。</li>
+</ul>
+<p>3.2.  重写doService方法</p>
+<p> 实现了Http请求的处理过程，具体流程如下图，即开头提及的SpringMVC处理Http请求的过程，前面已经介绍过流程，这里不再赘述。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/9.png"
+        data-srcset="/07-spring-mvc/9.png, /07-spring-mvc/9.png 1.5x, /07-spring-mvc/9.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/9.png"
+        title="/07-spring-mvc/9.png" width="1890" height="1862" /></p>
+<h5 id="33-mvcannotation-driven">3.3. mvc:annotation-driven</h5>
+<p> 按照之前说的，先看resource/META-INF/spring.handlers文件，这个配置在spring-webmvc模块下，内容为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">http\://www.springframework.org/schema/mvc=org.springframework.web.servlet.config.MvcNamespaceHandler
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>支持的标签如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/10.png"
+        data-srcset="/07-spring-mvc/10.png, /07-spring-mvc/10.png 1.5x, /07-spring-mvc/10.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/10.png"
+        title="/07-spring-mvc/10.png" width="868" height="462" /></p>
+<p>annotation-driven的解析类为：AnnotationDrivenBeanDefinitionParser，该类主要自动做了如下动作：</p>
+<ul>
+<li>注入了RequestMappingHandlerMapping和BeanNameUrlHandlerMapping两个HandlerMapping实现</li>
+<li>注入了RequestMappingHandlerAdapter、HttpRequestHandlerAdapter和SimpleControllerHandlerAdapter三个HandlerAdapter实现。需要指出的是对于RequestMappingHandlerAdapter，如果没有配置message-converters标签指定消息处理器的话，会根据classpath中存在的包自动注入处理器，包括：</li>
+<li>ByteArrayHttpMessageConverter</li>
+<li>StringHttpMessageConverter</li>
+<li>ResourceHttpMessageConverter</li>
+<li>SourceHttpMessageConverter</li>
+<li>AllEncompassingFormHttpMessageConverter</li>
+<li>如果存在com.rometools.rome.feed.WireFeed类，则增加AtomFeedHttpMessageConverter、RssChannelHttpMessageConverter</li>
+<li>如果存在com.fasterxml.jackson.dataformat.xml.XmlMapper类，则增加MappingJackson2XmlHttpMessageConverter</li>
+<li>如果存在javax.xml.bind.Binder类，则增加Jaxb2RootElementHttpMessageConverter</li>
+<li>如果存在com.fasterxml.jackson.databind.ObjectMapper和com.fasterxml.jackson.core.JsonGenerator，则增加MappingJackson2HttpMessageConverter</li>
+<li>如果存在com.google.gson.Gson，则增加GsonHttpMessageConverter</li>
+<li>注入了ExceptionHandlerExceptionResolver用于实现@ExceptionHandler注解、注入了ResponseStatusExceptionResolver用于实现@ResponseStatus和DefaultHandlerExceptionResolver</li>
+<li>注入了AntPathMatcher和UrlPathHelper用于路径解析</li>
+</ul>
+<p> 上面介绍了SpringMVC大体流程的实现，当然还有很多细节没有进行说明，如@Param,HttpServletRequest等各种参数的解析和注入，响应结果转为json等各种结果的加工，详细内容可以根据上面介绍再进行深入。</p>
+<h4 id="4-webapplicationinitializer">4. WebApplicationInitializer</h4>
+<p> Servlet3.0+提供了ServletContainerInitializer接口，用于在web容器启动时为提供给第三方组件机会做一些初始化的工作，例如注册servlet或者filtes等。</p>
+<p> 每个框架要使用ServletContainerInitializer就必须在对应的jar包的META-INF/services 目录创建一个名为javax.servlet.ServletContainerInitializer的文件，文件内容指定具体的ServletContainerInitializer实现类。spring-web模块下便存在该配置：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/07-spring-mvc/11.png"
+        data-srcset="/07-spring-mvc/11.png, /07-spring-mvc/11.png 1.5x, /07-spring-mvc/11.png 2x"
+        data-sizes="auto"
+        alt="/07-spring-mvc/11.png"
+        title="/07-spring-mvc/11.png" width="389" height="177" /></p>
+<p>内容为:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">org.springframework.web.SpringServletContainerInitializer
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>SpringServletContainerInitializer的主要功能是加载classpath下的所有WebApplicationInitializer实现类（非接口、非抽象类），按照@Order进行排序后依次执行WebApplicationInitializer的onStartup方法。</p>
+<p> spring-web模块提供的抽象类实现AbstractContextLoaderInitializer能够不用web.xml配置增加RootContext；提供的抽象类实现AbstractDispatcherServletInitializer能够不用web.xml配置增加DispatcherServlet。当然更重要的实现是SpringBoot中的实现，这个后续介绍SpringBoot时再提。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-01-07</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/07-spring-mvc/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/07-spring-mvc/" data-title="Spring MVC" data-hashtags="spring"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/07-spring-mvc/" data-hashtag="spring"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/07-spring-mvc/" data-title="Spring MVC"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/00-basic/" class="prev" rel="prev" title="RocketMQ介绍"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>RocketMQ介绍</a>
+            <a href="/01-client-start/" class="next" rel="next" title="RocketMQ客户端加载流程">RocketMQ客户端加载流程<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

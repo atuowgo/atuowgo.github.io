@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt; - 程序猿二腊</title><meta name="Description" content="这节介绍jvm-sandbox的事件机制"><meta property="og:title" content="JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;" />
+<meta property="og:description" content="这节介绍jvm-sandbox的事件机制" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/02-event/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-08-02T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-08-02T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;"/>
+<meta name="twitter:description" content="这节介绍jvm-sandbox的事件机制"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/02-event/" /><link rel="prev" href="https://atuowgo.github.io/01-start/" /><link rel="next" href="https://atuowgo.github.io/003-socks/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "JVM层面的切面实现 : jvm-sandbox 之 \u003c事件机制\u003e",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/02-event\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "jvm-sandbox","wordcount":  1054 ,
+        "url": "https:\/\/atuowgo.github.io\/02-event\/","datePublished": "2020-08-02T00:00:00+00:00","dateModified": "2020-08-02T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍jvm-sandbox的事件机制"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">JVM层面的切面实现 : jvm-sandbox 之 <事件机制></h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2020-08-02">2020-08-02</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 1054 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 5 分钟&nbsp;<span id="/02-event/" class="leancloud_visitors" data-flag-title="JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1观察者模式">1.观察者模式</a></li>
+            <li><a href="#2-触发观察defaultmoduleeventwatcherwatch">2. 触发观察DefaultModuleEventWatcher.watch</a></li>
+            <li><a href="#3-subject的observer列表">3. Subject的Observer列表</a></li>
+            <li><a href="#4-通知observer">4. 通知Observer</a></li>
+            <li><a href="#5-spy">5. Spy</a></li>
+            <li><a href="#51-spy间谍类">5.1 Spy间谍类</a></li>
+            <li><a href="#52-eventprocessor">5.2 EventProcessor</a></li>
+            <li><a href="#53-spyret">5.3 Spy.Ret</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p>这节介绍jvm-sandbox的事件机制，事件机制提供了切面通知的核心功能，内部主要结合asm和观察者模式来实现。jvm-sandbox提供的事件包括：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B61.png"
+        data-srcset="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B61.png, /02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B61.png 1.5x, /02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B61.png 2x"
+        data-sizes="auto"
+        alt="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B61.png"
+        title="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B61.png" width="941" height="480" /></p>
+<p>上面的截图是官网github wiki对事件的介绍，包括提供的事件类型、事件的作用域以及状态机流转。概括的说就是，jvm-sandbox围绕了目标方法这个切面点，提供了多种通知机制。</p>
+<h4 id="1观察者模式">1.观察者模式</h4>
+<p>观察者模式的简单示意如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/observer1.png"
+        data-srcset="/02-event/observer1.png, /02-event/observer1.png 1.5x, /02-event/observer1.png 2x"
+        data-sizes="auto"
+        alt="/02-event/observer1.png"
+        title="/02-event/observer1.png" width="204" height="360" /></p>
+<p>Observer(观察者)观察Subject(目标)，Subject在发生变化时通知Observer。具体到这里，模型抽象为:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/EventListener.png"
+        data-srcset="/02-event/EventListener.png, /02-event/EventListener.png 1.5x, /02-event/EventListener.png 2x"
+        data-sizes="auto"
+        alt="/02-event/EventListener.png"
+        title="/02-event/EventListener.png" width="458" height="373" /></p>
+<p>目标对象为符合条件的类的方法，观察者则为EventListener实现类。一般我们在实现时，</p>
+<ol>
+<li>Subject都会有一个<strong>Observer列表</strong>，以及提供一个添加观察者的方法(add)</li>
+<li>用户通过调用Subject的add方法，<strong>触发观察</strong>，把Observer添加到Observer列表中</li>
+<li>Subject在事件发生时，遍历Observer列表，<strong>通知到Observer</strong></li>
+</ol>
+<p>以此达到目的。下面来看jvm-sandbox如何实现该过程。</p>
+<h4 id="2-触发观察defaultmoduleeventwatcherwatch">2. 触发观察DefaultModuleEventWatcher.watch</h4>
+<p>从官网的例子开始</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"> /**
+</span></span><span class="line"><span class="cl">   * 一个损坏的钟实现
+</span></span><span class="line"><span class="cl">   */
+</span></span><span class="line"><span class="cl">  static class BrokenClock extends Clock {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">      @Override
+</span></span><span class="line"><span class="cl">      void checkState() {
+</span></span><span class="line"><span class="cl">          throw new IllegalStateException();
+</span></span><span class="line"><span class="cl">      }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">      @Override
+</span></span><span class="line"><span class="cl">      void delay() throws InterruptedException {
+</span></span><span class="line"><span class="cl">          Thread.sleep(10000L);
+</span></span><span class="line"><span class="cl">      }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">/**
+</span></span><span class="line"><span class="cl"> * 修复损坏的钟模块
+</span></span><span class="line"><span class="cl"> */
+</span></span><span class="line"><span class="cl">@Information(id = &#34;broken-clock-tinker&#34;)
+</span></span><span class="line"><span class="cl">public class BrokenClockTinkerModule implements Module {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Resource
+</span></span><span class="line"><span class="cl">    private ModuleEventWatcher moduleEventWatcher;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Http(&#34;/repairCheckState&#34;)
+</span></span><span class="line"><span class="cl">    public void repairCheckState() {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        moduleEventWatcher.watch(
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                // 匹配到Clock$BrokenClock#checkState()
+</span></span><span class="line"><span class="cl">                new NameRegexFilter(&#34;Clock\\$BrokenClock&#34;, &#34;checkState&#34;),
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                // 监听THROWS事件并且改变原有方法抛出异常为正常返回
+</span></span><span class="line"><span class="cl">                new EventListener() {
+</span></span><span class="line"><span class="cl">                    @Override
+</span></span><span class="line"><span class="cl">                    public void onEvent(Event event) throws Throwable {
+</span></span><span class="line"><span class="cl">                        // 立即返回
+</span></span><span class="line"><span class="cl">                        ProcessControlException.throwReturnImmediately(null);
+</span></span><span class="line"><span class="cl">                    }
+</span></span><span class="line"><span class="cl">                },
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                // 指定监听的事件为抛出异常
+</span></span><span class="line"><span class="cl">                Event.Type.THROWS
+</span></span><span class="line"><span class="cl">        );
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>按上一节的介绍，每个Module类都会分配一个MOduleEventWatcher，注入的对象为<strong>DefaultModuleEventWatcher</strong>。DefaultModuleEventWatcher是jvm-sandbox内置的默认观察者实现门户类(没有实现EventWatcher)，用于将用户定义的EventWatcher添加到目标类中。上面例子中的watch动作最终会调用到如下方法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private int watch(/*匹配器*/final Matcher matcher,
+</span></span><span class="line"><span class="cl">                      /*事件监听器*/final EventListener listener,
+</span></span><span class="line"><span class="cl">                      final Progress progress,
+</span></span><span class="line"><span class="cl">                     /*观察的时间类型*/ final Event.Type... eventType)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该方法的主要流程如下:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/watch.png"
+        data-srcset="/02-event/watch.png, /02-event/watch.png 1.5x, /02-event/watch.png 2x"
+        data-sizes="auto"
+        alt="/02-event/watch.png"
+        title="/02-event/watch.png" width="392" height="568" /></p>
+<p>概括来说就是，每一次watch(观察)都会对应一个watchId**(1)<strong>，对应多个需要处理的class</strong>(2)<strong>，对应一个EventListener</strong>(3)<strong>，对应一个</strong>SandboxClassFileTransformer** <strong>(4)</strong>，激活后会对应一个<strong>EventProcessor</strong> <strong>(5)</strong></p>
+<ol>
+<li>
+<p>watchId由Sequencer进行分配，该ID序号是全局的，目前的实现是从1000开始的int，每次获取都加1</p>
+</li>
+<li>
+<p>通过CoreLoadedClassDataSource找出符合条件的Class列表</p>
+</li>
+<li>
+<p>EventListener由用户传入，会在用户指定的事件发生时进行回调通知</p>
+</li>
+<li>
+<p>SandboxClassFileTransformer实现了ClassFileTransformer接口，提供了AOP代码的织入逻辑的入口，真正的字节码处理动作由EventEnhancer和EventWeaver完成。SandboxClassFileTransformer的构造方法如下，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">SandboxClassFileTransformer(/*观察动作id*/final int watchId,
+</span></span><span class="line"><span class="cl">                            /*模块id*/final String uniqueId,
+</span></span><span class="line"><span class="cl">                            /*类匹配器*/final Matcher matcher,
+</span></span><span class="line"><span class="cl">                           /*监听器*/ final EventListener eventListener,
+</span></span><span class="line"><span class="cl">                            final boolean isEnableUnsafe,
+</span></span><span class="line"><span class="cl">                            final Event.Type[] eventTypeArray,
+</span></span><span class="line"><span class="cl">                            /*命名空间*/final String namespace) {
+</span></span><span class="line"><span class="cl">    this.watchId = watchId;
+</span></span><span class="line"><span class="cl">    this.uniqueId = uniqueId;
+</span></span><span class="line"><span class="cl">    this.matcher = matcher;
+</span></span><span class="line"><span class="cl">    this.eventListener = eventListener;
+</span></span><span class="line"><span class="cl">    this.isEnableUnsafe = isEnableUnsafe;
+</span></span><span class="line"><span class="cl">    this.eventTypeArray = eventTypeArray;
+</span></span><span class="line"><span class="cl">    this.namespace = namespace;
+</span></span><span class="line"><span class="cl">    //为每个EventListener实例分配一个全局的id，便于传递
+</span></span><span class="line"><span class="cl">    this.listenerId = ObjectIDs.instance.identity(eventListener);
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在构造方法中会为EventListener对象分配一个全局的id(listenerId)，这个id会跟事件处理器(EventListener)对象进行映射，并缓存起来，后续可以通过id获取该对象。</p>
+<p><em>当进行观察时，会使用asm将listenerId织入到目标方法中，从而实现上面提到的调用<strong>add</strong>方法的效果。</em></p>
+<p>再调用Instrument的reTransform方法，对符合条件的类重头应用一遍类处理器，从而达到新增监听器的效果。</p>
+</li>
+<li>
+<p>调用<strong>EventListenerHandler</strong>的active方法激活该事件处理器，本质是将该对象缓存在内部的Map中</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">// 全局处理器ID:处理器映射集合
+</span></span><span class="line"><span class="cl">private final Map&lt;Integer/*LISTENER_ID*/, EventProcessor&gt; mappingOfEventProcessor
+</span></span><span class="line"><span class="cl">        = new ConcurrentHashMap&lt;Integer, EventProcessor&gt;();
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>后续可以通过该listenerId获取到对应的对象。</p>
+</li>
+</ol>
+<h4 id="3-subject的observer列表">3. Subject的Observer列表</h4>
+<p>&ldquo;<strong>add</strong>&ldquo;方法的具体实现是由EventEnhancer和EventWeaver完成。内容上偏底层，主要是字节码操作。这边直接给出处理后效果，以开头的例子为例，感兴趣的可以看源码了解具体的实现。BrokenClock增强后的内容如下:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class BrokenClock extends Clock {
+</span></span><span class="line"><span class="cl">    public BrokenClock() {
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void checkState() {
+</span></span><span class="line"><span class="cl">        boolean var10000 = true;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        try {
+</span></span><span class="line"><span class="cl">            Ret var5 = Spy.spyMethodOnBefore(new Object[0], &#34;default&#34;, 1000, 1001, &#34;com.alibaba.jvm.sandbox.qatest.core.enhance.target.BrokenClock&#34;, &#34;checkState&#34;, &#34;()V&#34;, this);
+</span></span><span class="line"><span class="cl">            int var6 = var5.state;
+</span></span><span class="line"><span class="cl">            if (var6 != 1) {
+</span></span><span class="line"><span class="cl">                if (var6 != 2) {
+</span></span><span class="line"><span class="cl">                    var10000 = true;
+</span></span><span class="line"><span class="cl">                    throw new IllegalStateException();//原方法内容
+</span></span><span class="line"><span class="cl">                } else {
+</span></span><span class="line"><span class="cl">                    throw (Throwable)var5.respond;
+</span></span><span class="line"><span class="cl">                }
+</span></span><span class="line"><span class="cl">            } else {
+</span></span><span class="line"><span class="cl">                Object var2 = var5.respond;
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        } catch (Throwable var1) {
+</span></span><span class="line"><span class="cl">            boolean var10001 = true;
+</span></span><span class="line"><span class="cl">            Ret var3 = Spy.spyMethodOnThrows(var1, &#34;default&#34;, 1000);
+</span></span><span class="line"><span class="cl">            int var10002 = var3.state;
+</span></span><span class="line"><span class="cl">            if (var10002 != 1) {
+</span></span><span class="line"><span class="cl">                if (var10002 != 2) {
+</span></span><span class="line"><span class="cl">                    var10001 = true;
+</span></span><span class="line"><span class="cl">                    throw var1;
+</span></span><span class="line"><span class="cl">                } else {
+</span></span><span class="line"><span class="cl">                    throw (Throwable)var3.respond;
+</span></span><span class="line"><span class="cl">                }
+</span></span><span class="line"><span class="cl">            } else {
+</span></span><span class="line"><span class="cl">                Object var4 = var3.respond;
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void delay() throws InterruptedException {
+</span></span><span class="line"><span class="cl">        Thread.sleep(10000L);
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中原方法的内容用注释的方式进行了标明。可以看到，相比原方法，里面多了几个判断，入口都来自于Spy.spyMethodOnXXXX，分别有:</p>
+<ol>
+<li>Spy.spyMethodOnBefore</li>
+<li>Spy.spyMethodOnThrows</li>
+</ol>
+<p>分别表示方法进入前，以及捕获异常后进入插桩，后面再根据返回结果的状态Sy.Ret.state来控制流程。这两个方法都以硬编码的方式传入了listenerId（例子中是1000），然后在事件触发的地方通过Spy类将listenerId带入。即不存在Subject的Observer列表，而是把遍历的过程通过硬编码来实现。官方给出的效果为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B62.png"
+        data-srcset="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B62.png, /02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B62.png 1.5x, /02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B62.png 2x"
+        data-sizes="auto"
+        alt="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B62.png"
+        title="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B62.png" width="788" height="623" /></p>
+<p>需要指出，当有多个EventListener时便会重复嵌套。比如，新增一个EventListener如下，该方法只监听before事件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">@Command(&#34;log&#34;)
+</span></span><span class="line"><span class="cl">    public void log() {
+</span></span><span class="line"><span class="cl">        new EventWatchBuilder(moduleEventWatcher)
+</span></span><span class="line"><span class="cl">            .onClass(&#34;sandbox.demo.Clock&#34;)
+</span></span><span class="line"><span class="cl">            .onBehavior(&#34;checkState&#34;)
+</span></span><span class="line"><span class="cl">            .onWatch(new EventListener() {
+</span></span><span class="line"><span class="cl">	            @Override
+</span></span><span class="line"><span class="cl">	            public void onEvent(Event event) throws Throwable {
+</span></span><span class="line"><span class="cl">	                System.out.println(&#34;a&#34;);
+</span></span><span class="line"><span class="cl">	            }
+</span></span><span class="line"><span class="cl">        });
+</span></span><span class="line"><span class="cl">    }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>反编译后的方法内容如下(先执行repairCheckState，listenerId为1000；再执行log，listenerId为1002)：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">void checkState() {
+</span></span><span class="line"><span class="cl">        boolean var10000 = true;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        boolean var10001;
+</span></span><span class="line"><span class="cl">        int var10002;
+</span></span><span class="line"><span class="cl">        Ret var4;
+</span></span><span class="line"><span class="cl">        Object var5;
+</span></span><span class="line"><span class="cl">        try {
+</span></span><span class="line"><span class="cl">            Ret var7 = Spy.spyMethodOnBefore(new Object[0], &#34;default&#34;, 1002, 1001, &#34;com.alibaba.jvm.sandbox.qatest.core.enhance.target.BrokenClock&#34;, &#34;checkState&#34;, &#34;()V&#34;, this);
+</span></span><span class="line"><span class="cl">            int var8 = var7.state;
+</span></span><span class="line"><span class="cl">            Object var3;
+</span></span><span class="line"><span class="cl">            if (var8 == 1) {
+</span></span><span class="line"><span class="cl">                var3 = var7.respond;
+</span></span><span class="line"><span class="cl">            } else if (var8 != 2) {
+</span></span><span class="line"><span class="cl">                var10000 = true;
+</span></span><span class="line"><span class="cl">                var10000 = true;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                try {
+</span></span><span class="line"><span class="cl">                    var7 = Spy.spyMethodOnBefore(new Object[0], &#34;default&#34;, 1000, 1001, &#34;com.alibaba.jvm.sandbox.qatest.core.enhance.target.BrokenClock&#34;, &#34;checkState&#34;, &#34;()V&#34;, this);
+</span></span><span class="line"><span class="cl">                    var8 = var7.state;
+</span></span><span class="line"><span class="cl">                    if (var8 != 1) {
+</span></span><span class="line"><span class="cl">                        if (var8 != 2) {
+</span></span><span class="line"><span class="cl">                            var10000 = true;
+</span></span><span class="line"><span class="cl">                            throw new IllegalStateException();
+</span></span><span class="line"><span class="cl">                        } else {
+</span></span><span class="line"><span class="cl">                            throw (Throwable)var7.respond;
+</span></span><span class="line"><span class="cl">                        }
+</span></span><span class="line"><span class="cl">                    } else {
+</span></span><span class="line"><span class="cl">                        var3 = var7.respond;
+</span></span><span class="line"><span class="cl">                        var10000 = true;
+</span></span><span class="line"><span class="cl">                        Ret var6 = Spy.spyMethodOnReturn((Object)null, &#34;default&#34;, 1002);
+</span></span><span class="line"><span class="cl">                        var8 = var6.state;
+</span></span><span class="line"><span class="cl">                        if (var8 != 1) {
+</span></span><span class="line"><span class="cl">                            if (var8 != 2) {
+</span></span><span class="line"><span class="cl">                                var10000 = true;
+</span></span><span class="line"><span class="cl">                            } else {
+</span></span><span class="line"><span class="cl">                                throw (Throwable)var6.respond;
+</span></span><span class="line"><span class="cl">                            }
+</span></span><span class="line"><span class="cl">                        } else {
+</span></span><span class="line"><span class="cl">                            var3 = var6.respond;
+</span></span><span class="line"><span class="cl">                        }
+</span></span><span class="line"><span class="cl">                    }
+</span></span><span class="line"><span class="cl">                } catch (Throwable var1) {
+</span></span><span class="line"><span class="cl">                    var10001 = true;
+</span></span><span class="line"><span class="cl">                    var4 = Spy.spyMethodOnThrows(var1, &#34;default&#34;, 1000);
+</span></span><span class="line"><span class="cl">                    var10002 = var4.state;
+</span></span><span class="line"><span class="cl">                    if (var10002 != 1) {
+</span></span><span class="line"><span class="cl">                        if (var10002 != 2) {
+</span></span><span class="line"><span class="cl">                            var10001 = true;
+</span></span><span class="line"><span class="cl">                            throw var1;
+</span></span><span class="line"><span class="cl">                        } else {
+</span></span><span class="line"><span class="cl">                            throw (Throwable)var4.respond;
+</span></span><span class="line"><span class="cl">                        }
+</span></span><span class="line"><span class="cl">                    } else {
+</span></span><span class="line"><span class="cl">                        var5 = var4.respond;
+</span></span><span class="line"><span class="cl">                        var10001 = true;
+</span></span><span class="line"><span class="cl">                        var4 = Spy.spyMethodOnReturn((Object)null, &#34;default&#34;, 1002);
+</span></span><span class="line"><span class="cl">                        var10002 = var4.state;
+</span></span><span class="line"><span class="cl">                        if (var10002 != 1) {
+</span></span><span class="line"><span class="cl">                            if (var10002 != 2) {
+</span></span><span class="line"><span class="cl">                                var10001 = true;
+</span></span><span class="line"><span class="cl">                            } else {
+</span></span><span class="line"><span class="cl">                                throw (Throwable)var4.respond;
+</span></span><span class="line"><span class="cl">                            }
+</span></span><span class="line"><span class="cl">                        } else {
+</span></span><span class="line"><span class="cl">                            var5 = var4.respond;
+</span></span><span class="line"><span class="cl">                        }
+</span></span><span class="line"><span class="cl">                    }
+</span></span><span class="line"><span class="cl">                }
+</span></span><span class="line"><span class="cl">            } else {
+</span></span><span class="line"><span class="cl">                throw (Throwable)var7.respond;
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        } catch (Throwable var2) {
+</span></span><span class="line"><span class="cl">            var10001 = true;
+</span></span><span class="line"><span class="cl">            var4 = Spy.spyMethodOnThrows(var2, &#34;default&#34;, 1002);
+</span></span><span class="line"><span class="cl">            var10002 = var4.state;
+</span></span><span class="line"><span class="cl">            if (var10002 != 1) {
+</span></span><span class="line"><span class="cl">                if (var10002 != 2) {
+</span></span><span class="line"><span class="cl">                    var10001 = true;
+</span></span><span class="line"><span class="cl">                    throw var2;
+</span></span><span class="line"><span class="cl">                } else {
+</span></span><span class="line"><span class="cl">                    throw (Throwable)var4.respond;
+</span></span><span class="line"><span class="cl">                }
+</span></span><span class="line"><span class="cl">            } else {
+</span></span><span class="line"><span class="cl">                var5 = var4.respond;
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">    }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>效果上相当于第二个EventListener的插桩代码是在第一个EventListener处理过的class后再进行处理。</p>
+<h4 id="4-通知observer">4. 通知Observer</h4>
+<p>从第2部分插桩过后的代码可以看出，jvm-sandbox在方法的每个通知点(before,throw,return)都买入了Spy.spyMethodOnXXX方法以及对应的listenerId。当相应的流程到达对应的通知点时，便会触发listenerId对应EventListener的回调，从而达到通知Observer的效果。</p>
+<p>根据前面几部分，可以得到jvm-sandbox实现观察者模式的过程是这样的：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B0.png"
+        data-srcset="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B0.png, /02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B0.png 1.5x, /02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B0.png 2x"
+        data-sizes="auto"
+        alt="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B0.png"
+        title="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B0.png" width="1498" height="680" /></p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B.png"
+        data-srcset="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B.png, /02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B.png 1.5x, /02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B.png 2x"
+        data-sizes="auto"
+        alt="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B.png"
+        title="/02-event/%E8%A7%82%E5%AF%9F%E8%80%85%E6%B5%81%E7%A8%8B.png" width="769" height="462" /></p>
+<h4 id="5-spy">5. Spy</h4>
+<p>从第2部分插桩过后的代码可以看出，Spy完成了方法的回调，然后插桩代码根据Spy.Ret的状态更新了原流程的控制。下面来看下这两个类</p>
+<h4 id="51-spy间谍类">5.1 Spy间谍类</h4>
+<p>Spy类会分布在各个ClassLoader中，因而Spy类由BoostrapClassLoader加载。涉及到的类如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/SpyClass.png"
+        data-srcset="/02-event/SpyClass.png, /02-event/SpyClass.png 1.5x, /02-event/SpyClass.png 2x"
+        data-sizes="auto"
+        alt="/02-event/SpyClass.png"
+        title="/02-event/SpyClass.png" width="2034" height="1036" /></p>
+<p>以Spy.spyMethodOnBefore为例，该方法会调用命名空间内的SpyHandler类对应的handleOnBefore方法。SpyHandler为接口，位于sandbox-spy.jar中，实现类为EventListenerHandler，该对象会在初始化JvmSandbox对象时调用SpyUtils进行赋值（将上一节内容）。EventListenerHandler位于sandbox-core.jar中，通过Spy.spyMethodOnBefore，将流程传到了EventListenerHandler，传递的参数如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public static Ret spyMethodOnBefore(final Object[] argumentArray,//参数列表
+</span></span><span class="line"><span class="cl">                                        final String namespace,//命名空间
+</span></span><span class="line"><span class="cl">                                        final int listenerId,//EventListener对象对应的全局id
+</span></span><span class="line"><span class="cl">                                        final int targetClassLoaderObjectID,//触发目标方法所在ClassLoader对应的全局对象id
+</span></span><span class="line"><span class="cl">                                        final String javaClassName,
+</span></span><span class="line"><span class="cl">                                        final String javaMethodName,
+</span></span><span class="line"><span class="cl">                                        final String javaMethodDesc,
+</span></span><span class="line"><span class="cl">                                        final Object target) throws Throwable {
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>关注listenerId，EventListenerHandler会用该listnerId获取对应的EventProcessor对象，该对象持有客户自定义的EventListener实现和关注的事件类型（见上面讲解）。</p>
+<h4 id="52-eventprocessor">5.2 EventProcessor</h4>
+<p>EventProcessor持有事件的3要素：</p>
+<ol>
+<li>listenerId：EventListener对象对应的id</li>
+<li>EventListener对象</li>
+<li>Event.Type[]：关注的事件类型列表</li>
+</ol>
+<p>以及一个线程相关的Process对象</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">final ThreadLocal&lt;Process&gt; processRef = new ThreadLocal&lt;Process&gt;() {
+</span></span><span class="line"><span class="cl">        @Override
+</span></span><span class="line"><span class="cl">        protected Process initialValue() {
+</span></span><span class="line"><span class="cl">            return new Process();
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">    };
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该对象作用在运行时，每个线程独享一个实例。Process对象有两个重要的属性，为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">// 事件工厂
+</span></span><span class="line"><span class="cl">        private final SingleEventFactory eventFactory
+</span></span><span class="line"><span class="cl">                = new SingleEventFactory();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        // 调用堆栈
+</span></span><span class="line"><span class="cl">        private final GaStack&lt;Integer&gt; stack
+</span></span><span class="line"><span class="cl">                = new ThreadUnsafeGaStack&lt;Integer&gt;();
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>事件工厂<strong>SingleEventFactory</strong>用来创建各种事件对象，如BeforeEvent、ReturnEvent；调用堆栈<strong>ThreadUnsafeGaStack</strong>用于记录调用过程。</p>
+<p>SingleEventFactory使用Unsafe为各种事件对象赋值，避免在新生代赋值，减少不必要的GC。同时对于同一个线程，事件对象是公用的，该对象使用完后会留作下次使用，这样避免频繁申请堆外内存。</p>
+<p>jvm-sandbox会在每个Before事件发生时，为该次动作分配一个调用id：<strong>invokeId</strong>，并将该invokeId推入调用堆栈ThreadUnsafeGaStack中。并在方法流程完成时从堆栈中弹出对应的id。</p>
+<p>由于Process在EventProcess中分配且是线程相关的，因而堆栈只记录对应EventListener的调用且是线程相关的。所以堆栈主要用来记录同个EventListener锁匹配方法的调用深度。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/process.png"
+        data-srcset="/02-event/process.png, /02-event/process.png 1.5x, /02-event/process.png 2x"
+        data-sizes="auto"
+        alt="/02-event/process.png"
+        title="/02-event/process.png" width="854" height="789" /></p>
+<p>上面通过SingleEventFactory产生了BeforeEvent对象，可以通过EventProcessor获取到EventListener对象，并进行回调。</p>
+<h4 id="53-spyret">5.3 Spy.Ret</h4>
+<p>前面介绍过，插桩后的代码是通过Spy.Ret.status来控制流程。定义为:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public static class Ret {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        public static final int RET_STATE_NONE = 0;
+</span></span><span class="line"><span class="cl">        public static final int RET_STATE_RETURN = 1;
+</span></span><span class="line"><span class="cl">        public static final int RET_STATE_THROWS = 2;
+</span></span><span class="line"><span class="cl">        private static final Ret RET_NONE = new Ret(RET_STATE_NONE, null);
+</span></span><span class="line"><span class="cl">        /**
+</span></span><span class="line"><span class="cl">         * 返回状态(0:NONE;1:RETURN;2:THROWS)
+</span></span><span class="line"><span class="cl">         */
+</span></span><span class="line"><span class="cl">        public final int state;
+</span></span><span class="line"><span class="cl">        /**
+</span></span><span class="line"><span class="cl">         * 应答对象
+</span></span><span class="line"><span class="cl">         */
+</span></span><span class="line"><span class="cl">        public final Object respond;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        private Ret(int state, Object respond) {
+</span></span><span class="line"><span class="cl">            this.state = state;
+</span></span><span class="line"><span class="cl">            this.respond = respond;
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">    }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>即返回结果中：</p>
+<ol>
+<li>0 ：不处理，继续原流程</li>
+<li>1 ： 直接返回，流程不再往下走</li>
+<li>2 ：抛出异常，流程以异常的方式结束</li>
+</ol>
+<p>这个状态是用户指定返回的，但EventListener的定义为:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public interface EventListener {
+</span></span><span class="line"><span class="cl">    void onEvent(Event event) throws Throwable;
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>没有返回值。咋回事？？？实际上，jvm-sandbox是通过异常来控制流程可传递参数的，开头的例子中</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">ProcessControlException.throwReturnImmediately(null);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>是jvm-sandbox封装的工具类。通过在对应的事件中抛出异常或者正常返回可以控制原方法的流程，官方给出的状态机为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B63.png"
+        data-srcset="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B63.png, /02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B63.png 1.5x, /02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B63.png 2x"
+        data-sizes="auto"
+        alt="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B63.png"
+        title="/02-event/%E6%B2%99%E7%AE%B1%E4%BA%8B%E4%BB%B63.png" width="614" height="399" /></p>
+<p>具体到实现如下:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/state.png"
+        data-srcset="/02-event/state.png, /02-event/state.png 1.5x, /02-event/state.png 2x"
+        data-sizes="auto"
+        alt="/02-event/state.png"
+        title="/02-event/state.png" width="997" height="665" /></p>
+<p>通过在EventListener中抛出ProcessControlException，并设置state对应的值来判断流程的具体走向。</p>
+<p>上面介绍了jvm-sandbox如果通过AOP实现了事件机制通知，最后总结整个过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/02-event/%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5.png"
+        data-srcset="/02-event/%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5.png, /02-event/%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5.png 1.5x, /02-event/%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5.png 2x"
+        data-sizes="auto"
+        alt="/02-event/%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5.png"
+        title="/02-event/%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5.png" width="1296" height="357" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-08-02</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/02-event/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/02-event/" data-title="JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;" data-hashtags="jvm-sandbox"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/02-event/" data-hashtag="jvm-sandbox"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/02-event/" data-title="JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/jvm-sandbox/">JVM-SandBox</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/01-start/" class="prev" rel="prev" title="JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>JVM层面的切面实现 : jvm-sandbox 之 <应用启动></a>
+            <a href="/003-socks/" class="next" rel="next" title="Socks协议">Socks协议<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/valine@1.5.0/dist/Valine.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@14.0.0/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://leancloud.hugoloveit.com","visitor":true}},"lightgallery":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>
