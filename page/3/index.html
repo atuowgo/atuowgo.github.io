@@ -97,7 +97,7 @@
         data-srcset="/images/avatar.jpeg, /images/avatar.jpeg 1.5x, /images/avatar.jpeg 2x"
         data-sizes="auto"
         alt="/images/avatar.jpeg"
-        title="/images/avatar.jpeg" width="700" height="700" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a></div></div>
+        title="/images/avatar.jpeg" width="700" height="700" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/06-nameserver/">轻量级注册中心：RocketMQ NameServer</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish">发布于 <time datetime="2020-04-15">2020-04-15</time></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">NameServer实现比较简单，主要包括配置管理、路由管理两块。其主要功能是为整个MQ集群提供服务协调与治理，具体就是记录维护Topic、Broker的信息，及监控Broker的运行状态，为client提供路由能力。NameServer是一个几乎无状态节点，可集群部署，节点之间无任何信息同步。
