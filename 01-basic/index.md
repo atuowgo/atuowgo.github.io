@@ -1,161 +1,153 @@
-# Redis基本结构
+# Sentinel基本概念
 
 
-&emsp;之前看了《Redis设计与实现》这本书，对Redis的认识加深了一些，便做了一些总结，同时也记录下自己的一些想法。
+&emsp;Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍。
 
-&emsp;这节先介绍Redis提供的基本结构，主要分为底层的基本结构和以对象形式包装的Object结构。
+&emsp;这里先介绍下Sentinel中涉及到的基本概念，包括使用上或者实现上。主要是笔者在阅读文档和源码时经常会接触到的对象。
 
-#### 1.SDS
+#### Resource
 
-&emsp;C字符串在redis中主要用于无须对字符串值进行修改的地方，对于需要修改字符串的场景，则使用SDS（简单动态字符串）。
+&emsp;资源是整个Sentinel最基本的一个概念。可以是一段代码，一个http请求，一个微服务，总而言之，他是Sentinel需要保证的实体。大部分情况下，我们可以使用方法签名，URL或者是服务名称来作为资源的名称。它在Sentinel中的体现是：ResourceWrapper，他有两个子类：
 
-SDS的结构如下示：
+ 1. StringResourceWrapper 使用string来标识一个资源
 
-![](1.png)
+ 2. MethodResouceWrapper 使用一个函数签名来标识一个资源
 
-&emsp;其中buff是字符串缓冲区，用于存放字符串，len为buf数组中已使用字节的数量，free为buf数组中未使用字节的数量。注意，buff中存放的是二进制数据，使用len属性来判断字符串是否结束，保留’\0’符号是为了兼容部分C函数。
+#### Node
 
-&emsp;同C字符串相比，由于SDS记录了相关的使用情况，因而能够以常数复杂度获取字符串长度，并且能够杜绝缓冲区溢出。同时，通过使用空间预分配和惰性空间释放两种策略，能够减少修改字符串时带来的内存重分配次数。
+&emsp;节点是用来存储统计数据的基本数据单元，Node本身只是一个接口，它有多个实现：
 
-&emsp;所谓空间预分配是指，当对SDS进行修改的时候，并且需要对SDS空间进行扩展的时候，程序不仅会为SDS分配修改所需要的空间，还会为SDS分配额外的未使用空间。其分配策略是如下定义的：如果对SDS修改后的长度小于1MB，那么程序分配和len属性同样大小的未使用空间；如果对SDS修改后的长度大于等于1MB，那么程序会分配1MB的未使用空间。通过空间预分配策略，redis可以减少连续执行字符串增长操作所需要的内存重分配次数。
+1. StatisticNode 唯一的直接实现类，实现了流量统计的基本方法，在StatisticSlot中使用
 
-&emsp;所谓惰性空间释放，就是当需要缩短SDS保存的字符串的时候，程序并不立即使用内存重新分配来回收缩短后多出来的字节，而是使用free属性将这些字节的数量记录下来，并等将来使用。
+2. ClusterNode 继承自StatisticNode，对于某一个资源的全局统计
 
-&emsp;SDS的行为同Java中的StringBuilder类似。
+3. DefaultNode 继承自StatisticNode，对于某一个资源在相应上下文中的实现，保存了一个指向ClusterNode的引用。另外还保存了子节点列表，当在同一个context下多次调用SphU.entry不同资源时会创建子节点
 
-#### 2.list
+4. EntranceNode 继承自DefaultNode，代表一个调用的根节点，一个Context会对应到一个EntranceNode
 
-&emsp;list结构是个标准的无环双向链表实现，结构如下:
+#### Context
 
-![](2.png)
+&emsp;上下文是用来保存当前调用的元数据，存储在ThreadLocal中，它包含了几个信息：
 
-&emsp;具体过程不再讲解，网上对该结构的讲解比较多。
+1. EntranceNode 整个调用树的根节点，即入口
 
-#### 3.dict
+2. Entry 当前的调用点
 
-&emsp;dict结构是个标准的字典实现，使用链地址法解决冲突。Dict的结构如下:
+3. Node 关联到当前调用点的统计信息
 
-![](3.png)
+4. Origin 通常用来标识调用方，这在我们需要按照调用方来区分流控策略的时候会非常有用
 
-&emsp;其中ht是一个长度为2的数组，一般情况下只使用了ht[0]，ht[1]用于rehash过程。rehashidx记录了rehash的过程，-1表示没有在进行。redis采用渐进式rehash的方式来rehash，防止在数量庞大时导致服务器在一段时间内停止服务。
+&emsp;每当我们调用SphU.entry()或者 SphO.entry()获取访问资源许可的时候都需要当前线程处在某个context中，如果我们没有显式调用ContextUtil.enter()，默认会使用Default context。如果我们在一个上下文中多次调用SphU.entry()来获取多个资源，一个调用树就会被创建出来
 
-&emsp;渐进式rehash的主要过程为：为dict的ht[1]哈希表分配空间，可以是扩容，也可以是缩容;将保存在ht[0]中的所有键值对重新计算索引值，rehash到ht[1]上;迁移完成后释放ht[0]，将ht[1]设置为ht[0],并在ht[1]新创建一个空白哈希表，为下一次rehash做准备。
+#### NullContext
 
-#### 4.jump List
+&emsp;超过系统能够创建的最大会话数则返回NullContext，后续不对该会话做过滤校验，直接放过。
 
-&emsp;跳表是有序集合的底层实现之一。
+&emsp;Entry
 
-&emsp;关于跳表的细节，可以看下面的[介绍](https://zh.wikipedia.org/wiki/%E8%B7%B3%E8%B7%83%E5%88%97%E8%A1%A8)
+&emsp;每次SphU.entry()调用都会返回一个Entry，Entry保持了所有关于当前资源调用的信息：
 
-&emsp;redis使用跳表不用红黑树的原因在于：
+1. createTime 这个资源调用的创建时间
 
-&emsp;在插入、删除、查找以及迭代输出有序序列这几个操作上，跳表跟红黑树的时间复杂度是一样的，但是在按区间查找数据的操作上，跳表的效率比红黑树更高。
+2. currentNode SphU.entry请求进入的资源在当前上下文中的统计数据Node
 
-1.	跳表较红黑树更好实现，意味着可读性好、不易出错。
+3. originNode SphU.entry请求进入的资源对于特定origin调用方的统计数据node
 
-2.	跳表更加灵活，可以通过改变索引结构来平衡执行效率和内存消耗之间的关系
+&emsp;Entry的实现类为CtEntry，它其中除了上述信息之外，还保存了额外的信息：
 
-#### 5.intset
+1. parent 调用树链条中上一个entry
 
-&emsp;当一个集合只包含整数值元素，并且这个集合的元素数量不多时，redis就会使用整数集合作为集合的底层实现。下面是intset的结构
+2. child 调用树链条中的下一个entry
 
-![](4.png)
+3. chain 当前调用资源所使用的限流工作责任链，包括各个Slot
 
-&emsp;其中content用于存储整数集合的值，length为content的长度，encoding为content中存储的整数的类型，可以为int_16,int_32和int_64。
+4. context 当前调用点所属的上下文
 
-&emsp;当需要新增元素到intset里时，redis会保证元素是有序的。如果content长度不够或者新增的类型同encoding的类型不同，还会出发intset的升级。升级过程包括重新分配content大小（以新的encoding类型为准），必要时提升encoding的类型，移动元素的位置，最后修改length属性。
+#### EntryType
 
-&emsp;注意，intset不支持降级操作，一旦对数组进行了升级，编码就会一直保持升级后的状态。
+&emsp;EntryType 说的是这次请求的流量类型，共有两种类型：IN 和 OUT 。
 
-#### 6.zipList
+&emsp;IN：是指进入我们系统的入口流量，比如 http 请求或者是其他的 rpc 之类的请求。
 
-&emsp;当一个列表键只包含少量列表项，并且每个列表项要么就是小整数，要么就是长度比较短的字符串，那么就会使用压缩列表来做列表键的底层实现。
+&emsp;OUT：是指我们系统调用其他第三方服务的出口流量。
 
-&emsp;压缩列表的结构如下:
+&emsp;入口、出口流量只有在配置了系统规则时才有效。
 
-![](5.png)
+&emsp;设置Type 为 IN 是为了统计整个系统的流量水平，防止系统被打垮，用以自我保护的一种方式。
 
-&emsp;每个zipList节点的组成部分如下:
+&emsp;设置Type 为 OUT 一方面是为了保护第三方系统，比如我们系统依赖了一个生成订单号的接口，而这个接口是核心服务，如果我们的服务是非核心应用的话需要对他进行限流保护；另一方面也可以保护自己的系统，假设我们的服务是核心应用，而依赖的第三方应用老是超时，那这时可以通过设置依赖的服务的 rt 来进行降级，这样就不至于让第三方服务把我们的系统拖垮。
 
-![](6.png)
+#### Slot
 
-每个节点保存一个字节数据或者一个整数值，其中字节数组和整数值都允许保存不同的长度,由encoding属性决定。previous_entry_length属性则记录了前一个节点的长度，使用1个字节或者5个字节来存储，在新节点加入时可能引起[连锁更新](http://redisbook.com/preview/ziplist/cascade_update.html).
+&emsp;Entry 创建的时候，同时也会创建一系列功能插槽（slot chain），这些插槽有不同的职责，例如:
 
-#### 7.object
+1. NodeSelectorSlot 负责收集资源的路径，并将这些资源的调用路径，以树状结构存储起来，用于根据调用路径来限流降级；
 
-&emsp;Redis以对象的形式来存储键值，提供了字符串对象，列表对象，哈希对象，集合对象和有序集合对象5种类型。并使用引用计数来管理对象的回收。
+2. ClusterBuilderSlot 则用于存储资源的统计信息以及调用者信息，例如该资源的 RT, QPS,thread count 等等，这些信息将用作为多维度限流，降级的依据；
 
-&emsp;对象结构的主要属性包括type，encoding和ptr属性。
+3. LogSlot 用于打印日志
 
-&emsp;其中type属性记录了对象的类型，这个属性的值包括:
+4. StatisticSlot 则用于记录、统计不同纬度的 runtime 指标监控信息；
 
-类型常量	| 对象的名称
-:-: | :-:
-REDIS_STRING	| 字符串对象
-REDIS_LIST	|列表对象
-REDIS_HASH	|哈希对象
-REDIS_SET |	集合对象
-REDIS_ZSET	| 有序集合对象
+5. SystemSlot 则通过系统的状态，例如 load1 等，来控制总的入口流量；
 
-&emsp;encoding记录了对象使用了什么数据结构的对象底层实现，这个属性的值包括:
+6. AuthoritySlot 则根据配置的黑白名单和调用来源信息，来做黑白名单控制；
 
-编码常量	|编码所对应的底层数据结构
-:-:|:-:
-REDIS_ENCODING_INT |	long类型的整数
-REDIS_ENCODING_EMBSTR|	embstr编码的简单动态字符串
-REDIS_ENCODING_RAW	|简单动态字符串
-REDIS_ENCODING_HT	|字典
-REDIS_ENCODING_LINKEDLIST|	双端链表
-REDIS_ENCODING_ZIPLIST|	压缩列表
-REDIS_ENCODING_INTSET	|整数集合
-REDIS_ENCODING_SKIPLIST	|跳跃表和字典
+7. FlowSlot 则用于根据预设的限流规则以及前面 slot 统计的状态，来进行流量控制；
 
-###### 1.REDIS_STRING
+8. DegradeSlot 则通过统计信息以及预设的规则，来做熔断降级；
 
-&emsp;字符串对象的编码可以为INT,EMBSTR或者RAW。当字符串对象保存的是整数，且该整数能够用long来表示，则使用int存储整数值;当保存的是一个字符串，且长度小于39字节，则使用embstr编码，大于39字节则使用raw编码.关于两者的区别，可以看下面的[说明](http://redisbook.com/preview/object/string.html)。而embstr要以39个字节来划分的原因可以看这个[说明](http://www.cnblogs.com/lhcpig/p/4769397.html)
+&emsp; Slot只绑定在CtEntry上
 
-###### 2.REDIS_LIST
+#### ProcessorSlotChain
 
-&emsp;列表对象的编码可以为ZIPLIST或者LINKEDLIST。
+&emsp;功能槽处理链，entry进入一个槽可以添加自己的动作，之后后fire动作会entry下一个槽，exit同理
 
-&emsp;当列表对象可以同时满足以下两个条件时，列表对象使用ziplist编码：
+&emsp;**注意，实现上相同资源共享一个ProcessorSlotChain ，可以跨Context**
 
-1. 列表对象保存的所有字符串元素的长度都小于64字节;
+#### LimitApp
 
-2. 列表对象保存的元素数量小于512个
-若不满足则使用linkedlist编码，该条件可以通过配置文件的配置项list-max-ziplist-value和list-max-ziplist-entries进行修改。
+&emsp;流控规则中的 limitApp 字段用于根据调用来源进行流量控制。该字段的值有以下三种选项，分别对应不同的场景：
 
-###### 3.REDIS_HASH
+1. default：表示不区分调用者，来自任何调用者的请求都将进行限流统计。如果这个资源名的调用总和超过了这条规则定义的阈值，则触发限流。
 
-&emsp;哈希对象的编码可以为ZIPLIST或者HASHTABLE
+2. {some_origin_name}：表示针对特定的调用者，只有来自这个调用者的请求才会进行流量控制。例如 NodeA 配置了一条针对调用者caller1的规则，那么当且仅当来自 caller1 对 NodeA 的请求才会触发流量控制。
 
-&emsp;当哈希对象可以同时满足以下两个条件时，哈希对象使用ziplist编码：
+3. other：表示针对除 {some_origin_name} 以外的其余调用方的流量进行流量控制。例如，资源NodeA配置了一条针对调用者 caller1 的限流规则，同时又配置了一条调用者为 other 的规则，那么任意来自非 caller1 对 NodeA 的调用，都不能超过 other 这条规则定义的阈值。
 
-1. 哈希对象保存的所有键值对的键和值的字符串当度都小于64字节;
+&emsp;同一个资源名可以配置多条规则，规则的生效顺序为：{some_origin_name} > other > default
 
-2. 哈希对象保存的键值对数量小于512个
-&emsp;若不满足则使用hashtable编码，该条件可以通过配置文件的配置项hash-max-ziplist-value和hash-max-ziplist-entries进行修改。
+&emsp;介绍完了上面的基本概念，下面给出Sentinel的基本用法：
 
-###### 4.REDIS_SET
+```
 
-&emsp;集合对象的编码可以为INTSET或者HASHTABLE
+List<FlowRule> rules = new ArrayList<FlowRule>();
+FlowRule rule1 = new FlowRule();
+rule1.setResource(KEY);
+// set limit qps to 20
+rule1.setCount(20);
+rule1.setGrade(RuleConstant.FLOW_GRADE_QPS);
+rule1.setLimitApp("default");
+rules.add(rule1);
+​
+Entry entry = null;
+​
+try {
+        entry = SphU.entry(KEY);
+        // token acquired, means pass,do biz logic
+} catch (BlockException e1) {
+        //block,handle block logic
+} catch (Exception e2) {
+        // biz exception,handle biz exception logic
+} finally {
+        if (entry != null) {
+                entry.exit();
+        }
+}
+​
+```
 
-&emsp;当集合对象可以同时满足以下两个条件时，使用intset编码：
+&emsp;如上，为sentinel的基本用法:
 
-1. 集合对象保存的所有元素都是整数值;
+&emsp;先设定好规则，在进入需要受保护的资源前，尝试获取token，若成功获取token，则可以执行相关逻辑，否则抛出异常进行处理，最后释放所获得的token 。
 
-2. 集合对象保存的元素数量不超过512个
-
-&emsp;若不满足则使用hashtable编码，该条件可以通过配置文件的配置项set-max-intset-entries进行修改。
-
-##### 5.REDIS_ZSET
-
-&emsp;有序集合的编码可以为ZIPLIST或者SKIPLIST
-
-&emsp;当有序集合对象同时满足以下两个条件时，使用ziplist
-
-1. 有序集合保存的元素数量小于128个;
-
-2. 有序集合保存的所有元素成员的长度都小于64字节;
-
-&emsp;若不满足则使用skiplist编码，该条件可以通过配置文件的配置项zset-max-ziplist-entries和zset-max-ziplist-values进行修改。
