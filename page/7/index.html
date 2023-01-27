@@ -100,7 +100,7 @@
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/06-cluster/">Redis集群</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish">发布于 <time datetime="2019-09-26">2019-09-26</time></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的集群模式
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的集群模式
 主从模式提供了读写分离的支持，Sentinel提供了高可用的保障，满足了读模式下的横向扩展，但主节点只有一个，集中式的写模式无法应对不断增长的写需求。
 Redis 3.x 版本提供了Redis cluster功能，服务端sharding使用槽作为分布式的解决方案。对于 2.x版本，则通过客户端API提供的客户端sharding方式，使用一致性哈希来实现数据分片。此外，twiter开源的twemproxy 和豌豆荚的codis，则采用代理模式来实现。
 1 服务端模式 对于客户端来说，整个集群被看做一个整体，客户端可以连接任意一个节点进行操作，就像操作单一Redis数据库一样。当客户端操作的key没有分配到该节点上时，会返回转向指令，指向正确的节点。
@@ -117,7 +117,7 @@ Redis 3.x 版本提供了Redis cluster功能，服务端sharding使用槽作为�
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/redis/">Redis</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/05-sentinel/">Redis Sentinel</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish">发布于 <time datetime="2019-09-25">2019-09-25</time></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的高可用解决方案：Sentinel
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的高可用解决方案：Sentinel
 1.介绍 Sentinel是Redis官方推荐的高可用(HA)解决方案，当用Redis做master-slave的高可用方案时，假如master宕机了，Redis本身(包括它的很多客户端)都没有实现自动进行主备切换。
 Sentinel本身是一个运行在特殊模式下的Redis服务器，它能监控多个master-slave集群，发现master宕机后能进行自动切换。
 2.获取信息方式 sentinel通过配置项中的
@@ -154,7 +154,7 @@ sentinel每2秒通过命令连接向所监听的节点发送订阅命令，如
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/redis/">Redis</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/04-publish/">Redis发布与订阅</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish">发布于 <time datetime="2019-09-24">2019-09-24</time></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的发布与订阅
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的发布与订阅
 Redis提供了发布与订阅的功能，客户端能够向服务器订阅某个频道，当其他客户端向服务器的该频道发布消息时，服务器会将消息推送到订阅该频道的客户端。提供的命令包括：
 1 SUBSCRIBE channel [channel …] 该命令可以向服务器订阅多个频道的消息。与之对应的有UNSUBSCRIBE命令。
 1 PSUBSCRIBE pattern	[pattern …] 该命令可以向服务器订阅多个频道中满足对应模式的消息。与之对应的有UNPSUNSCRIBE命令。
@@ -167,7 +167,7 @@ Redis提供了发布与订阅的功能，客户端能够向服务器订阅某个
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/redis/">Redis</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/03-copy/">Redis主从复制</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish">发布于 <time datetime="2019-09-23">2019-09-23</time></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的主从复制过程,包括建立和复制。
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的主从复制过程,包括建立和复制。
 1.复制的建立 1.1 SLAVEOF命令 Redis支持主从模式以提供读写分离，可以通过在从服务器的客户端上执行如下命令以连接主服务器：
 1 SLAVEOF	IP	PORT 或者在配置文件中配置SLAVEOF选项。
 1.2 建立过程 SLAVEOF命令包括以下几个步骤：
@@ -204,7 +204,7 @@ PSYNC的执行步骤如下：
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/redis/">Redis</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/02-persist/">Redis持久化</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish">发布于 <time datetime="2019-09-22">2019-09-22</time></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的持久化，包括RDB和AOF两种方式。
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的持久化，包括RDB和AOF两种方式。
 1.RDB持久化 Redis能够将内存中的数据持久化到RDB文件中，避免数据丢失。RDB文件的格式如下示：
 第一部分是开头的5个字节，值为REDIS，第二部分是长度为4个字节的版本号，值为一个字符串表示的整形。database部分包含零个或任意多个数据库，以及各个数据库中的键值对数据，database的结构如下示：
 EOF为1字节的结束符号，check_sum为8字节长的校验和，这个校验和是通过前面4个部分计算出来的。
@@ -225,7 +225,7 @@ Redis提供了AOF重写功能，来应对文件过大的情况。执行AOF重写
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/redis/">Redis</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/01-basic/">Redis基本结构</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish">发布于 <time datetime="2019-09-21">2019-09-21</time></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">之前看了《Redis设计与实现》这本书，对Redis的认识加深了一些，便做了一些总结，同时也记录下自己的一些想法。
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">之前看了《Redis设计与实现》这本书，对Redis的认识加深了一些，便做了一些总结，同时也记录下自己的一些想法。
 这节先介绍Redis提供的基本结构，主要分为底层的基本结构和以对象形式包装的Object结构。
 1.SDS C字符串在redis中主要用于无须对字符串值进行修改的地方，对于需要修改字符串的场景，则使用SDS（简单动态字符串）。
 SDS的结构如下示：
@@ -280,7 +280,40 @@ redis使用跳表不用红黑树的原因在于：
                     </span>
                 </li></ul></div></div>
             </main><footer class="footer">
-        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span></div>
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2019 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="far fa-eye fa-fw"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
         </div>
     </footer></div>
 
