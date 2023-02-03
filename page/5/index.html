@@ -99,7 +99,18 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/06-spring-aop/">Spring AOP</a>
+        <a href="/jacoco_01_class_file_type/">Class文件格式</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">我们知道Java是一门跨平台的语言，我们编写的Java代码会被编译成中间class文件以让Java虚拟机解析运行。而Java虚拟机规范仅仅描述了抽象的Java虚拟机，在实现具体的Java虚拟机时，仅指出了设计规范。Java虚拟机的实现必须体现规范中的内容，但仅在确有必要时才应该受制于这些规范。对于完整内容，可以查看原文档，以JDK7为例，可查看https://docs.oracle.com/javase/specs/jvms/se7/html/，或者《深入理解Java虚拟机 JVM高级特性与最佳实践》一书。完整的规范主要包含以下内容：
+第2章：概览Java虚拟机整体架构 第3章：介绍如何将Java语言编写的程序转换为虚拟机指令集 第4章：定义class文件格式。它是一种与硬件和操作系统无关的二进制格式，用来表示编译后的类和接口 第5章：定义了Java虚拟机启动以及类和接口的加载、链接和初始化的过程 第6章：定义了Java虚拟机指令集 第7章：提供了一张以操作码值为索引的Java虚拟机操作码助记表 本文只是大概记录项目需要了解的基础概念，着重在介绍Class文件格式上，为该系列后续内容做铺垫。
+Class文件是一组以8字节为基础单位的二进制流，各个数据项目严格按照顺序紧凑排列在class文件中，中间没有任何分割符。每个 Class 文件都是由 8 字节为单位的字节流组成，所有的 16 位、32 位和 64 位长度的数据将被构造成 2 个、4 个和 8 个 8 字节单位来表示。
+每一个Class文件对应于一个如下所示的ClassFile结构体:
+涉及到的内容包括：
+magic：魔数，魔数的唯一作用是确定这个文件是否为一个能被虚拟机所接受的Class文件。魔数值固定为0xCAFEBABE，不会改变。 minor_version、major_version：副版本号和主版本号，minor_version和major_version的值分别表示Class文件的副、主版本。一个Java虚拟机实例只能支持特定范围内的主版本号（Mi至Mj）和0至特定范围内（0至m）的副版本号。 constant_pool_count：常量池计数器，constant_pool_count的值等于constant_pool表中的成员数加1。 constant_pool[]：常量池，constant_pool是一种表结构，它包含Class文件结构及其子结构中引用的所有字符串常量、类或接口名、字段名和其它常量。 access_flags：访问标志，access_flags是一种掩码标志，用于表示某个类或者接口的访问权限及基础属性。 this_class：类索引 super_class：父类索引 interfaces_count：接口计数器，interfaces_count的值表示当前类或接口的直接父接口数量 interfaces[]：接口表，在interfaces[]数组中，成员所表示的接口顺序和对应的源代码中给定的接口顺序（从左至右）一样，即interfaces[0]对应的是源代码中最左边的接口。 fields_count：字段计数器，fields_count的值表示当前Class文件fields[]数组的成员个数。 fields[]：字段表，fields[]数组描述当前类或接口声明的所有字段，但不包括从父类或父接口继承的部分。 methods_count：方法计数器，methods_count的值表示当前Class文件methods[]数组的成员个数。 methods[]：方法表，methods[]数组只描述当前类或接口中声明的方法，不包括从父类或父接口继承的方法。 attributes_count：属性计数器，attributes_count的值表示当前Class文件attributes表的成员个数。 attributes[]：属性表 可用jdk自带的javap命令对class文件进行反编译，以查看内容，如下代码：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 public class Ex { public void judgeAge(int age) { int step = 0; if (age &gt; 18) { step++; System.</div><div class="post-footer">
+        <a href="/jacoco_01_class_file_type/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/jacoco/">Jacoco</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/spring_06-aop/">Spring AOP</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Spring AOP。关于Spring AOP的名字就不多做介绍了，网上有很多对AOP的解释。
 1. 概念术语 1.1 切面（Aspect）
 切面是一个关注点的模块化，这个关注点可能是横切多个对象；
@@ -138,10 +149,10 @@ AOP代理是指AOP框架创建的对象，用来实现切面（包括通知方�
 3.1. postProcessBeforeInstantiation 如上图示：
 在beanName为空或者目标类不包含该beanName的前提下，如果该bean是通知执行对象(advisedBeans)则不进行代理；如果为基础类且需要跳过则不进行代理，同时会将其标记为非通知执行对象。
 如果该beanName设置了TargetSource，则调用createProxy方法为该beanName创建代理对象，并将其进行标记，存于targetSourceBeans字段中。这里调用createProxy方法前会调用getAdvicesAndAdvisorsForBean方法获取该bean上设置的通知点。</div><div class="post-footer">
-        <a href="/06-spring-aop/">阅读全文</a><div class="post-tags">
+        <a href="/spring_06-aop/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/002-p3c/">扩展阿里p3c实现自定义代码规范检查</a>
+        <a href="/notes_002_p3c/">扩展阿里p3c实现自定义代码规范检查</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">前段时间fastjson报出了漏洞，只要打开setAutoType特性就会存在风险，自己测试环境的一个项目被揪出来了-_-!。虽然改动很小，但就是觉得憋屈。fastjson还是挺好的，想着禁用的话太可惜，用的话又要注意安全，就想着找款工具提示下在用fastjson的时候不要打开这个特性。刚好阿里开源了p3c（https://github.com/alibaba/p3c），一款代码规范的检查工具，有对应的ide插件，能在编码过程中对设置的规则进行提示，便打算对它进行拓展，增加对fastjson检查是否打开setAutoType特性的检查。
 p3c主要包括3部分：
 PMD实现(p3c-pmd)：使用PMDhttps://pmd.github.io/来实现代码规范检查 Intellij IDEA插件 Eclipse插件 《阿里巴巴Java开发手册》中的大部分规则都是在p3c-pmd模块中实现的，该部分也是这节研究的主要部分。
@@ -154,10 +165,10 @@ AST是源代码的抽象语法结构的树状表示 抽象语法树并不依赖�
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 &lt;?xml version=&#34;1.0&#34;?&gt; &lt;ruleset name=&#34;Custom Rules&#34; xmlns=&#34;http://pmd.sourceforge.net/ruleset/2.0.0&#34; xmlns:xsi=&#34;http://www.w3.org/2001/XMLSchema-instance&#34; xsi:schemaLocation=&#34;http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd&#34;&gt; &lt;description&gt; My custom rules &lt;/description&gt; &lt;!-- Your rules will come here --&gt; &lt;/ruleset&gt; 在上面的ruleset 标签中引用自定义规则
 1 &lt;rule ref=&#34;pathToYourOwnClass&#34; /&gt; 配置规则集
 1.2.2. 配置规则 可以在 rule 标签中对某一规则进行配置</div><div class="post-footer">
-        <a href="/002-p3c/">阅读全文</a><div class="post-tags">
+        <a href="/notes_002_p3c/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/work/">日常记录</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/05-spring-destorybean/">Spring DestroySingleton流程</a>
+        <a href="/spring_05-destorybean/">Spring DestroySingleton流程</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content"> 第一节介绍Spring启动(链接)时，介绍AbstractApplicationContext的过销毁过程，主要是调用了内部的destroyBeans方法，这节便来介绍bean的销毁过程。
 一.销毁流程 destroyBeans方法内部委托给了DefaultSingletonBeanRegistry的destroySingletons方法。destroySingletons方法如下，比较清晰:
 前面介绍过，DefaultSingletonBeanRegistry用一个Map缓存着所有的单例实例，对于对象的销毁，只要简单的将其从Map中移除就行。主要处理的是依赖关系下的bean销毁顺序以及回调接口的处理。上面先对disposableBeans中所涉及到的bean逐个进行销毁，然后再清理所有的依赖关系和缓存的单例实例。
@@ -176,10 +187,10 @@ destoryMethod：destoryMethodName对应的Method对象
 beanPostProcessors：需要处理该bean的DestructionAwareBeanPostProcessor回调列表。在实例化DisposableBeanAdapter对象时，会过滤系统中的BeanPostProcessor列表，找出实现DestructionAwareBeanPostProcessor接口，且requiresDestruction方法返回true的实例，用于后续进行回调。（InitDestroyAnnotationBeanPostProcessor类实现了该方法，用以回调@PreDestory注解的方法，CommonAnnotationBeanPostProcessor继承自该类，设置了destroyAnnotationType为PreDestroy.class）
 当按照第（二）部分第4步执行时，该类会按照如下顺序执行销毁动作：
 如果beanPostProcessors列表不为空，则回调DestructionAwareBeanPostProcessor的postProcessBeforeDestruction方法，即执行@PreDestory注解方法 如果实现了DisposableBean，则回调DisposableBean的destroy方法，即执行DisposableBean接口方法 如果配置了destroy-method，则执行配置的方法，即执行destory-method配置方法 </div><div class="post-footer">
-        <a href="/05-spring-destorybean/">阅读全文</a><div class="post-tags">
+        <a href="/spring_05-destorybean/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/04-spring-getbean/">Spring GetBean的流程</a>
+        <a href="/spring_04_getbean/">Spring GetBean的流程</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">第一节讲解Spring启动（链接）的时候说到，Spring内部先解析了所有的配置，加载所有的Bean定义后，再根据需要对Bean进行实例化和初始化。除开Spring自己主动新建的对象，第一次根据Bean定义加载对象的动作出现在AbstractApplicationContext的invokeBeanFactoryPostProcessors方法，该方法会在Spring容器中找出实现了BeanFactoryPostProcessor接口的bean列表并执行。根据之前介绍的内容，内部主要调用了AbstractBeanFactory的getBean方法，这节将对该方法进行讲解。
 一、getBean 在这之前，先介绍BeanFactory的层次结构，如下：
 涉及到的接口和实现类为：
@@ -196,10 +207,10 @@ ConfigurableBeanFactory：按照规矩，增加了修改功能的接口，同时
 AbstractBeanFactory：BeanFacoty的基本实现。
 AbstractBeanFactory的getBean方法内部调用了doGetBean，该方法提供了根据beanName获取实例的具体实现，代码如下(删除了相关的注释和空格)：
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 protected &lt;T&gt; T doGetBean( final String name, final Class&lt;T&gt; requiredType, final Object[] args, boolean typeCheckOnly) throws BeansException { /*(1)*/ final String beanName = transformedBeanName(name); Object bean; /*(2)*/ Object sharedInstance = getSingleton(beanName); /*(3)*/ if (sharedInstance !</div><div class="post-footer">
-        <a href="/04-spring-getbean/">阅读全文</a><div class="post-tags">
+        <a href="/spring_04_getbean/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/03-spring-bean-load/">Spring BeanDefinition的加载</a>
+        <a href="/spring_03_beanload/">Spring BeanDefinition的加载</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">前面提到AbstractRefreshableApplicationContext在刷新BeanFactory时，会调用loadBeanDefinitions方法以加载系统中Bean的定义，下面将讲解Bean定义的加载过程。
 一．XML定义 XML配置的加载由AbstractXmlApplicationContext实现，方法实现如下：
 主要是实例化了一个XmlBeanDefinitionReader对象，对其设置了Environment对象（具体过程可以上一篇）等后，调用XmlBeanDefinitionReader进行解析。直接跟踪进去，得到如下内容：
@@ -254,57 +265,7 @@ parseDefautlElement方法如上， 对beans空间定义的各个标签分别进�
 获取base-package属性内容赋值给basePackage
 替换basePackage中的占位符内容
 根据 , ; \t \n 分割符分割basePackage，得到多个包路径</div><div class="post-footer">
-        <a href="/03-spring-bean-load/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/02-spring-env/">Spring Environment的加载</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍environment，默认环境变量的加载以及初始化内容。
-之前在介绍spring启动过程讲到，第一步进行环境准备时就会初始化一个StandardEnvironment。下图为Environment类图的接口，可以分为4块内容：
-ConversionService（蓝）：类型转换服务
-PropertySource（绿）:键值对数据源
-PropertyResolver（红）:键值对服务，包括类型转换
-Environment（紫）:环境配置数据服务
-1.ConversionService 提供了类型转换服务，能将源目标转换为目标类型，同时提供了管理功能，内部维护了各类型转换映射关系。其实从ConversionService和ConverterRegistry接口就能看出该模块的功能，如下：
-ConversionService接口为主要的对外功能接口，提供查询的能力。
-ConverterRegistry接口为主要的管理接口，提供添加和删除的能力。而ConfigurableConversionService继承自上面二者，则提供了Converter的CRUD功能。结构上也延续了Spring固有的风格，将执行接口作为主要功能对外提供单一的接口，再通过继承的方式，以Configurable开头的子接口，扩展出管理功能，使得责任分离更加立体。
-接下来是GenericConversionService类，该类提供了接口全部实现，下图展示了其主要实现:
-GenericConversionService结构上可以说是一个小型的管理系统，内部维护了一个Converters对象，用于“底层”管理所有的GenericConverter。同时还维护了一个ConcurrentReferenceHashMap用于缓存常用的GenericConverter。
-Converters在存储GenericConverter时还进行了分类，如果GenericConverter有指定能够解析的类别（ConvertiablePair：包括SourceType和TargetType）时，则使用一个LinkedHashMap按Key Value进行存储，在存储时会遍历可解析的类别，将该GenericConverter追加到对应的Value列表末尾，因而可以看到该Map的Value是一个LinkedList。对应没有指定能解析的类别的GenericConverter，则直接放到LinkedHashSet维护的集合中。
-Converters在查询时会遍历源类型和目标类型的组合结果，以查找匹配的目标GenericConverter对象。如下：
-对于getRegisteredConverter方法，会先使用Key从LinkedHashMap中查找是否有匹配的Converter,再遍历相应的Value,查找到能处理的转换器。若Map中无法查到，则遍历LinkedHashSet，以查到到能处理的转换器。
-由上知道，Converters在查找时存在多次遍历列表的过程，在频率过多时效率会比较低下，因而GenericConversionService内部维护了一个ConcurrentReferenceHashMap提供缓存的功能，该Map提供了同ConcurrentHashMap相同的功能，但是能够存储对应的软引用，从而能在内存不足时自动进行内存回收。在查到转换器时，会先试着从缓存中查找，如果获取不到，则会转而从Converters中查找，当从Converters中查找到后便会put到ConcurrentReferenceHashMap缓存中。
-DefaultConversionService是一个单例，继承自GenericConversionService，在初始化后自动添加了默认的转换器，包括Scalar相关的、集合相关的等转换器。
-####2.PropertySource
-PropertySource代表了一个包含键值对的数据源。从类定义上看，有一个表示数据源名字的name字段，还有一个表示具体数据源泛型T的source字段。而数据源的设置则是通过构造方法传入的，同时方法提供了通过键名获取键值的抽象方法getProperty。此外还有其他抽象方法，如containsProperty等。
-EnumerablePropertySource继承自PropertySource，增加了getPropertyNames方法，要求子类返回内存持有的键名列表。同时实现了containsProperty方法，通过判断所给的键名是否存在上述返回的键名列表中从而判断是否包含该键名。
-MapPropertySource继承自EnumerablePropertySource，顾名思义，内部通过Map维护各键值对内容。类似的还有PropertiesPropertySource，内部通过Properties维护各键值对内容。
-SystemEnvironmentPropertySource是MapPropertySource的装饰器，继承自MapPropertySource，为其添加了键名转换功能，以应对环境变量、shell参数的环境。在通过键名获取键值时，会先根据原键名进行查找，查找不到则通过对键进行转换再尝试查找，具体查找过程为：
-通过name查找
-将name中的 . 转换为 _ 查找
-将name中的 – 转换为 _ 查找
-将name中的 . 和 _ 转换为 – 查找
-将name转换为大写，再进行（1） - （4）的过程
-PropertySources的实现如下，扩展了PropertySource接口，将单个数据源的能力扩展到了多个。MutablePropertySources作为PropertySources的实现，内部维护了一个List对象，用以存储给个数据源，并将自身的行为封装为List。
-3.PropertyResolver PropertyResolver定义了一系列接口，以提供了对外根据键名获取相应值的功能，同时提供了类型转换和占位符替换的功能，是ConversionService和PropertySource的结合。ConfigurablePropertyResolver接口继承自PropertyResolver接口，老规则，扩展了设置的功能，主要是设置类型转换器和占位符的相关属性。
-AbstractPropertyResolver提供了除PropertySource功能外的其余实现。使用DefaultConversionService作为默认的类型转换实现，使用 ${ 和 } 作为占位符的前后缀，使用:作为默认值分割符，同时引入PropertyPlaceholderHelper用于占位符的解析和替换。而getProperty的实现则留到了了子类PropertySourcesPropertyResolver中，其引入了PropertySources用以维护多个键值对数据源。获取指定属性值过程如下：
-通过遍历数据源的方式，查到对应的值后，会进行占位符的替换，替换完占位符后会进行类型的转换。类型转换直接用的DefaultConversionService，这个上面已经介绍过了，下面介绍占位符替换。
-占位符替换的功能是在PropertyResolver接口中定义的，分为严格和不严格模式，如下：
-resolvePlaceholders为不严格模式，如果没法替换占位符，则直接忽略，resolveRequiredPlaceholders为严格模式，如果占位符没法替换则会抛出异常。如上面说的，AbstractPropertyResolver实现时都委托给PropertyPlaceholderHelper的replacePlaceholders方法。
-如上，该方法要求传入一个源字符串，同时提供一个PlaceholderResolver数据源，一遍解析出占位符内容后能够从数据源中获取对应的值。为了保持类功能的单一职责，从而增加了一个内部接口PlaceholderResolver。上面提到，在这个模块中的键值对数据源都是由PropertySourcesPropertyResolver维护的，事实上上面方法截图的实现中，getPropertyAsRawString方法也确实是由PropertySourcesPropertyResolver提供实现的，下面看下占位符的解析。
-占位符的解析过程如上流程，主要过程为：
-根据${前缀得到startIndex
-查找跟${前缀配对的}后缀，如${xxx${yy}z}，得到第二个}后缀的下标endIndex
-截取${和}中间的内容得到placeholder
-由于placeholder的内容可能也可能包含占位符，因而要递归处理placeholder，既占位符可以嵌套，内层的结果可以当做外层的Key使用
-placeholder解析完后，将其作为Key从键值对源中获取对应的值propVal
-如果propVal值为空，则判断是否存在:分割符，如果有分割符，则进行分割，并使用前端内容作为Key再次查找值。若该次查找结果不为空，则使用该次结果为propVal的值，否则使用第二段内容作为默认值
-若第（5）/（6）步中propVal结果不为空，则判断从键值对源中获取的值是否也有占位符，若有占位符，则再次进行解析，若没有，则将结果替换回原字段中，更新startIndex，继续下次解析。
-若第（5）/（6）步中propVal结果不空，则会根据设置的解析模式来判断下一步行为，如果未不严格模式，则跳过该次内容，更新startIndex，继续下一次解析，若为严格模式，则抛出异常，流程结束。
-下面以一个例子进行演示，如下
-输出结果为：
-若将解析模式设置为严格模式则会抛出异常
-4.Environment Environment继承自PropertyResolver接口，增加了Profiles功能，即我们平时看到的，多环境特性，能够在不同环境下加载不同的配置。ConfigurableEnvironment继承自Environment，老规矩，又是添加了修改的扩展接口，同时增加了获取系统参数的接口。另外，该接口也继承自ConfigurablePropertyResolver，有了键值对数据源管理、获取和处理的能力，集合Environment接口的功能，能够达到在不同环境下通过加载不同配置源实现环境隔离的效果。</div><div class="post-footer">
-        <a href="/02-spring-env/">阅读全文</a><div class="post-tags">
+        <a href="/spring_03_beanload/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
 </article><ul class="pagination"><li class="page-item ">
                     <span class="page-link">
@@ -331,6 +292,10 @@ placeholder解析完后，将其作为Key从键值对源中获取对应的值pro
                 </li><li class="page-item ">
                     <span class="page-link">
                         <a href="/page/7/">7</a>
+                    </span>
+                </li><li class="page-item ">
+                    <span class="page-link">
+                        <a href="/page/8/">8</a>
                     </span>
                 </li></ul></div></div>
             </main><footer class="footer">
@@ -377,5 +342,5 @@ placeholder解析完后，将其作为Key从键值对源中获取对应的值pro
             </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
                 <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
             </a>
-        </div><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
 </html>

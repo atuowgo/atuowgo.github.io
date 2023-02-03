@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt; - 程序猿二腊</title><meta name="Description" content="jvm-sandbox的启动"><meta property="og:title" content="JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;" />
+<meta property="og:description" content="jvm-sandbox的启动" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/sandbox_01_start/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-07-24T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-07-24T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;"/>
+<meta name="twitter:description" content="jvm-sandbox的启动"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/sandbox_01_start/" /><link rel="prev" href="https://atuowgo.github.io/rocketmq_09_consumequeue/" /><link rel="next" href="https://atuowgo.github.io/sandbox_02_event/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "JVM层面的切面实现 : jvm-sandbox 之 \u003c应用启动\u003e",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/sandbox_01_start\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "jvm-sandbox","wordcount":  210 ,
+        "url": "https:\/\/atuowgo.github.io\/sandbox_01_start\/","datePublished": "2020-07-24T00:00:00+00:00","dateModified": "2020-07-24T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "jvm-sandbox的启动"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">JVM层面的切面实现 : jvm-sandbox 之 <应用启动></h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2020-07-24">2020-07-24</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 210 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-启动">1. 启动</a></li>
+            <li><a href="#2-agentlauncherinstall">2. AgentLauncher.install</a></li>
+            <li><a href="#3-jettycoreserverbind">3. JettyCoreServer.bind</a></li>
+            <li><a href="#31-初始化jvmsandbox对象">3.1 初始化JvmSandbox对象</a></li>
+            <li><a href="#32-初始化http服务">3.2 初始化Http服务</a></li>
+            <li><a href="#33-初始化jetty处理器">3.3 初始化Jetty处理器</a></li>
+            <li><a href="#331-modulehttpservlet">3.3.1 ModuleHttpServlet</a></li>
+            <li><a href="#34-启动http服务">3.4 启动Http服务</a></li>
+            <li><a href="#35-重置所有用户模块">3.5 重置所有用户模块</a></li>
+            <li><a href="#351-modulejarloaderloadingmodules">3.5.1 ModuleJarLoader.loadingModules</a></li>
+            <li><a href="#352-defaultcoremodulemanagerload">3.5.2 DefaultCoreModuleManager.load</a></li>
+            <li><a href="#353-modulejarclassloader">3.5.3 ModuleJarClassLoader</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h4 id="1-启动">1. 启动</h4>
+<p>sandbox源码各模块的结构如下:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/%E6%A8%A1%E5%9D%97.png"
+        data-srcset="/sandbox_01_start/%E6%A8%A1%E5%9D%97.png, /sandbox_01_start/%E6%A8%A1%E5%9D%97.png 1.5x, /sandbox_01_start/%E6%A8%A1%E5%9D%97.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/%E6%A8%A1%E5%9D%97.png"
+        title="/sandbox_01_start/%E6%A8%A1%E5%9D%97.png" width="324" height="387" /></p>
+<p>sandbox安装后的目录结构如下:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/%E7%BB%93%E6%9E%84.png"
+        data-srcset="/sandbox_01_start/%E7%BB%93%E6%9E%84.png, /sandbox_01_start/%E7%BB%93%E6%9E%84.png 1.5x, /sandbox_01_start/%E7%BB%93%E6%9E%84.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/%E7%BB%93%E6%9E%84.png"
+        title="/sandbox_01_start/%E7%BB%93%E6%9E%84.png" width="318" height="381" /></p>
+<p>按照官方的教程，启动命令如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">./sandbox.sh -p 2343
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>查看对应的脚本，函数定义如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/sh_attach.png"
+        data-srcset="/sandbox_01_start/sh_attach.png, /sandbox_01_start/sh_attach.png 1.5x, /sandbox_01_start/sh_attach.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/sh_attach.png"
+        title="/sandbox_01_start/sh_attach.png" width="1167" height="491" /></p>
+<p>翻译过来就是执行如下命令</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">java -Xms128M -Xmx128M -Xnoclassgc -ea -jar /xxx/sandbox-core.jar 2342 /xxx/sandbox-agent.jar home=/xxx;token=xxx;server.ip=xxx;service.port=xxx;namespace=xxx
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>按顺序将参数定义为</p>
+<ol>
+<li>targetJvmPid:目标应用pid</li>
+<li>agentJarPath:附加的agent包路径</li>
+<li>cfg:agent-main的参数,包括home路径;该次唯一标识toke;ip端口以及命名空间</li>
+</ol>
+<p>查看sandbox-core模块的pom.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">&lt;archive&gt;
+</span></span><span class="line"><span class="cl">    &lt;manifest&gt;
+</span></span><span class="line"><span class="cl">        &lt;mainClass&gt;com.alibaba.jvm.sandbox.core.CoreLauncher&lt;/mainClass&gt;
+</span></span><span class="line"><span class="cl">    &lt;/manifest&gt;
+</span></span><span class="line"><span class="cl">&lt;/archive&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>找到启动类 <code>com.alibaba.jvm.sandbox.core.CoreLauncher</code></p>
+<p>该类存在一个main方法，接收3个参数，并实例化一个CoreLauncher实例，它在构造方法中完成agent的attach动作.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public CoreLauncher(final String targetJvmPid,
+</span></span><span class="line"><span class="cl">                    final String agentJarPath,
+</span></span><span class="line"><span class="cl">                    final String token) throws Exception {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    attachAgent(targetJvmPid, agentJarPath, token);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>主要是以agent-main的方式执行。</p>
+<p>去到<code>sandbox-agent</code>模块的pom.xml，有如下配置</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">&lt;archive&gt;
+</span></span><span class="line"><span class="cl">    &lt;manifestEntries&gt;
+</span></span><span class="line"><span class="cl">        &lt;Premain-Class&gt;com.alibaba.jvm.sandbox.agent.AgentLauncher&lt;/Premain-Class&gt;
+</span></span><span class="line"><span class="cl">        &lt;Agent-Class&gt;com.alibaba.jvm.sandbox.agent.AgentLauncher&lt;/Agent-Class&gt;
+</span></span><span class="line"><span class="cl">        &lt;Can-Redefine-Classes&gt;true&lt;/Can-Redefine-Classes&gt;
+</span></span><span class="line"><span class="cl">        &lt;Can-Retransform-Classes&gt;true&lt;/Can-Retransform-Classes&gt;
+</span></span><span class="line"><span class="cl">    &lt;/manifestEntries&gt;
+</span></span><span class="line"><span class="cl">&lt;/archive&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>分别指定了premain和agent的启动类<code>com.alibaba.jvm.sandbox.agent.AgentLauncher</code></p>
+<p>查看入口agentmain方法</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/agentmain.png"
+        data-srcset="/sandbox_01_start/agentmain.png, /sandbox_01_start/agentmain.png 1.5x, /sandbox_01_start/agentmain.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/agentmain.png"
+        title="/sandbox_01_start/agentmain.png" width="724" height="345" /></p>
+<p>处理agent传入的cfg参数字段，解析为k-v对，然后执行install方法，并将结果写入到了${HOME}/.sandbox.token里,该文件记录的内容为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">default;21988529;0.0.0.0;32165//命名空间;token;ip;port
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h4 id="2-agentlauncherinstall">2. AgentLauncher.install</h4>
+<p>sandbox-agent模块里AgentLauncher类的install方法将完成主要的加载过程,包括:</p>
+<ol>
+<li>将系统参数序列化，用于后续反射调用</li>
+<li>将sandbox-spy.jar 加入BootstrapClassLoader</li>
+<li>分别为每个namespace初始化一个<strong>SandboxClassLoader</strong>自定义类加载器，其继承自URLClassLoader，指向sandbox-core.jar，支持加载该jar包中的类。结合第2步，SandboxClassLoader目前加载的自定义jar包括<strong>sandbox-spy.jar</strong>和<strong>sandbox-core.jar</strong>。其中sandbox-core.jar包括了源码里的sandbox-core-api模块。注意，SandboxClassLoader位于sandbox-agent.jar包中，其父类加载器为AppClassLoader</li>
+<li>使用SandboxClassLoader反射加载并实例化sandbox-core.jar里的<code>com.alibaba.jvm.sandbox.core.CoreConfigure</code>，传入第1步的参数以及sandbox.properties文件的路径</li>
+<li>使用SandboxClassLoader反射加载并实例化sandbox-core.jar里的<code>com.alibaba.jvm.sandbox.core.server.ProxyCoreServer</code>，该步会实例化sandbox-core.jar里的<code>com.alibaba.jvm.sandbox.core.server.jetty.JettyCoreServer</code>实例</li>
+<li>执行JettyCoreServer的bind方法，加载自定义模块、启动http服务</li>
+</ol>
+<h4 id="3-jettycoreserverbind">3. JettyCoreServer.bind</h4>
+<p>JettyCoreServer的bind方法主要完成Http服务的启动以及各模块的加载，主要动作为:</p>
+<ol>
+<li>初始化JvmSandbox对象</li>
+<li>初始化Http服务</li>
+<li>初始化Jetty处理器</li>
+<li>启动Http服务</li>
+<li>重置所有用户模块，先卸载再加载</li>
+</ol>
+<p>注，当前的ClassLoader为每个namespace对应的<strong>SandboxClassLoader</strong>，后续该包里加载的类的类加载器都是这个，影响的类位于sandbox-core.jar中，对应源码里的<strong>sandbox-common-api</strong>、<strong>sandbox-provider-api</strong>、<strong>sandbox-api</strong>、<strong>sandbox-core</strong>模块。</p>
+<h4 id="31-初始化jvmsandbox对象">3.1 初始化JvmSandbox对象</h4>
+<p><code>JvmSandbox</code>表示一个沙箱对象，关系如下，依赖CoreConfigure和<strong>CoreModuleManager</strong>，分别表示系统配置信息和模块管理。CoreModuleManager的实现类为<strong>DefaultCoreModuleManager</strong>，为主要功能。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/jvm-sandbox.png"
+        data-srcset="/sandbox_01_start/jvm-sandbox.png, /sandbox_01_start/jvm-sandbox.png 1.5x, /sandbox_01_start/jvm-sandbox.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/jvm-sandbox.png"
+        title="/sandbox_01_start/jvm-sandbox.png" width="809" height="660" /></p>
+<p>同时在初始化的时候还会调用SpyUtils，为每个namespace分配公共的<strong>EventListenerHandler</strong>(<strong>SpyHandler</strong>实现)类</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private void init() {
+</span></span><span class="line"><span class="cl">   SpyUtils.init(cfg.getNamespace());//初始化SpyUtils，分配公共的EventListenerHandler(SpyHandler实现)类
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h4 id="32-初始化http服务">3.2 初始化Http服务</h4>
+<p>初始化Http服务,启动一个Jetty Server，并设置为daemon</p>
+<h4 id="33-初始化jetty处理器">3.3 初始化Jetty处理器</h4>
+<p>初始化Jetty处理器，实现一个请求分发器，可以通过http的方式来触发**@Command**注解的方法。</p>
+<p>注册的处理器有两种:</p>
+<ol>
+<li>
+<p>web-scoket-servet</p>
+<p>访问路径为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">/sandbox/${namespace}/module/websocket/*
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>处理类为<del>WebSocketAcceptorServlet</del></p>
+</li>
+<li>
+<p>module-http-servlet</p>
+<p>访问路径为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">/sandbox/${namespace}/module/http/*
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>处理类为<strong>ModuleHttpServlet</strong>，这边重点介绍http处理器</p>
+</li>
+</ol>
+<h4 id="331-modulehttpservlet">3.3.1 ModuleHttpServlet</h4>
+<p>该Servlet要求请求URL按照如下格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">/sandbox/${namespace}/module/http/${uniqueId}/${command}?${k1}=${v1}&amp;${k2}=${v2}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li>${uniqueId}:模块id</li>
+<li>${command}:模块下的方法，需要加@Command注解</li>
+<li>{k1}=${v1}&amp;${k2}=${v2}:方法参数</li>
+</ol>
+<p>对于一个http请求，具体流程为:</p>
+<ol>
+<li>
+<p>解析url得到模块id，如果模块不存在则返回，否则从模块管理类CoreModuleManager中获取对应的模块CoreModule</p>
+</li>
+<li>
+<p>匹配对应的方法,获得Method对象查找有@Command注解且匹配/${uniqueId}/${command}的方法，具体会将模块id和@Command的值用<code>/</code>进行拼接</p>
+</li>
+<li>
+<p>生成方法调用参数，遍历方法的入参类型，按照类型设置对应的入参列表，支持的类型包括:</p>
+<ol>
+<li>HttpServletRequest</li>
+<li>HttpServletResponse</li>
+<li>Map&lt;String,String[]&gt;：使用http请求的参数</li>
+<li>String：使用url中<code>?</code>后面的内容</li>
+<li>PrintWriter：HttpServletResponse.getWriter()</li>
+<li>OutputStream：HttpServletResponse.getOutputStream()</li>
+</ol>
+</li>
+<li>
+<p>反射执行Method</p>
+</li>
+</ol>
+<p>相当于自己实现了一个http请求分发器</p>
+<h4 id="34-启动http服务">3.4 启动Http服务</h4>
+<p>启动Jetty http服务</p>
+<h4 id="35-重置所有用户模块">3.5 重置所有用户模块</h4>
+<p>主要调用CoreModuleManager的reset方法，完成模块的重置。先卸载各个模块再进行加载。</p>
+<p>在这之前先介绍模块的生命周期</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/%E6%A8%A1%E5%9D%97%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png"
+        data-srcset="/sandbox_01_start/%E6%A8%A1%E5%9D%97%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png, /sandbox_01_start/%E6%A8%A1%E5%9D%97%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png 1.5x, /sandbox_01_start/%E6%A8%A1%E5%9D%97%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/%E6%A8%A1%E5%9D%97%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png"
+        title="/sandbox_01_start/%E6%A8%A1%E5%9D%97%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png" width="936" height="447" />
+<em>(来自官网github wiki，官网都有，懒的搬了)</em></p>
+<p>上面少了一个<code>loadCompleted</code>事件，会在模块加载完成，模块完成加载后调用。作者的意思是方法比较常用，所以单独出来成为一个接口。</p>
+<p>模块的卸载会先将模块进行冻结，然后再将模块卸载，期间会触发onFrozen和onUnload事件。<strong>有点需要注意的是冻结和卸载的不同，冻结只是把sandbox的事件通知机制给屏蔽掉，模块的插桩代码还在。冻结后可以解冻，插桩代码可以复用。而卸载则会移除模块对应的ClassFileTransformer，并重新加载原始的class，重新处理class，达到去除模块插桩的目的。</strong></p>
+<p>这里先只关注模块的加载流程,模块的加载过程如下:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/moduler.png"
+        data-srcset="/sandbox_01_start/moduler.png, /sandbox_01_start/moduler.png 1.5x, /sandbox_01_start/moduler.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/moduler.png"
+        title="/sandbox_01_start/moduler.png" width="1790" height="650" /></p>
+<ol>
+<li>
+<p>DefaultCoreModuleManager构造ModuleLibLoader对象，传入模块jar包所在路径和两个Callback，再调用load方法</p>
+</li>
+<li>
+<p>ModuleLibLoader在load方法里会遍历路径下的所有Jar包，对每个Jar包，构造ModuleJarLoader对象，传入Jar包所在路径，再调用load方法触发加载</p>
+</li>
+<li>
+<p>ModuleJarLoader会构造一个<strong>ModuleJarClassLoader</strong>，用于加载Jar包，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/ModuleJarLoader.png"
+        data-srcset="/sandbox_01_start/ModuleJarLoader.png, /sandbox_01_start/ModuleJarLoader.png 1.5x, /sandbox_01_start/ModuleJarLoader.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/ModuleJarLoader.png"
+        title="/sandbox_01_start/ModuleJarLoader.png" width="1200" height="581" /></p>
+<p>由于ModuleJarClassLoader当前线程的类加载器为SandboxClassLoader，为了让Jar包中的类独立开来，避免不同自定义模块包中的类冲突，执行真正的加载动作<code>loadingModules</code>方法前，会把当前线程的类加载器设置为刚创建的ModuleJarClassLoader，加载完后再设置回namespace公用的SandboxClassLoader。</p>
+</li>
+</ol>
+<h4 id="351-modulejarloaderloadingmodules">3.5.1 ModuleJarLoader.loadingModules</h4>
+<p>该方法会使用ModuleJarClassLoader通过SPI机制加载jar包里的Module类。由于通过SPI机制，因而需要符合SPI规范:</p>
+<ol>
+<li>必须拥有publish的无参构造函数</li>
+<li>必须实现com.alibaba.jvm.sandbox.api.Module接口</li>
+<li>必须完成META-INF/services/com.alibaba.jvm.sandbox.api.Module文件中的注册（Java SPI规范要求）</li>
+</ol>
+<p>sandbox里的模块都是通过<code>sandbox-module-starter</code>插件完成，只要实现Module接口然后再类上加上<code>org.kohsuke.MetaInfServices</code>注解，<em>为插件点赞</em>。</p>
+<p>加载完Module类后会读取类似的<code>com.alibaba.jvm.sandbox.api.Information</code>注解，获得模块id，如果没有该注解，则不会加载该模块。</p>
+<p>加载完后会通知<code>InnerModuleLoadCallback</code>进行回调，完成后续动作。然后将该模块id加入已加载模块列表中。</p>
+<p>InnerModuleLoadCallback经过过滤链处理后，会委托给DefaultCoreModuleManager的load方法完成实际的处理动作。</p>
+<h4 id="352-defaultcoremodulemanagerload">3.5.2 DefaultCoreModuleManager.load</h4>
+<p>该方法主要完成如下动作：</p>
+<ol>
+<li>
+<p>构造CoreModule对象，初始化模块信息</p>
+</li>
+<li>
+<p>为Module实现类上有@Resource的属性字段注入资源，当前只支持</p>
+<ol>
+<li>LoadedClassDataSource，已加载类数据源，注入已有的DefaultCoreLoadedClassDataSource</li>
+<li>ModuleEventWatcher，事件观察者，注入新建的DefaultModuleEventWatcher.该对象被标记为一个可释放资源，由ReleaseResource引用，会在模块卸载的时候进行回收。具体到这里是触发ModuleEventWatcher的delete动作，在释放模块资源时，清除模块上的事件，该动作会触发class重新加载，去除该模块的插桩代码。</li>
+<li>ModuleController，模块控制接口，注入新建的DefaultModuleController</li>
+<li>ModuleManager，模块管理器，注入新建的DefaultModuleManager</li>
+<li>ConfigInfo，沙箱配置信息，注入新建的DefaultConfigInfo</li>
+</ol>
+</li>
+<li>
+<p>模块生命周期回调，MODULE_LOAD</p>
+</li>
+<li>
+<p>标记模块已加载</p>
+</li>
+<li>
+<p>如果模块标记了加载时自动激活，则需要在加载完成之后激活模块</p>
+</li>
+<li>
+<p>注册到模块列表中</p>
+</li>
+<li>
+<p>模块生命周期回调，MODULE_LOAD_COMPLETED</p>
+</li>
+</ol>
+<h4 id="353-modulejarclassloader">3.5.3 ModuleJarClassLoader</h4>
+<p>回到3.5.2的第2步，这里新建了很多对象注入到自定义Module实现类中，这些类都位于sandbox-core.jar包中。前面说过，这些类由SandboxClassLoader来加载，而ModuleJarClassLoader只复制加载各自模块jar包的类，因而ModuleJarClassLoader需要继承SandboxClassLoader，看下它的定义</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/ModuleJarClassLoader.png"
+        data-srcset="/sandbox_01_start/ModuleJarClassLoader.png, /sandbox_01_start/ModuleJarClassLoader.png 1.5x, /sandbox_01_start/ModuleJarClassLoader.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/ModuleJarClassLoader.png"
+        title="/sandbox_01_start/ModuleJarClassLoader.png" width="453" height="404" /></p>
+<p>RoutingURLClassLoader预先给指定的包路径正则表达式指定ClassLoader，命中后将加载动作委托给指定的ClassLoader，没命中才委托给父类加载器。</p>
+<p>而ModuleJarClassLoader继承自RoutingURLClassLoader，构造方法如下</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/ModuleJarClassLoaderDef.png"
+        data-srcset="/sandbox_01_start/ModuleJarClassLoaderDef.png, /sandbox_01_start/ModuleJarClassLoaderDef.png 1.5x, /sandbox_01_start/ModuleJarClassLoaderDef.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/ModuleJarClassLoaderDef.png"
+        title="/sandbox_01_start/ModuleJarClassLoaderDef.png" width="678" height="484" /></p>
+<p>指定了sandbox-core.jar里类都由ModuleJarClassLoader的父类加载器即SandboxClassLoader来处理。</p>
+<p>综上，得到jvm-sandbox的类加载关系如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/classloader.jpg"
+        data-srcset="/sandbox_01_start/classloader.jpg, /sandbox_01_start/classloader.jpg 1.5x, /sandbox_01_start/classloader.jpg 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/classloader.jpg"
+        title="/sandbox_01_start/classloader.jpg" width="960" height="423" /></p>
+<p><em>(图片来自官网github)</em></p>
+<p>除了sandbox-spy.jar包外，其他都包跟业务包进行了分离，各个模块的包也互不影响。而sandbox-spy.jar里的类由于s在完成插桩后会出现在业务代理里，所以需要全局加载，故由Bootstrap加载器加载。</p>
+<p>Ok,用一张图总结jvm-sandbox的的启动过程:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sandbox_01_start/%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B.png"
+        data-srcset="/sandbox_01_start/%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B.png, /sandbox_01_start/%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B.png 1.5x, /sandbox_01_start/%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B.png 2x"
+        data-sizes="auto"
+        alt="/sandbox_01_start/%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B.png"
+        title="/sandbox_01_start/%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B.png" width="726" height="1561" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-07-24</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/sandbox_01_start/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/sandbox_01_start/" data-title="JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;" data-hashtags="jvm-sandbox"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/sandbox_01_start/" data-hashtag="jvm-sandbox"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/sandbox_01_start/" data-title="JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/jvm-sandbox/">JVM-SandBox</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/rocketmq_09_consumequeue/" class="prev" rel="prev" title="RocketMQ消息的存储消费模型"><i class="fas fa-angle-left fa-fw"></i>RocketMQ消息的存储消费模型</a>
+            <a href="/sandbox_02_event/" class="next" rel="next" title="JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;">JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

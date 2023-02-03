@@ -5,10 +5,10 @@
         <description>烂笔头 - 分类 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 31 May 2022 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/categories/notes/" rel="self" type="application/rss+xml" /><item>
     <title>golang error</title>
-    <link>https://atuowgo.github.io/007-golang-error/</link>
+    <link>https://atuowgo.github.io/notes-007-golang-error/</link>
     <pubDate>Tue, 31 May 2022 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/007-golang-error/</guid>
+    <guid>https://atuowgo.github.io/notes-007-golang-error/</guid>
     <description><![CDATA[go error 记录go1.x error相关内容
 1. 原生error error 只是一个普通的interface,在buildin.go 里给出了定义:
 1 2 3 4 5 // The error built-in interface type is the conventional interface for // representing an error condition, with the nil value representing no error. type error interface { Error() string } 当返回值为nil时，表示没有错误，所以调用方需要通过类似err != nil的方式来处理。
@@ -18,10 +18,10 @@
 </item>
 <item>
     <title>MySQL InnoDB索引那点事儿</title>
-    <link>https://atuowgo.github.io/005-mysql-innodb/</link>
+    <link>https://atuowgo.github.io/notes_005_mysql_innodb/</link>
     <pubDate>Mon, 09 Nov 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/005-mysql-innodb/</guid>
+    <guid>https://atuowgo.github.io/notes_005_mysql_innodb/</guid>
     <description><![CDATA[总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头。
 1. B+树 我们知道InnoDB的索引是以B+树的形式组织的。B+树是一种树数据结构，是一个n叉树，每个节点通常有多个孩子，一颗B+树包含根节点、内部节点和叶子节点。
 下面是B+树的示例：
@@ -57,10 +57,10 @@ InnoDB会将一个页中的所有记录划分成若干个组，每组4-8个记�
 </item>
 <item>
     <title>常见的分布式唯一ID方案</title>
-    <link>https://atuowgo.github.io/004-distrubte-id/</link>
+    <link>https://atuowgo.github.io/notes_004_distrubte_id/</link>
     <pubDate>Sun, 20 Sep 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/004-distrubte-id/</guid>
+    <guid>https://atuowgo.github.io/notes_004_distrubte_id/</guid>
     <description><![CDATA[最近看一个新系统，发现里面有很多场景用到唯一id，便搜罗了一下常见的方案。
 对于分布式id，需要满足下面的基本要求
 全局唯一 趋势递增 1. UUID UUID（Universally Unique Identifier）全局唯一标识符，定义为一个字符串主键，采用32位数字组成，编码采用16进制，定义了在时间和空间都完全惟一的系统信息。
@@ -92,10 +92,10 @@ Snowflake算法中41个bit的时间戳完全依赖于时间的，如果有时钟
 </item>
 <item>
     <title>Socks协议</title>
-    <link>https://atuowgo.github.io/003-socks/</link>
+    <link>https://atuowgo.github.io/notes_003_socks/</link>
     <pubDate>Sat, 29 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/003-socks/</guid>
+    <guid>https://atuowgo.github.io/notes_003_socks/</guid>
     <description><![CDATA[SOCKS：防火墙安全会话转换协议 （Socks: Protocol for sessions traversal across firewall securely） SOCKS协议提供一个框架，为在 TCP和UDP域中的客户机/服务器应用程序能更方便安全地使用网络防火墙所提供的服务。协议工作在OSI参考模型的第5层(会话层)，使用TCP协议传输数据，因而不提供如传递ICMP信息之类的网络层网关服务。
 当防火墙后的客户端要访问外部的服务器时，就跟SOCKS代理服务器连接。这个代理服务器控制客户端访问外网的资格，允许的话，就将客户端的请求发往外部的服务器。Socks不要求应用程序遵循特定的操作系统平台，Socks 代理与应用层代理、 HTTP 层代理不同，Socks代理只是简单地传递数据包，而不必关心是何种应用协议（比如FTP、HTTP和NNTP请求）。所以，Socks代理比其他应用层代理要快得多。它通常绑定在代理服务器的1080端口上。
 这个协议最初由David Koblas开发，而后由NEC的Ying-Da Lee将其扩展到SOCKS4。最新协议是 SOCKS5，与前一版本相比，增加支持UDP、验证，以及IPv6。
@@ -121,10 +121,10 @@ jsocks实现功能同上面大体相同，代码也比较简单，这边不做�
 </item>
 <item>
     <title>动态路由:Gin vs SpringMVC</title>
-    <link>https://atuowgo.github.io/006-ginvsmvc/</link>
+    <link>https://atuowgo.github.io/notes-006-ginvsmvc/</link>
     <pubDate>Mon, 16 Mar 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/006-ginvsmvc/</guid>
+    <guid>https://atuowgo.github.io/notes-006-ginvsmvc/</guid>
     <description><![CDATA[这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比。
 1.简介 Gin是使用Go/golang语言实现的HTTP Web框架。接口简洁,性能极高。截止1.4.0版本,包含测试代码,仅14K,其中测试代码9K左右,也就是说框架源码仅5K左右。SpringMVC不用过多介绍，Java市场的一把手。
 Gin支持动态路由，简单示例如下：
@@ -133,20 +133,20 @@ Gin支持动态路由，简单示例如下：
 </item>
 <item>
     <title>Instrument API介绍</title>
-    <link>https://atuowgo.github.io/03-instrument-api/</link>
+    <link>https://atuowgo.github.io/jacoco_03_instrument_api/</link>
     <pubDate>Sat, 21 Dec 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-instrument-api/</guid>
+    <guid>https://atuowgo.github.io/jacoco_03_instrument_api/</guid>
     <description><![CDATA[1. Instrumentation介绍 JVMTI（JVM Tool Interface）是 Java 虚拟机所提供的 native 编程接口，是 JVMPI（Java Virtual Machine Profiler Interface）和 JVMDI（Java Virtual Machine Debug Interface）的更新版本。JVMTI 提供了一套“代理”程序机制，可以支持第三方工具程序以代理的方式连接和访问 JVM，并利用 JVMTI 提供的丰富的编程接口，完成很多跟 JVM 相关的功能。
 Agent 即 JVMTI 的客户端，它和执行 Java 程序的虚拟机运行在同一个进程上。他们通常由另一个独立的进程控制，充当这个独立进程和当前虚拟机之间的中介，通过调用 JVMTI 提供的接口和虚拟机交互，负责获取并返回当前虚拟机的状态或者转发控制命令。java.lang.instrument 包的实现，也是基于这种机制的。在 Instrumentation 的实现当中，存在一个 JVMTI 的代理程序，通过调用 JVMTI 当中于 Java 类相关的函数来完成Java 类的动态操作。
 利用 java.lang.instrument 做动态 Instrumentation 是 Java SE 5 的新特性，它把 Java 的 instrument 功能从本地代码中解放出来，使之可以用 Java 代码的方式解决问题。使用 Instrumentation，开发者可以构建一个独立于应用程序的代理程序（Agent），用来监测和协助运行在 JVM 上的程序，甚至能够替换和修改某些类的定义。有了这样的功能，开发者就可以实现更为灵活的运行时虚拟机监控和 Java 类操作了，这样的特性实际上提供了 一种虚拟机级别支持的 AOP 实现方式，使得开发者无需对 JDK 做任何升级和改动，就可以实现某些 AOP 的功能了。]]></description>
 </item>
 <item>
     <title>字节码增强</title>
-    <link>https://atuowgo.github.io/02-class-instrument/</link>
+    <link>https://atuowgo.github.io/jacoco_02_class_instrument/</link>
     <pubDate>Fri, 13 Dec 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-class-instrument/</guid>
+    <guid>https://atuowgo.github.io/jacoco_02_class_instrument/</guid>
     <description><![CDATA[上节介绍了Java字节码结构，这节介绍字节码增强技术。Java字节码增强指的是在Java字节码生成之后，对其进行修改，增强其功能，这种方式相当于对应用程序的二进制文件进行修改。
 常见的字节码增强技术包括：
 Java自带的动态代理 ASM Javassist 1. 动态代理 在介绍动态代理前，先介绍代理模式。如下图，为代理模式的UML类图：
@@ -156,10 +156,10 @@ Java自带的动态代理 ASM Javassist 1. 动态代理 在介绍动态代理前
 </item>
 <item>
     <title>Class文件格式</title>
-    <link>https://atuowgo.github.io/01-class-filetype/</link>
+    <link>https://atuowgo.github.io/jacoco_01_class_file_type/</link>
     <pubDate>Sun, 08 Dec 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-class-filetype/</guid>
+    <guid>https://atuowgo.github.io/jacoco_01_class_file_type/</guid>
     <description><![CDATA[我们知道Java是一门跨平台的语言，我们编写的Java代码会被编译成中间class文件以让Java虚拟机解析运行。而Java虚拟机规范仅仅描述了抽象的Java虚拟机，在实现具体的Java虚拟机时，仅指出了设计规范。Java虚拟机的实现必须体现规范中的内容，但仅在确有必要时才应该受制于这些规范。对于完整内容，可以查看原文档，以JDK7为例，可查看https://docs.oracle.com/javase/specs/jvms/se7/html/，或者《深入理解Java虚拟机 JVM高级特性与最佳实践》一书。完整的规范主要包含以下内容：
 第2章：概览Java虚拟机整体架构 第3章：介绍如何将Java语言编写的程序转换为虚拟机指令集 第4章：定义class文件格式。它是一种与硬件和操作系统无关的二进制格式，用来表示编译后的类和接口 第5章：定义了Java虚拟机启动以及类和接口的加载、链接和初始化的过程 第6章：定义了Java虚拟机指令集 第7章：提供了一张以操作码值为索引的Java虚拟机操作码助记表 本文只是大概记录项目需要了解的基础概念，着重在介绍Class文件格式上，为该系列后续内容做铺垫。
 Class文件是一组以8字节为基础单位的二进制流，各个数据项目严格按照顺序紧凑排列在class文件中，中间没有任何分割符。每个 Class 文件都是由 8 字节为单位的字节流组成，所有的 16 位、32 位和 64 位长度的数据将被构造成 2 个、4 个和 8 个 8 字节单位来表示。
@@ -170,10 +170,10 @@ magic：魔数，魔数的唯一作用是确定这个文件是否为一个能被
 </item>
 <item>
     <title>扩展阿里p3c实现自定义代码规范检查</title>
-    <link>https://atuowgo.github.io/002-p3c/</link>
+    <link>https://atuowgo.github.io/notes_002_p3c/</link>
     <pubDate>Fri, 25 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/002-p3c/</guid>
+    <guid>https://atuowgo.github.io/notes_002_p3c/</guid>
     <description><![CDATA[前段时间fastjson报出了漏洞，只要打开setAutoType特性就会存在风险，自己测试环境的一个项目被揪出来了-_-!。虽然改动很小，但就是觉得憋屈。fastjson还是挺好的，想着禁用的话太可惜，用的话又要注意安全，就想着找款工具提示下在用fastjson的时候不要打开这个特性。刚好阿里开源了p3c（https://github.com/alibaba/p3c），一款代码规范的检查工具，有对应的ide插件，能在编码过程中对设置的规则进行提示，便打算对它进行拓展，增加对fastjson检查是否打开setAutoType特性的检查。
 p3c主要包括3部分：
 PMD实现(p3c-pmd)：使用PMDhttps://pmd.github.io/来实现代码规范检查 Intellij IDEA插件 Eclipse插件 《阿里巴巴Java开发手册》中的大部分规则都是在p3c-pmd模块中实现的，该部分也是这节研究的主要部分。
@@ -189,10 +189,10 @@ AST是源代码的抽象语法结构的树状表示 抽象语法树并不依赖�
 </item>
 <item>
     <title>Java的EOF标识？</title>
-    <link>https://atuowgo.github.io/001-java-eof/</link>
+    <link>https://atuowgo.github.io/notes_001_java_eof/</link>
     <pubDate>Sat, 28 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/001-java-eof/</guid>
+    <guid>https://atuowgo.github.io/notes_001_java_eof/</guid>
     <description><![CDATA[这篇是关于JAVA中EOF标识的讲解，之前在工作上碰到过一个问题，有人问过，不能通过判断EOF来知道文件有没有读取完毕吗？其实，还真不能。
 直接从JDK接口文档入手，以FileInputStream为例，JDK接口文档给出了明确的说明：
 使用FileInputStream的read方法读取文件时，当返回-1就表明读到了文件末尾，如果期间出现IO异常，则会抛出一个IOException。而对于EOF文件结束符，其实是不存在的。在Linux系统之中，EOF根本不是一个字符，而是当系统读取到文件结尾，所返回的一个信号值，例如在C语言中，EOF是一个定义在头文件stdio.h的常量，一般等于-1。对于JAVA的实现，我们可以通过查看FileInputStream的源码查看，如下：

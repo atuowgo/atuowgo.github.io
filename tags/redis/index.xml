@@ -5,10 +5,10 @@
         <description>Redis - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Thu, 26 Sep 2019 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/redis/" rel="self" type="application/rss+xml" /><item>
     <title>Redis集群</title>
-    <link>https://atuowgo.github.io/06-cluster/</link>
+    <link>https://atuowgo.github.io/redis_06_cluster/</link>
     <pubDate>Thu, 26 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/06-cluster/</guid>
+    <guid>https://atuowgo.github.io/redis_06_cluster/</guid>
     <description><![CDATA[这节介绍Redis的集群模式
 主从模式提供了读写分离的支持，Sentinel提供了高可用的保障，满足了读模式下的横向扩展，但主节点只有一个，集中式的写模式无法应对不断增长的写需求。
 Redis 3.x 版本提供了Redis cluster功能，服务端sharding使用槽作为分布式的解决方案。对于 2.x版本，则通过客户端API提供的客户端sharding方式，使用一致性哈希来实现数据分片。此外，twiter开源的twemproxy 和豌豆荚的codis，则采用代理模式来实现。
@@ -25,10 +25,10 @@ Redis 3.x 版本提供了Redis cluster功能，服务端sharding使用槽作为�
 </item>
 <item>
     <title>Redis Sentinel</title>
-    <link>https://atuowgo.github.io/05-sentinel/</link>
+    <link>https://atuowgo.github.io/redis_05_sentinel/</link>
     <pubDate>Wed, 25 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/05-sentinel/</guid>
+    <guid>https://atuowgo.github.io/redis_05_sentinel/</guid>
     <description><![CDATA[这节介绍Redis的高可用解决方案：Sentinel
 1.介绍 Sentinel是Redis官方推荐的高可用(HA)解决方案，当用Redis做master-slave的高可用方案时，假如master宕机了，Redis本身(包括它的很多客户端)都没有实现自动进行主备切换。
 Sentinel本身是一个运行在特殊模式下的Redis服务器，它能监控多个master-slave集群，发现master宕机后能进行自动切换。
@@ -65,10 +65,10 @@ sentinel每2秒通过命令连接向所监听的节点发送订阅命令，如
 </item>
 <item>
     <title>Redis发布与订阅</title>
-    <link>https://atuowgo.github.io/04-publish/</link>
+    <link>https://atuowgo.github.io/redis_04_publish/</link>
     <pubDate>Tue, 24 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/04-publish/</guid>
+    <guid>https://atuowgo.github.io/redis_04_publish/</guid>
     <description><![CDATA[这节介绍Redis的发布与订阅
 Redis提供了发布与订阅的功能，客户端能够向服务器订阅某个频道，当其他客户端向服务器的该频道发布消息时，服务器会将消息推送到订阅该频道的客户端。提供的命令包括：
 1 SUBSCRIBE channel [channel …] 该命令可以向服务器订阅多个频道的消息。与之对应的有UNSUBSCRIBE命令。
@@ -81,10 +81,10 @@ Redis提供了发布与订阅的功能，客户端能够向服务器订阅某个
 </item>
 <item>
     <title>Redis主从复制</title>
-    <link>https://atuowgo.github.io/03-copy/</link>
+    <link>https://atuowgo.github.io/redis_03_copy/</link>
     <pubDate>Mon, 23 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-copy/</guid>
+    <guid>https://atuowgo.github.io/redis_03_copy/</guid>
     <description><![CDATA[这节介绍Redis的主从复制过程,包括建立和复制。
 1.复制的建立 1.1 SLAVEOF命令 Redis支持主从模式以提供读写分离，可以通过在从服务器的客户端上执行如下命令以连接主服务器：
 1 SLAVEOF	IP	PORT 或者在配置文件中配置SLAVEOF选项。
@@ -121,10 +121,10 @@ PSYNC的执行步骤如下：
 </item>
 <item>
     <title>Redis持久化</title>
-    <link>https://atuowgo.github.io/02-persist/</link>
+    <link>https://atuowgo.github.io/redis_02_persist/</link>
     <pubDate>Sun, 22 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-persist/</guid>
+    <guid>https://atuowgo.github.io/redis_02_persist/</guid>
     <description><![CDATA[这节介绍Redis的持久化，包括RDB和AOF两种方式。
 1.RDB持久化 Redis能够将内存中的数据持久化到RDB文件中，避免数据丢失。RDB文件的格式如下示：
 第一部分是开头的5个字节，值为REDIS，第二部分是长度为4个字节的版本号，值为一个字符串表示的整形。database部分包含零个或任意多个数据库，以及各个数据库中的键值对数据，database的结构如下示：
@@ -145,10 +145,10 @@ Redis提供了AOF重写功能，来应对文件过大的情况。执行AOF重写
 </item>
 <item>
     <title>Redis基本结构</title>
-    <link>https://atuowgo.github.io/01-basic/</link>
+    <link>https://atuowgo.github.io/redis_01_basic/</link>
     <pubDate>Sat, 21 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-basic/</guid>
+    <guid>https://atuowgo.github.io/redis_01_basic/</guid>
     <description><![CDATA[之前看了《Redis设计与实现》这本书，对Redis的认识加深了一些，便做了一些总结，同时也记录下自己的一些想法。
 这节先介绍Redis提供的基本结构，主要分为底层的基本结构和以对象形式包装的Object结构。
 1.SDS C字符串在redis中主要用于无须对字符串值进行修改的地方，对于需要修改字符串的场景，则使用SDS（简单动态字符串）。

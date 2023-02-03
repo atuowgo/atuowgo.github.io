@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Dubbo Provider启动都做了什么 - 程序猿二腊</title><meta name="Description" content="这节介绍Provider的启动过程"><meta property="og:title" content="Dubbo Provider启动都做了什么" />
+<meta property="og:description" content="这节介绍Provider的启动过程" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/dubbo_03_provider/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-12-10T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-12-10T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Dubbo Provider启动都做了什么"/>
+<meta name="twitter:description" content="这节介绍Provider的启动过程"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/dubbo_03_provider/" /><link rel="prev" href="https://atuowgo.github.io/notes_005_mysql_innodb/" /><link rel="next" href="https://atuowgo.github.io/notes-007-golang-error/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Dubbo Provider启动都做了什么",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/dubbo_03_provider\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "doubbo","wordcount":  719 ,
+        "url": "https:\/\/atuowgo.github.io\/dubbo_03_provider\/","datePublished": "2020-12-10T00:00:00+00:00","dateModified": "2020-12-10T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍Provider的启动过程"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Dubbo Provider启动都做了什么</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2020-12-10">2020-12-10</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 719 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 4 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1设置默认配置">1.设置默认配置</a></li>
+            <li><a href="#2暴露服务">2.暴露服务</a></li>
+            <li><a href="#21-加载注册中心配置">2.1 加载注册中心配置</a></li>
+            <li><a href="#22-注册服务">2.2 注册服务</a></li>
+            <li><a href="#221-暴露本地服务">2.2.1 暴露本地服务</a></li>
+            <li><a href="#222-暴露远程服务">2.2.2 暴露远程服务</a></li>
+            <li><a href="#3-代理逻辑">3. 代理逻辑</a></li>
+            <li><a href="#31-proxyfactory">3.1 ProxyFactory</a></li>
+            <li><a href="#32-protocol">3.2 Protocol</a></li>
+            <li><a href="#4-provider的服务模型">4. Provider的服务模型</a></li>
+            <li><a href="#41-本地服务启动">4.1 本地服务启动</a></li>
+            <li><a href="#42-处理消息">4.2 处理消息</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><blockquote>
+<p>这节介绍Provider的启动过程，既服务发布。</p>
+</blockquote>
+<p>先从Demo看起：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class ApplicationApi {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static void main(String[] args) throws Exception {
+</span></span><span class="line"><span class="cl">        ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;();
+</span></span><span class="line"><span class="cl">        service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;));
+</span></span><span class="line"><span class="cl">        service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;));
+</span></span><span class="line"><span class="cl">        service.setInterface(DemoService.class);
+</span></span><span class="line"><span class="cl">        service.setRef(new DemoServiceImpl());
+</span></span><span class="line"><span class="cl">        service.export();
+</span></span><span class="line"><span class="cl">        System.in.read();
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>上面Demo主要做了几件事</p>
+<ol>
+<li>新建一个ServiceConfig对象，既服务配置对象</li>
+<li>为服务配置设置ApplicationConfig，既服务对应的项目配置</li>
+<li>为服务配置设置RegistryConfig，既注册中心配置</li>
+<li>指定服务关联的接口DemoService</li>
+<li>指定服务关联的实现DemoServiceImpl</li>
+<li>调用ServiceConfig的export方法暴露服务</li>
+</ol>
+<p>这里重点关注export方法。</p>
+<p>在这之前先说下服务暴露的主要流程：一个应用(<code>ApplicationConfig</code>)包含很多服务，一个服务(<code>ServiceConfig</code>)需要服务提供者(<code>ProviderConfig</code>)通过某种协议(<code>ProtocolConfig</code>)将自身的信息注册到注册中心(<code>RegistriesConfig</code>)，这就是服务暴露主要做的事情。</p>
+<p>export方法主要围绕上面几个组件展开。</p>
+<h4 id="1设置默认配置">1.设置默认配置</h4>
+<p>export会先检查当前环境是否准备就绪，主要是检查各组件配置，如ProviderConfig、ProtocolConfig、ApplicationConfig、ModuleConfig、RegistriesConfig、MonitorConfig等。对于某些为空的配置项则会使用默认值，如：</p>
+<ol>
+<li>创建ProviderConfig，设置prefix，如果有传则使用原值，没有则新建一个ProviderConfig，并设置prefix为<code>dubbo.provider</code></li>
+<li>创建ProtocolConfig，设置prefix，如果有则使用原值，如果没有设置则新建一个ProtocolConfig，使用默认协议dubbo,并设置prefix为<code>dubbo.protocol.</code></li>
+</ol>
+<p>以上各配置项都继承自AbstractConfig</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/abstractConfig.png"
+        data-srcset="/dubbo_03_provider/abstractConfig.png, /dubbo_03_provider/abstractConfig.png 1.5x, /dubbo_03_provider/abstractConfig.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/abstractConfig.png"
+        title="/dubbo_03_provider/abstractConfig.png" width="585" height="404" /></p>
+<p>各配置的实例对象会托管到ConfigMananger，同时被ServiceConfig引用。各实例初始化后的主要值如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/export.png"
+        data-srcset="/dubbo_03_provider/export.png, /dubbo_03_provider/export.png 1.5x, /dubbo_03_provider/export.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/export.png"
+        title="/dubbo_03_provider/export.png" width="1183" height="595" /></p>
+<p>PS:当id为空时，会设置默认值为<code>default</code>。</p>
+<h4 id="2暴露服务">2.暴露服务</h4>
+<p>ServiceConfig准备完配置后就开始进行服务的暴露，主要内容为<code>doExportUrls</code>方法。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/doExportUrls.png"
+        data-srcset="/dubbo_03_provider/doExportUrls.png, /dubbo_03_provider/doExportUrls.png 1.5x, /dubbo_03_provider/doExportUrls.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/doExportUrls.png"
+        title="/dubbo_03_provider/doExportUrls.png" width="1068" height="254" /></p>
+<p>该方法分为两个过程：</p>
+<ol>
+<li>加载所有的注册中心配置RegistriesConfig</li>
+<li>遍历所有的协议配置ProtocolConfig，使用各种协议将服务本身注册到所有的注册中心</li>
+</ol>
+<h4 id="21-加载注册中心配置">2.1 加载注册中心配置</h4>
+<p>加载ServiceConfig指定的所有注册中心配置对象，并以URL的形式返回。需要提及的一点时，Dubbo中为了增加统一的拦截处理，会把URL的协议改为<code>registry</code>，等拦截处理完后再修改回来。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/changeRegistryProtocol.png"
+        data-srcset="/dubbo_03_provider/changeRegistryProtocol.png, /dubbo_03_provider/changeRegistryProtocol.png 1.5x, /dubbo_03_provider/changeRegistryProtocol.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/changeRegistryProtocol.png"
+        title="/dubbo_03_provider/changeRegistryProtocol.png" width="717" height="280" /></p>
+<p>如开头例子的URL会从</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&amp;dubbo=2.0.2&amp;pid=1204&amp;timestamp=1606640163895
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>修改为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&amp;dubbo=2.0.2&amp;pid=1204&amp;registry=zookeeper&amp;timestamp=1606640163895
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>PS：Dubbo使用URL用于在各个扩展点之间传递数据，一个标准的 URL 格式至多可以包含如下的几个部分</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">protocol://username:password@host:port/path?key=value&amp;key=value
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h4 id="22-注册服务">2.2 注册服务</h4>
+<p>ServiceConfig会遍历所有的协议配置ProtocolConfig，对于每种协议，会将服务自身注册到所有配置的注册中心，过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/doExportUrlsFor1Protocol.png"
+        data-srcset="/dubbo_03_provider/doExportUrlsFor1Protocol.png, /dubbo_03_provider/doExportUrlsFor1Protocol.png 1.5x, /dubbo_03_provider/doExportUrlsFor1Protocol.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/doExportUrlsFor1Protocol.png"
+        title="/dubbo_03_provider/doExportUrlsFor1Protocol.png" width="486" height="670" /></p>
+<p>前面都在准备URL的各种参数，以便于构造ServiceConfig对应的URL对象，开头例子Service对应的URL为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">dubbo://10.35.25.111:20880/org.apache.dubbo.demo.DemoService?anyhost=true&amp;application=dubbo-demo-api-provider&amp;bind.ip=10.35.25.111&amp;bind.port=20880&amp;deprecated=false&amp;dubbo=2.0.2&amp;dynamic=true&amp;generic=false&amp;interface=org.apache.dubbo.demo.DemoService&amp;methods=sayHello&amp;pid=18164&amp;release=&amp;side=provider&amp;timestamp=1606657116399
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>构造完URL后便正式进入服务暴露的过程，包括本地暴露和远程暴露。这两种方式都是可选的，可以通过scope参数来控制，可选值包括</p>
+<ol>
+<li>none：不对外进行暴露</li>
+<li>remote：只暴露远程服务</li>
+<li>local：只暴露本地服务</li>
+<li>空：同时暴露本地服务和远程服务（默认值）</li>
+</ol>
+<h4 id="221-暴露本地服务">2.2.1 暴露本地服务</h4>
+<p>指暴露在同一个JVM里面，不用通过调用注册中心如ZK来进行远程通信。例如：在同一个服务，自己调用自己的接口，就没必要进行网络IP连接来通信。如下为本地暴露的内容</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/exportLocal.png"
+        data-srcset="/dubbo_03_provider/exportLocal.png, /dubbo_03_provider/exportLocal.png 1.5x, /dubbo_03_provider/exportLocal.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/exportLocal.png"
+        title="/dubbo_03_provider/exportLocal.png" width="934" height="255" /></p>
+<p>本地服务暴露给注册中心的URL为:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">injvm://127.0.0.1/org.apache.dubbo.demo.DemoService?anyhost=true&amp;application=dubbo-demo-api-provider&amp;bind.ip=10.35.25.111&amp;bind.port=20880&amp;deprecated=false&amp;dubbo=2.0.2&amp;dynamic=true&amp;generic=false&amp;interface=org.apache.dubbo.demo.DemoService&amp;methods=sayHello&amp;pid=23480&amp;release=&amp;side=provider&amp;timestamp=1606665693215
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>本地暴露时主要做几件事：</p>
+<ol>
+<li>拷贝原URL，将协议转为<code>injvm</code></li>
+<li>设置URL的host为<code>127.0.0.1</code>，端口为<code>0</code></li>
+<li><strong>将本地URL转为Exporter</strong></li>
+</ol>
+<h4 id="222-暴露远程服务">2.2.2 暴露远程服务</h4>
+<p>指暴露给远程客户端的IP和端口号，以便通过网络来实现通信。在原URL基础上，会尝试再增加一些可选的参数，如监控:monitor，invoker代理:proxy，最后Service对外开放的URL为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">dubbo://10.35.25.111:20880/org.apache.dubbo.demo.DemoService?anyhost=true&amp;application=dubbo-demo-api-provider&amp;bind.ip=10.35.25.111&amp;bind.port=20880&amp;deprecated=false&amp;dubbo=2.0.2&amp;dynamic=true&amp;generic=false&amp;interface=org.apache.dubbo.demo.DemoService&amp;methods=sayHello&amp;pid=23480&amp;release=&amp;side=provider&amp;timestamp=1606665693215
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>然后会将该Service的URL添加到Registry的URL中，同时使用Registry的URL转为Exporter。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/exportRemote.png"
+        data-srcset="/dubbo_03_provider/exportRemote.png, /dubbo_03_provider/exportRemote.png 1.5x, /dubbo_03_provider/exportRemote.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/exportRemote.png"
+        title="/dubbo_03_provider/exportRemote.png" width="1181" height="101" /></p>
+<p>从2.7.0版本开始，增加了服务元数据存储，将原来注册到注册中心的URL进行减负，抽取一些参数存储到元数据存储中，减少注册中心的负担。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/metadata.png"
+        data-srcset="/dubbo_03_provider/metadata.png, /dubbo_03_provider/metadata.png 1.5x, /dubbo_03_provider/metadata.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/metadata.png"
+        title="/dubbo_03_provider/metadata.png" width="686" height="192" /></p>
+<h4 id="3-代理逻辑">3. 代理逻辑</h4>
+<p>Dubbo可以选择多种通信协议，也可以选择不同的注册中心，为了统一处理，抽象出了一个Proxy层和Protocol层。不管是本地暴露，还是远程暴露，都涉及到<code>ProxyFactory</code>和<code>Protocol</code>接口，二者都是动态来适配具体的代理插桩逻辑和协议实现逻辑,这两个都用到了上一节提到的自适应扩展机制SPI。</p>
+<h4 id="31-proxyfactory">3.1 ProxyFactory</h4>
+<p>ProxyFactory的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">@SPI(&#34;javassist&#34;)
+</span></span><span class="line"><span class="cl">public interface ProxyFactory {
+</span></span><span class="line"><span class="cl">    @Adaptive({PROXY_KEY})
+</span></span><span class="line"><span class="cl">    &lt;T&gt; T getProxy(Invoker&lt;T&gt; invoker) throws RpcException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Adaptive({PROXY_KEY})
+</span></span><span class="line"><span class="cl">    &lt;T&gt; T getProxy(Invoker&lt;T&gt; invoker, boolean generic) throws RpcException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Adaptive({PROXY_KEY})
+</span></span><span class="line"><span class="cl">    &lt;T&gt; Invoker&lt;T&gt; getInvoker(T proxy, Class&lt;T&gt; type, URL url) throws RpcException;
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>ServiceConfig里调用方式为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private static final ProxyFactory PROXY_FACTORY = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>ProxyFactory通过指定参数<code>proxy</code>的值来动态选择实现，默认使用<code>javassist</code>，如下为dubbo-rpc-api模块提供的实现：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/ProxyFactory.png"
+        data-srcset="/dubbo_03_provider/ProxyFactory.png, /dubbo_03_provider/ProxyFactory.png 1.5x, /dubbo_03_provider/ProxyFactory.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/ProxyFactory.png"
+        title="/dubbo_03_provider/ProxyFactory.png" width="582" height="76" /></p>
+<p>既ServiceConfig里ProxyFactory的具体实现类为<code>org.apache.dubbo.rpc.proxy.javassist.JavassistProxyFactory</code>。</p>
+<p>JavassistProxyFactory使用Javassist来实现动态代理，主要实现方法如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/JavassistProxyFactory.png"
+        data-srcset="/dubbo_03_provider/JavassistProxyFactory.png, /dubbo_03_provider/JavassistProxyFactory.png 1.5x, /dubbo_03_provider/JavassistProxyFactory.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/JavassistProxyFactory.png"
+        title="/dubbo_03_provider/JavassistProxyFactory.png" width="971" height="314" /></p>
+<p>1.将目标接口包装为<code>org.apache.dubbo.common.bytecode.Wrapper</code>的子类，Wrapper使用Javassist以硬编码的方式代理了目标接口的动作以实现动态代理的功能，减少了反射的调用。对于开头例子的接口，Wrapper处理后的主要内容如下:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class Wrapper0 extends Wrapper implements DC {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	 public Object invokeMethod(Object var1, String var2, Class[] var3, Object[] var4) throws InvocationTargetException {
+</span></span><span class="line"><span class="cl">        DemoService var5;
+</span></span><span class="line"><span class="cl">        try {
+</span></span><span class="line"><span class="cl">            var5 = (DemoService)var1;
+</span></span><span class="line"><span class="cl">        } catch (Throwable var8) {
+</span></span><span class="line"><span class="cl">            throw new IllegalArgumentException(var8);
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        try {
+</span></span><span class="line"><span class="cl">            if (&#34;sayHello&#34;.equals(var2) &amp;&amp; var3.length == 1) {
+</span></span><span class="line"><span class="cl">                return var5.sayHello((String)var4[0]);
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        } catch (Throwable var9) {
+</span></span><span class="line"><span class="cl">            throw new InvocationTargetException(var9);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        throw new NoSuchMethodException(&#34;Not found method \&#34;&#34; + var2 + &#34;\&#34; in class org.apache.dubbo.demo.DemoService.&#34;);
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public Wrapper0() {
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>2.构造AbstractProxyInvoker对象并返回，AbstractProxyInvoker实现了<code>org.apache.dubbo.common.Node.Invoker</code>接口。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public interface Invoker&lt;T&gt; extends Node {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * get service interface.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @return service interface.
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    Class&lt;T&gt; getInterface();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * invoke.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @param invocation    调用
+</span></span><span class="line"><span class="cl">     * @return result       结果
+</span></span><span class="line"><span class="cl">     * @throws RpcException
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    Result invoke(Invocation invocation) throws RpcException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><em><strong>Invoker表示Service对应接口的可执行对象</strong></em>，通过传入Invocation指明调用哪个方法以及方法参数。具体到JavassistProxyFactory，invoke方法的实现则是使用Wrapper动态代理技术。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/Invoker.png"
+        data-srcset="/dubbo_03_provider/Invoker.png, /dubbo_03_provider/Invoker.png 1.5x, /dubbo_03_provider/Invoker.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/Invoker.png"
+        title="/dubbo_03_provider/Invoker.png" width="686" height="226" /></p>
+<h4 id="32-protocol">3.2 Protocol</h4>
+<p>Protocol的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">@SPI(&#34;dubbo&#34;)
+</span></span><span class="line"><span class="cl">public interface Protocol {
+</span></span><span class="line"><span class="cl">    int getDefaultPort();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Adaptive
+</span></span><span class="line"><span class="cl">    &lt;T&gt; Exporter&lt;T&gt; export(Invoker&lt;T&gt; invoker) throws RpcException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Adaptive
+</span></span><span class="line"><span class="cl">    &lt;T&gt; Invoker&lt;T&gt; refer(Class&lt;T&gt; type, URL url) throws RpcException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void destroy();
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>ServiceConfig里调用方式为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Protocol比较特殊，上节提到过Protocol接口方法上没有指定key，而是直接使用的URL中<code>protocol</code>属性字段的值。因而本地暴露使用的<code>InjvmProtocol</code>实例，远程暴露使用的<code>RegistryProtocol</code>实例。</p>
+<p>Protocol接口的作用在于，将Invoker以特定的协议暴露出去，并返回对应的Expoter。Exporter表示一个对外暴露的可执行对象，可以通过对应的key获得内部的可执行对象Invoker。</p>
+<p>开头例子进行本地暴露和远程暴露的过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/ProtocolExport.png"
+        data-srcset="/dubbo_03_provider/ProtocolExport.png, /dubbo_03_provider/ProtocolExport.png 1.5x, /dubbo_03_provider/ProtocolExport.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/ProtocolExport.png"
+        title="/dubbo_03_provider/ProtocolExport.png" width="472" height="380" /></p>
+<p>本地暴露只是简单的返回一个InjvmExprter（InjvmExporter会缓存在InjvmProtocol内部），仅供JVM内部使用。</p>
+<p>远程暴露会先经过RegistryProtocol，在这里会拿到原始的协议即让DubboProtocol处理一遍，DubboProtocol内部会<em><strong>启动一个本地服务</strong></em>并将Invoker包装为DubboExporter并返回（DubboExporter会缓存在DubboProtocol内部）；<em><strong>然后会去访问注册中心，将该服务注册上去，同时订阅该服务的变化</strong></em>；最后返回包装过后的DestryableExpoter。</p>
+<p>经过该步骤后Provider端已经启动本地服务以便接收外部请求，同时也将服务的路由信息注册到了ZK,以便外部发现该服务，可以正式对外提供服务。如下为ZK发布的服务路由信息：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/zk.png"
+        data-srcset="/dubbo_03_provider/zk.png, /dubbo_03_provider/zk.png 1.5x, /dubbo_03_provider/zk.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/zk.png"
+        title="/dubbo_03_provider/zk.png" width="1288" height="205" /></p>
+<h4 id="4-provider的服务模型">4. Provider的服务模型</h4>
+<h4 id="41-本地服务启动">4.1 本地服务启动</h4>
+<p>上面提到，DubboProtocol会在本地启动一个本地服务，Dubbo内部将服务抽象为<code>org.apache.dubbo.remoting.exchange.ExchangeServer</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public interface ExchangeServer extends Server {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * get channels.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @return channels
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    Collection&lt;ExchangeChannel&gt; getExchangeChannels();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * get channel.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @param remoteAddress
+</span></span><span class="line"><span class="cl">     * @return channel
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    ExchangeChannel getExchangeChannel(InetSocketAddress remoteAddress);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>ExchangeServer位于<code>Exchange</code>层，即信息交换层，是对<code>Request</code>和<code>Response</code>的抽象。主要用于整合各通信方式，提供统一的通信模型：请求-响应模型。</p>
+<p>创建ExchangeServer核心动作如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/ExchangeServer.png"
+        data-srcset="/dubbo_03_provider/ExchangeServer.png, /dubbo_03_provider/ExchangeServer.png 1.5x, /dubbo_03_provider/ExchangeServer.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/ExchangeServer.png"
+        title="/dubbo_03_provider/ExchangeServer.png" width="1007" height="634" /></p>
+<p>Exchanges使用了SPI来获取Exchanger的实现，并调用bind方法，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">@SPI(HeaderExchanger.NAME)
+</span></span><span class="line"><span class="cl">public interface Exchanger {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * bind.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @param url
+</span></span><span class="line"><span class="cl">     * @param handler
+</span></span><span class="line"><span class="cl">     * @return message server
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    @Adaptive({Constants.EXCHANGER_KEY})
+</span></span><span class="line"><span class="cl">    ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * connect.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @param url
+</span></span><span class="line"><span class="cl">     * @param handler
+</span></span><span class="line"><span class="cl">     * @return message channel
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    @Adaptive({Constants.EXCHANGER_KEY})
+</span></span><span class="line"><span class="cl">    ExchangeClient connect(URL url, ExchangeHandler handler) throws RemotingException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>bind方法的意思为：将服务对应的URL绑定到ExchangeHandler处理器上。Exchanger的默认实现为<code>org.apache.dubbo.remoting.exchange.support.header.HeaderExchanger</code>基于消息头的信息交换。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class HeaderExchanger implements Exchanger {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static final String NAME = &#34;header&#34;;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Override
+</span></span><span class="line"><span class="cl">    public ExchangeClient connect(URL url, ExchangeHandler handler) throws RemotingException {
+</span></span><span class="line"><span class="cl">        return new HeaderExchangeClient(Transporters.connect(url, new DecodeHandler(new HeaderExchangeHandler(handler))), true);
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    @Override
+</span></span><span class="line"><span class="cl">    public ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException {
+</span></span><span class="line"><span class="cl">        return new HeaderExchangeServer(Transporters.bind(url, new DecodeHandler(new HeaderExchangeHandler(handler))));
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在这里调用了下一层：协议转换层<code>Transporter</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">@SPI(&#34;netty&#34;)
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">public interface Transporter {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * Bind a server.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @param url     server url
+</span></span><span class="line"><span class="cl">     * @param handler
+</span></span><span class="line"><span class="cl">     * @return server
+</span></span><span class="line"><span class="cl">     * @throws RemotingException
+</span></span><span class="line"><span class="cl">     * @see org.apache.dubbo.remoting.Transporters#bind(URL, ChannelHandler...)
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    @Adaptive({Constants.SERVER_KEY, Constants.TRANSPORTER_KEY})
+</span></span><span class="line"><span class="cl">    Server bind(URL url, ChannelHandler handler) throws RemotingException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * Connect to a server.
+</span></span><span class="line"><span class="cl">     *
+</span></span><span class="line"><span class="cl">     * @param url     server url
+</span></span><span class="line"><span class="cl">     * @param handler
+</span></span><span class="line"><span class="cl">     * @return client
+</span></span><span class="line"><span class="cl">     * @throws RemotingException
+</span></span><span class="line"><span class="cl">     * @see org.apache.dubbo.remoting.Transporters#connect(URL, ChannelHandler...)
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    @Adaptive({Constants.CLIENT_KEY, Constants.TRANSPORTER_KEY})
+</span></span><span class="line"><span class="cl">    Client connect(URL url, ChannelHandler handler) throws RemotingException;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Transporter用于提供统一的协议转换模型，将Exchange层“有序”的Requqest-Response模型中的消息，通过<code>Channel</code>(通道)“无序”的进行发送/接受。</p>
+<p>Transporter默认的实现为<code>NettyTransporter</code>，既底层使用Netty进行通信。</p>
+<p>对于服务端而言，就是包装Netty的API，启动一个Netty后台服务，并传入一个请求处理器，在请求到来时进行处理并返回响应。Netty在启动BootStrapServer时，需要指定编解码处理器，还要指定消息处理器，消息处理器就是Transporter层的ChannelHander/Exchange层的ExchangeHandler，编解码器则位Transporter层的下层：codec层。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/code.png"
+        data-srcset="/dubbo_03_provider/code.png, /dubbo_03_provider/code.png 1.5x, /dubbo_03_provider/code.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/code.png"
+        title="/dubbo_03_provider/code.png" width="734" height="231" /></p>
+<p>编解码器也是通过SPI来定位具体实现类的，接口为<code>org.apache.dubbo.remoting.Codec2</code>，key为<code>codec</code>。具体到DubboProtocol，使用的是Dubbo内部自己的协议，实现类为<code>org.apache.dubbo.rpc.protocol.dubbo.DubboCountCodec</code>。DubboCountCodec使用<code>org.apache.dubbo.rpc.protocol.dubbo.DubboCodec</code>来解码消息，将解码的多条消息整合到MultiMessage中。</p>
+<p>DubboCodec处理Netty接收的消息，对消息进行编解码，然后包装为<code>org.apache.dubbo.remoting.exchange.Request</code>或者<code>org.apache.dubbo.remoting.exchange.Response</code>对象，即处理为Request-Response模型，再交由消息处理器处理。</p>
+<p>在Dubbo协议中，会为每次Request-Response交互分配一个唯一id，称为消息id。消息id通过编码，最终会作为请求内容的一部分发送出去，同时响应内容中也会带有消息id，通过解码，会把id解析出来。通过消息id,“无序”的tcp交互，在Exchange层就变得“有序”起来。</p>
+<h4 id="42-处理消息">4.2 处理消息</h4>
+<p>NettyServer在解码消息后，会出现相应的事件，如<code>connect</code>,<code>read````,</code>write```等，会包装为ChannelHandler的事件，再交由Transporter层的ChannelHandler处理，最后再进行包装交由Exchange层的ExchangeHandler处理。</p>
+<p>具体到Dubbo协议，处理器是在DubboProtocol中传入的，该处理器为ExchangeHandlerAdapter的子类，最终的事件处理动作会在这里处理。在传到codec层时该Handler会经过多层包装：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/Handler.png"
+        data-srcset="/dubbo_03_provider/Handler.png, /dubbo_03_provider/Handler.png 1.5x, /dubbo_03_provider/Handler.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/Handler.png"
+        title="/dubbo_03_provider/Handler.png" width="736" height="645" /></p>
+<p>拿到Invocation对象后，便可以获得对应的serviceKey，从而通过DubboProtocol内部缓存的Exporter中拿到对应的Exporter，拿到Exporter便能拿到Invoker，从而调用对应的具体实现类的方法，触发真正的调用。</p>
+<p>概括Provider主要做的内容就是：Provider将接口实现通过Wrapper类包装起来，作为Invoker，以便可以通过Invocation来动态执行实现类的方法；将接口名作为ServiceKey，以及Provider本身的ip和端口注册到注册中心，作为Exporter；Exporter跟Invoker一一映射，外界通过ServiceKey可以获取JVM缓存的Exporter，从而获取到Invoker，进而通过Wrapper对象调用目标类的方法。</p>
+<p>整个核心过程经过扩展后为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_03_provider/ProviderDetail.png"
+        data-srcset="/dubbo_03_provider/ProviderDetail.png, /dubbo_03_provider/ProviderDetail.png 1.5x, /dubbo_03_provider/ProviderDetail.png 2x"
+        data-sizes="auto"
+        alt="/dubbo_03_provider/ProviderDetail.png"
+        title="/dubbo_03_provider/ProviderDetail.png" width="559" height="589" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-12-10</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/dubbo_03_provider/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/dubbo_03_provider/" data-title="Dubbo Provider启动都做了什么" data-hashtags="doubbo"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/dubbo_03_provider/" data-hashtag="doubbo"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/dubbo_03_provider/" data-title="Dubbo Provider启动都做了什么"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/doubbo/">doubbo</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/notes_005_mysql_innodb/" class="prev" rel="prev" title="MySQL InnoDB索引那点事儿"><i class="fas fa-angle-left fa-fw"></i>MySQL InnoDB索引那点事儿</a>
+            <a href="/notes-007-golang-error/" class="next" rel="next" title="golang error">golang error<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

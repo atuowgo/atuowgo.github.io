@@ -2,63 +2,66 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
-            <loc>https://atuowgo.github.io/categories/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/categories/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/posts/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/tags/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/categories/theory/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/tags/deeplearn/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/deeplearning_01_perceptron/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
             <loc>https://atuowgo.github.io/tags/golang/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/007-golang-error/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/posts/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/tags/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes-007-golang-error/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/categories/notes/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/doubbo/</loc><lastmod>2020-12-10T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/03-provider/</loc><lastmod>2020-12-10T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/dubbo_03_provider/</loc><lastmod>2020-12-10T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/categories/srccode/</loc><lastmod>2020-12-10T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/005-mysql-innodb/</loc><lastmod>2020-11-09T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes_005_mysql_innodb/</loc><lastmod>2020-11-09T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/work/</loc><lastmod>2020-11-09T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/004-distrubte-id/</loc><lastmod>2020-09-20T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/02-extend/</loc><lastmod>2020-09-07T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/01-introduce/</loc><lastmod>2020-08-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/003-socks/</loc><lastmod>2020-08-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes_004_distrubte_id/</loc><lastmod>2020-09-20T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/dubbo_02_extend/</loc><lastmod>2020-09-07T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/dubbo_01_introduce/</loc><lastmod>2020-08-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes_003_socks/</loc><lastmod>2020-08-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/jvm-sandbox/</loc><lastmod>2020-08-02T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/02-event/</loc><lastmod>2020-08-02T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/01-start/</loc><lastmod>2020-07-24T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/sandbox_02_event/</loc><lastmod>2020-08-02T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/sandbox_01_start/</loc><lastmod>2020-07-24T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/rocketmq/</loc><lastmod>2020-05-18T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/09-consumequeue/</loc><lastmod>2020-05-18T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/08-mappedfile/</loc><lastmod>2020-05-14T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/07-broker/</loc><lastmod>2020-05-04T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/06-nameserver/</loc><lastmod>2020-04-15T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/05-netty/</loc><lastmod>2020-03-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_09_consumequeue/</loc><lastmod>2020-05-18T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_08_mappedfile/</loc><lastmod>2020-05-14T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_07_broker/</loc><lastmod>2020-05-04T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_06_nameserver/</loc><lastmod>2020-04-15T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_05_netty/</loc><lastmod>2020-03-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/java/</loc><lastmod>2020-03-16T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/006-ginvsmvc/</loc><lastmod>2020-03-16T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/04-consumer/</loc><lastmod>2020-02-25T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/03-rebalance/</loc><lastmod>2020-02-22T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/02-producer/</loc><lastmod>2020-02-05T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/01-client-start/</loc><lastmod>2020-01-08T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes-006-ginvsmvc/</loc><lastmod>2020-03-16T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_04_consumer/</loc><lastmod>2020-02-25T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_03_rebalance/</loc><lastmod>2020-02-22T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_02_producer/</loc><lastmod>2020-02-05T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_01_client/</loc><lastmod>2020-01-08T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/spring/</loc><lastmod>2020-01-07T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/07-spring-mvc/</loc><lastmod>2020-01-07T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/00-basic/</loc><lastmod>2019-12-28T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/03-instrument-api/</loc><lastmod>2019-12-21T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/spring_07_mvc/</loc><lastmod>2020-01-07T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/rocketmq_00_basic/</loc><lastmod>2019-12-28T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/jacoco_03_instrument_api/</loc><lastmod>2019-12-21T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/jacoco/</loc><lastmod>2019-12-21T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/02-class-instrument/</loc><lastmod>2019-12-13T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/01-class-filetype/</loc><lastmod>2019-12-08T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/06-spring-aop/</loc><lastmod>2019-11-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/002-p3c/</loc><lastmod>2019-10-25T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/05-spring-destorybean/</loc><lastmod>2019-10-13T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/04-spring-getbean/</loc><lastmod>2019-10-06T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/03-spring-bean-load/</loc><lastmod>2019-10-04T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/02-spring-env/</loc><lastmod>2019-10-03T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/01-spring-start/</loc><lastmod>2019-10-02T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/jacoco_02_class_instrument/</loc><lastmod>2019-12-13T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/jacoco_01_class_file_type/</loc><lastmod>2019-12-08T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/spring_06-aop/</loc><lastmod>2019-11-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes_002_p3c/</loc><lastmod>2019-10-25T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/spring_05-destorybean/</loc><lastmod>2019-10-13T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/spring_04_getbean/</loc><lastmod>2019-10-06T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/spring_03_beanload/</loc><lastmod>2019-10-04T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/spring_02_env/</loc><lastmod>2019-10-03T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/spring_01_start/</loc><lastmod>2019-10-02T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/sentinel/</loc><lastmod>2019-10-01T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/03-module-cluster/</loc><lastmod>2019-10-01T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/02-module-core/</loc><lastmod>2019-09-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/01-basic/</loc><lastmod>2019-09-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/001-java-eof/</loc><lastmod>2019-09-28T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/sentinel_03_module_cluster/</loc><lastmod>2019-10-01T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/sentinel_02_module_core/</loc><lastmod>2019-09-30T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/sentinel_01_basic/</loc><lastmod>2019-09-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes_001_java_eof/</loc><lastmod>2019-09-28T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/distrubute/</loc><lastmod>2019-09-27T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/000-distrubte-protocol/</loc><lastmod>2019-09-27T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/notes_000_distrubte_protocol/</loc><lastmod>2019-09-27T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/tags/redis/</loc><lastmod>2019-09-26T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/06-cluster/</loc><lastmod>2019-09-26T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/05-sentinel/</loc><lastmod>2019-09-25T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/04-publish/</loc><lastmod>2019-09-24T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/03-copy/</loc><lastmod>2019-09-23T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/02-persist/</loc><lastmod>2019-09-22T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>https://atuowgo.github.io/01-basic/</loc><lastmod>2019-09-21T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/redis_06_cluster/</loc><lastmod>2019-09-26T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/redis_05_sentinel/</loc><lastmod>2019-09-25T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/redis_04_publish/</loc><lastmod>2019-09-24T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/redis_03_copy/</loc><lastmod>2019-09-23T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/redis_02_persist/</loc><lastmod>2019-09-22T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
+            <loc>https://atuowgo.github.io/redis_01_basic/</loc><lastmod>2019-09-21T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/about/</loc><lastmod>2019-08-02T11:04:49&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url></urlset>

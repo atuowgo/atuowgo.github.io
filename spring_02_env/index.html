@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Spring Environment的加载 - 程序猿二腊</title><meta name="Description" content="这节介绍environment，默认环境变量的加载以及初始化内容"><meta property="og:title" content="Spring Environment的加载" />
+<meta property="og:description" content="这节介绍environment，默认环境变量的加载以及初始化内容" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/spring_02_env/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-10-03T00:00:00+00:00" />
+<meta property="article:modified_time" content="2019-10-03T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Spring Environment的加载"/>
+<meta name="twitter:description" content="这节介绍environment，默认环境变量的加载以及初始化内容"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/spring_02_env/" /><link rel="prev" href="https://atuowgo.github.io/spring_01_start/" /><link rel="next" href="https://atuowgo.github.io/spring_03_beanload/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Spring Environment的加载",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/spring_02_env\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "spring","wordcount":  74 ,
+        "url": "https:\/\/atuowgo.github.io\/spring_02_env\/","datePublished": "2019-10-03T00:00:00+00:00","dateModified": "2019-10-03T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍environment，默认环境变量的加载以及初始化内容"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Spring Environment的加载</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2019-10-03">2019-10-03</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 74 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1conversionservice">1.ConversionService</a></li>
+            <li><a href="#3propertyresolver">3.PropertyResolver</a></li>
+            <li><a href="#4environment">4.Environment</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 这节介绍environment，默认环境变量的加载以及初始化内容。</p>
+<p> 之前在介绍spring启动过程讲到，第一步进行环境准备时就会初始化一个StandardEnvironment。下图为Environment类图的接口，可以分为4块内容：</p>
+<ol>
+<li>
+<p>ConversionService（蓝）：类型转换服务</p>
+</li>
+<li>
+<p>PropertySource（绿）:键值对数据源</p>
+</li>
+<li>
+<p>PropertyResolver（红）:键值对服务，包括类型转换</p>
+</li>
+<li>
+<p>Environment（紫）:环境配置数据服务</p>
+</li>
+</ol>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/1.png"
+        data-srcset="/spring_02_env/1.png, /spring_02_env/1.png 1.5x, /spring_02_env/1.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/1.png"
+        title="/spring_02_env/1.png" width="865" height="703" /></p>
+<h4 id="1conversionservice">1.ConversionService</h4>
+<p> 提供了类型转换服务，能将源目标转换为目标类型，同时提供了管理功能，内部维护了各类型转换映射关系。其实从ConversionService和ConverterRegistry接口就能看出该模块的功能，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/2.png"
+        data-srcset="/spring_02_env/2.png, /spring_02_env/2.png 1.5x, /spring_02_env/2.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/2.png"
+        title="/spring_02_env/2.png" width="865" height="306" /></p>
+<p> ConversionService接口为主要的对外功能接口，提供查询的能力。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/3.png"
+        data-srcset="/spring_02_env/3.png, /spring_02_env/3.png 1.5x, /spring_02_env/3.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/3.png"
+        title="/spring_02_env/3.png" width="834" height="448" /></p>
+<p> ConverterRegistry接口为主要的管理接口，提供添加和删除的能力。而ConfigurableConversionService继承自上面二者，则提供了Converter的CRUD功能。结构上也延续了Spring固有的风格，将执行接口作为主要功能对外提供单一的接口，再通过继承的方式，以Configurable开头的子接口，扩展出管理功能，使得责任分离更加立体。</p>
+<p> 接下来是GenericConversionService类，该类提供了接口全部实现，下图展示了其主要实现:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/4.png"
+        data-srcset="/spring_02_env/4.png, /spring_02_env/4.png 1.5x, /spring_02_env/4.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/4.png"
+        title="/spring_02_env/4.png" width="636" height="750" /></p>
+<p> GenericConversionService结构上可以说是一个小型的管理系统，内部维护了一个Converters对象，用于“底层”管理所有的GenericConverter。同时还维护了一个ConcurrentReferenceHashMap用于缓存常用的GenericConverter。</p>
+<p> Converters在存储GenericConverter时还进行了分类，如果GenericConverter有指定能够解析的类别（ConvertiablePair：包括SourceType和TargetType）时，则使用一个LinkedHashMap按Key Value进行存储，在存储时会遍历可解析的类别，将该GenericConverter追加到对应的Value列表末尾，因而可以看到该Map的Value是一个LinkedList。对应没有指定能解析的类别的GenericConverter，则直接放到LinkedHashSet维护的集合中。</p>
+<p> Converters在查询时会遍历源类型和目标类型的组合结果，以查找匹配的目标GenericConverter对象。如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/5.png"
+        data-srcset="/spring_02_env/5.png, /spring_02_env/5.png 1.5x, /spring_02_env/5.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/5.png"
+        title="/spring_02_env/5.png" width="865" height="383" /></p>
+<p> 对于getRegisteredConverter方法，会先使用Key从LinkedHashMap中查找是否有匹配的Converter,再遍历相应的Value,查找到能处理的转换器。若Map中无法查到，则遍历LinkedHashSet，以查到到能处理的转换器。</p>
+<p> 由上知道，Converters在查找时存在多次遍历列表的过程，在频率过多时效率会比较低下，因而GenericConversionService内部维护了一个ConcurrentReferenceHashMap提供缓存的功能，该Map提供了同ConcurrentHashMap相同的功能，但是能够存储对应的软引用，从而能在内存不足时自动进行内存回收。在查到转换器时，会先试着从缓存中查找，如果获取不到，则会转而从Converters中查找，当从Converters中查找到后便会put到ConcurrentReferenceHashMap缓存中。</p>
+<p> DefaultConversionService是一个单例，继承自GenericConversionService，在初始化后自动添加了默认的转换器，包括Scalar相关的、集合相关的等转换器。</p>
+<p>####2.PropertySource</p>
+<p> PropertySource代表了一个包含键值对的数据源。从类定义上看，有一个表示数据源名字的name字段，还有一个表示具体数据源泛型T的source字段。而数据源的设置则是通过构造方法传入的，同时方法提供了通过键名获取键值的抽象方法getProperty。此外还有其他抽象方法，如containsProperty等。</p>
+<p> EnumerablePropertySource继承自PropertySource，增加了getPropertyNames方法，要求子类返回内存持有的键名列表。同时实现了containsProperty方法，通过判断所给的键名是否存在上述返回的键名列表中从而判断是否包含该键名。</p>
+<p> MapPropertySource继承自EnumerablePropertySource，顾名思义，内部通过Map维护各键值对内容。类似的还有PropertiesPropertySource，内部通过Properties维护各键值对内容。</p>
+<p> SystemEnvironmentPropertySource是MapPropertySource的装饰器，继承自MapPropertySource，为其添加了键名转换功能，以应对环境变量、shell参数的环境。在通过键名获取键值时，会先根据原键名进行查找，查找不到则通过对键进行转换再尝试查找，具体查找过程为：</p>
+<ol>
+<li>
+<p>通过name查找</p>
+</li>
+<li>
+<p>将name中的 . 转换为 _ 查找</p>
+</li>
+<li>
+<p>将name中的 – 转换为 _ 查找</p>
+</li>
+<li>
+<p>将name中的 . 和 _ 转换为 – 查找</p>
+</li>
+<li>
+<p>将name转换为大写，再进行（1） - （4）的过程</p>
+</li>
+</ol>
+<p> PropertySources的实现如下，扩展了PropertySource接口，将单个数据源的能力扩展到了多个。MutablePropertySources作为PropertySources的实现，内部维护了一个List对象，用以存储给个数据源，并将自身的行为封装为List。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/6.png"
+        data-srcset="/spring_02_env/6.png, /spring_02_env/6.png 1.5x, /spring_02_env/6.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/6.png"
+        title="/spring_02_env/6.png" width="800" height="259" /></p>
+<h4 id="3propertyresolver">3.PropertyResolver</h4>
+<p> PropertyResolver定义了一系列接口，以提供了对外根据键名获取相应值的功能，同时提供了类型转换和占位符替换的功能，是ConversionService和PropertySource的结合。ConfigurablePropertyResolver接口继承自PropertyResolver接口，老规则，扩展了设置的功能，主要是设置类型转换器和占位符的相关属性。</p>
+<p> AbstractPropertyResolver提供了除PropertySource功能外的其余实现。使用DefaultConversionService作为默认的类型转换实现，使用 ${ 和 } 作为占位符的前后缀，使用:作为默认值分割符，同时引入PropertyPlaceholderHelper用于占位符的解析和替换。而getProperty的实现则留到了了子类PropertySourcesPropertyResolver中，其引入了PropertySources用以维护多个键值对数据源。获取指定属性值过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/7.png"
+        data-srcset="/spring_02_env/7.png, /spring_02_env/7.png 1.5x, /spring_02_env/7.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/7.png"
+        title="/spring_02_env/7.png" width="865" height="581" /></p>
+<p> 通过遍历数据源的方式，查到对应的值后，会进行占位符的替换，替换完占位符后会进行类型的转换。类型转换直接用的DefaultConversionService，这个上面已经介绍过了，下面介绍占位符替换。</p>
+<p> 占位符替换的功能是在PropertyResolver接口中定义的，分为严格和不严格模式，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/8.png"
+        data-srcset="/spring_02_env/8.png, /spring_02_env/8.png 1.5x, /spring_02_env/8.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/8.png"
+        title="/spring_02_env/8.png" width="865" height="117" /></p>
+<p> resolvePlaceholders为不严格模式，如果没法替换占位符，则直接忽略，resolveRequiredPlaceholders为严格模式，如果占位符没法替换则会抛出异常。如上面说的，AbstractPropertyResolver实现时都委托给PropertyPlaceholderHelper的replacePlaceholders方法。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/9.png"
+        data-srcset="/spring_02_env/9.png, /spring_02_env/9.png 1.5x, /spring_02_env/9.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/9.png"
+        title="/spring_02_env/9.png" width="865" height="227" /></p>
+<p> 如上，该方法要求传入一个源字符串，同时提供一个PlaceholderResolver数据源，一遍解析出占位符内容后能够从数据源中获取对应的值。为了保持类功能的单一职责，从而增加了一个内部接口PlaceholderResolver。上面提到，在这个模块中的键值对数据源都是由PropertySourcesPropertyResolver维护的，事实上上面方法截图的实现中，getPropertyAsRawString方法也确实是由PropertySourcesPropertyResolver提供实现的，下面看下占位符的解析。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/10.png"
+        data-srcset="/spring_02_env/10.png, /spring_02_env/10.png 1.5x, /spring_02_env/10.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/10.png"
+        title="/spring_02_env/10.png" width="865" height="974" /></p>
+<p> 占位符的解析过程如上流程，主要过程为：</p>
+<ol>
+<li>
+<p>根据${前缀得到startIndex</p>
+</li>
+<li>
+<p>查找跟${前缀配对的}后缀，如${xxx${yy}z}，得到第二个}后缀的下标endIndex</p>
+</li>
+<li>
+<p>截取${和}中间的内容得到placeholder</p>
+</li>
+<li>
+<p>由于placeholder的内容可能也可能包含占位符，因而要递归处理placeholder，既占位符可以嵌套，内层的结果可以当做外层的Key使用</p>
+</li>
+<li>
+<p>placeholder解析完后，将其作为Key从键值对源中获取对应的值propVal</p>
+</li>
+<li>
+<p>如果propVal值为空，则判断是否存在:分割符，如果有分割符，则进行分割，并使用前端内容作为Key再次查找值。若该次查找结果不为空，则使用该次结果为propVal的值，否则使用第二段内容作为默认值</p>
+</li>
+<li>
+<p>若第（5）/（6）步中propVal结果不为空，则判断从键值对源中获取的值是否也有占位符，若有占位符，则再次进行解析，若没有，则将结果替换回原字段中，更新startIndex，继续下次解析。</p>
+</li>
+<li>
+<p>若第（5）/（6）步中propVal结果不空，则会根据设置的解析模式来判断下一步行为，如果未不严格模式，则跳过该次内容，更新startIndex，继续下一次解析，若为严格模式，则抛出异常，流程结束。</p>
+</li>
+</ol>
+<p> 下面以一个例子进行演示，如下</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/11.png"
+        data-srcset="/spring_02_env/11.png, /spring_02_env/11.png 1.5x, /spring_02_env/11.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/11.png"
+        title="/spring_02_env/11.png" width="865" height="399" /></p>
+<p>输出结果为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/12.png"
+        data-srcset="/spring_02_env/12.png, /spring_02_env/12.png 1.5x, /spring_02_env/12.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/12.png"
+        title="/spring_02_env/12.png" width="334" height="44" /></p>
+<p> 若将解析模式设置为严格模式则会抛出异常</p>
+<h4 id="4environment">4.Environment</h4>
+<p> Environment继承自PropertyResolver接口，增加了Profiles功能，即我们平时看到的，多环境特性，能够在不同环境下加载不同的配置。ConfigurableEnvironment继承自Environment，老规矩，又是添加了修改的扩展接口，同时增加了获取系统参数的接口。另外，该接口也继承自ConfigurablePropertyResolver，有了键值对数据源管理、获取和处理的能力，集合Environment接口的功能，能够达到在不同环境下通过加载不同配置源实现环境隔离的效果。</p>
+<p> AbstractEnvironment是ConfigurablePropertyResolver的实现，提供了默认的环境源default，同时内部组合使用PropertySourcesPropertyResolver作为PropertyResolver的实现。</p>
+<p> 它还维护了一个MutablePropertySources对象，用于存储多个数据源，在Context的父子上下文中，通过merge方法，能够将父上文中的环境变量内容添加进来（在AbstractApplicationContext设置父Context时，会将父Environment进行合并）。同时还有一个方法customizePropertySources，会在构造方法中进行调用，开放给子类添加默认的键值对源，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/13.png"
+        data-srcset="/spring_02_env/13.png, /spring_02_env/13.png 1.5x, /spring_02_env/13.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/13.png"
+        title="/spring_02_env/13.png" width="865" height="137" /></p>
+<p> 最后是StandardEnvironment类，继承自AbstractEnvironment，重写了customizePropertySources方法，在该方法中添加了系统相关的属性和应用环境变量相关的属性的键值对源。如下</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/spring_02_env/14.png"
+        data-srcset="/spring_02_env/14.png, /spring_02_env/14.png 1.5x, /spring_02_env/14.png 2x"
+        data-sizes="auto"
+        alt="/spring_02_env/14.png"
+        title="/spring_02_env/14.png" width="865" height="103" /></p>
+<p> 而这两个数据源来自于前面提到的PropertySource实现。其中，系统相关属性<code>SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME</code>的数据源来源于<code>System.getProperties()</code>，而应用环境变量相关属性<code>SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME</code>则来源于<code>System.getenv()</code>。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2019-10-03</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/spring_02_env/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/spring_02_env/" data-title="Spring Environment的加载" data-hashtags="spring"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/spring_02_env/" data-hashtag="spring"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/spring_02_env/" data-title="Spring Environment的加载"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/spring/">Spring</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/spring_01_start/" class="prev" rel="prev" title="Spring启动流程"><i class="fas fa-angle-left fa-fw"></i>Spring启动流程</a>
+            <a href="/spring_03_beanload/" class="next" rel="next" title="Spring BeanDefinition的加载">Spring BeanDefinition的加载<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

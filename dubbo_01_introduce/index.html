@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Dubbo简介 - 程序猿二腊</title><meta name="Description" content="这篇是开门贴，内容来自网上"><meta property="og:title" content="Dubbo简介" />
+<meta property="og:description" content="这篇是开门贴，内容来自网上" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/dubbo_01_introduce/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-08-30T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-08-30T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Dubbo简介"/>
+<meta name="twitter:description" content="这篇是开门贴，内容来自网上"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/dubbo_01_introduce/" /><link rel="prev" href="https://atuowgo.github.io/notes_003_socks/" /><link rel="next" href="https://atuowgo.github.io/dubbo_02_extend/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Dubbo简介",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/dubbo_01_introduce\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "doubbo","wordcount":  283 ,
+        "url": "https:\/\/atuowgo.github.io\/dubbo_01_introduce\/","datePublished": "2020-08-30T00:00:00+00:00","dateModified": "2020-08-30T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这篇是开门贴，内容来自网上"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Dubbo简介</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2020-08-30">2020-08-30</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 283 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-整体架构">1. 整体架构</a></li>
+            <li><a href="#2-使用demo">2. 使用demo</a></li>
+            <li><a href="#21-api方式">2.1 Api方式</a></li>
+            <li><a href="#22-spring方式">2.2 Spring方式</a></li>
+            <li><a href="#3-框架设计">3. 框架设计</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><blockquote>
+<p>这篇是开门贴，内容来自网上。</p>
+</blockquote>
+<p>Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。<em>(来自百度百科)</em></p>
+<h4 id="1-整体架构">1. 整体架构</h4>
+<p>Dubbo的整体架构如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_01_introduce/dubbo-architecture.jpg"
+        data-srcset="/dubbo_01_introduce/dubbo-architecture.jpg, /dubbo_01_introduce/dubbo-architecture.jpg 1.5x, /dubbo_01_introduce/dubbo-architecture.jpg 2x"
+        data-sizes="auto"
+        alt="/dubbo_01_introduce/dubbo-architecture.jpg"
+        title="/dubbo_01_introduce/dubbo-architecture.jpg" width="450" height="300" /></p>
+<p>涉及到的组件包括：</p>
+<ol>
+<li>Provider：暴露服务的服务提供方</li>
+<li>Consumer：调用远程服务的服务消费方</li>
+<li>Registry：服务注册与发现的注册中心</li>
+<li>Monitor：统计服务的调用次数和调用时间的监控中心</li>
+<li>Container：服务运行容器</li>
+</ol>
+<p>调用流程为：</p>
+<ol start="0">
+    <li>服务容器负责启动，加载，运行服务提供者。</li>
+    <li>服务提供者在启动时，向注册中心注册自己提供的服务。</li>
+    <li>服务消费者在启动时，向注册中心订阅自己所需的服务。</li>
+    <li>注册中心返回服务提供者地址列表给消费者，如果有变更，注册中心将基于长连接推送变更数据给消费者。</li>
+    <li>服务消费者，从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。</li>
+    <li>服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心。</li>
+</ol>
+<p><em>(上面内容来自Dubbo官方文档)</em></p>
+<h4 id="2-使用demo">2. 使用demo</h4>
+<h4 id="21-api方式">2.1 Api方式</h4>
+<p>纯Api方式调用模式如下：</p>
+<p>Provider：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class ApplicationApi {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static void main(String[] args) throws Exception {
+</span></span><span class="line"><span class="cl">        ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;();
+</span></span><span class="line"><span class="cl">        service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;));
+</span></span><span class="line"><span class="cl">        service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;));
+</span></span><span class="line"><span class="cl">        service.setInterface(DemoService.class);
+</span></span><span class="line"><span class="cl">        service.setRef(new DemoServiceImpl());
+</span></span><span class="line"><span class="cl">        service.export();
+</span></span><span class="line"><span class="cl">        System.in.read();
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Consumer：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class ApplicationApi {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static void main(String[] args) {
+</span></span><span class="line"><span class="cl">        ReferenceConfig&lt;DemoService&gt; reference = new ReferenceConfig&lt;&gt;();
+</span></span><span class="line"><span class="cl">        reference.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-consumer&#34;));
+</span></span><span class="line"><span class="cl">        reference.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;));
+</span></span><span class="line"><span class="cl">        reference.setInterface(DemoService.class);
+</span></span><span class="line"><span class="cl">        reference.setAsync(true);
+</span></span><span class="line"><span class="cl">        DemoService service = reference.get();
+</span></span><span class="line"><span class="cl">        String message = service.sayHello(&#34;dubbo&#34;);
+</span></span><span class="line"><span class="cl">        System.out.println(message);
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>展示纯Api调用方式有利于看清事物的本质</p>
+<p><em>(上面代码来自dubbo-demo-api模块)</em></p>
+<h4 id="22-spring方式">2.2 Spring方式</h4>
+<p>Spring方式调用模式如下：</p>
+<p>dubbo-provider：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">&lt;beans xmlns:xsi=&#34;http://www.w3.org/2001/XMLSchema-instance&#34;
+</span></span><span class="line"><span class="cl">       xmlns:dubbo=&#34;http://dubbo.apache.org/schema/dubbo&#34;
+</span></span><span class="line"><span class="cl">       xmlns=&#34;http://www.springframework.org/schema/beans&#34;
+</span></span><span class="line"><span class="cl">       xsi:schemaLocation=&#34;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+</span></span><span class="line"><span class="cl">       http://dubbo.apache.org/schema/dubbo http://dubbo.apache.org/schema/dubbo/dubbo.xsd&#34;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;dubbo:application name=&#34;demo-provider&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;dubbo:registry address=&#34;zookeeper://127.0.0.1:2181&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;dubbo:protocol name=&#34;dubbo&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;bean id=&#34;demoService&#34; class=&#34;org.apache.dubbo.demo.provider.DemoServiceImpl&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;dubbo:service interface=&#34;org.apache.dubbo.demo.DemoService&#34; ref=&#34;demoService&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">&lt;/beans&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>dubbo-consumer：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">&lt;beans xmlns:xsi=&#34;http://www.w3.org/2001/XMLSchema-instance&#34;
+</span></span><span class="line"><span class="cl">       xmlns:dubbo=&#34;http://dubbo.apache.org/schema/dubbo&#34;
+</span></span><span class="line"><span class="cl">       xmlns=&#34;http://www.springframework.org/schema/beans&#34;
+</span></span><span class="line"><span class="cl">       xsi:schemaLocation=&#34;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+</span></span><span class="line"><span class="cl">       http://dubbo.apache.org/schema/dubbo http://dubbo.apache.org/schema/dubbo/dubbo.xsd&#34;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;dubbo:application name=&#34;demo-consumer&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;dubbo:registry address=&#34;zookeeper://127.0.0.1:2181&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;dubbo:reference id=&#34;demoService&#34; check=&#34;false&#34; interface=&#34;org.apache.dubbo.demo.DemoService&#34;/&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">&lt;/beans&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>有了Bean后便可以在Spring中进行操作。</p>
+<p><em>(上面代码来自dubbo-demo-xml模块)</em></p>
+<h4 id="3-框架设计">3. 框架设计</h4>
+<p>Dubbo的分层结构如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_01_introduce/dubbo-framework.jpg"
+        data-srcset="/dubbo_01_introduce/dubbo-framework.jpg, /dubbo_01_introduce/dubbo-framework.jpg 1.5x, /dubbo_01_introduce/dubbo-framework.jpg 2x"
+        data-sizes="auto"
+        alt="/dubbo_01_introduce/dubbo-framework.jpg"
+        title="/dubbo_01_introduce/dubbo-framework.jpg" width="900" height="674" /></p>
+<p>涉及到的各层职责为：</p>
+<ul>
+<li>config 配置层：对外配置接口，以 ServiceConfig, ReferenceConfig 为中心，可以直接初始化配置类，也可以通过 spring 解析配置生成配置类</li>
+<li>proxy 服务代理层：服务接口透明代理，生成服务的客户端 Stub 和服务器端 Skeleton, 以 ServiceProxy 为中心，扩展接口为 ProxyFactory</li>
+<li>registry 注册中心层：封装服务地址的注册与发现，以服务 URL 为中心，扩展接口为 RegistryFactory, Registry, RegistryService</li>
+<li>cluster 路由层：封装多个提供者的路由及负载均衡，并桥接注册中心，以 Invoker 为中心，扩展接口为 Cluster, Directory, Router, LoadBalance</li>
+<li>monitor 监控层：RPC 调用次数和调用时间监控，以 Statistics 为中心，扩展接口为 MonitorFactory, Monitor, MonitorService</li>
+<li>protocol 远程调用层：封装 RPC 调用，以 Invocation, Result 为中心，扩展接口为 Protocol, Invoker, Exporter</li>
+<li>exchange 信息交换层：封装请求响应模式，同步转异步，以 Request, Response 为中心，扩展接口为 Exchanger, ExchangeChannel, ExchangeClient, ExchangeServer</li>
+<li>transport 网络传输层：抽象 mina 和 netty 为统一接口，以 Message 为中心，扩展接口为 Channel, Transporter, Client, Server, Codec</li>
+<li>serialize 数据序列化层：可复用的一些工具，扩展接口为 Serialization, ObjectInput, ObjectOutput, ThreadPool</li>
+</ul>
+<p><em>(上面内容来自Dubbo官方文档)</em></p>
+<p>可以看到，除Service 和 Config 层为 API，其它各层均为 SPI，这也是Dubbo面向插件设计的核心。</p>
+<p>最终调用链为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_01_introduce/dubbo-extension.jpg"
+        data-srcset="/dubbo_01_introduce/dubbo-extension.jpg, /dubbo_01_introduce/dubbo-extension.jpg 1.5x, /dubbo_01_introduce/dubbo-extension.jpg 2x"
+        data-sizes="auto"
+        alt="/dubbo_01_introduce/dubbo-extension.jpg"
+        title="/dubbo_01_introduce/dubbo-extension.jpg" width="800" height="738" /></p>
+<p>核心过程抽象为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/dubbo_01_introduce/%E6%A0%B8%E5%BF%83%E8%BF%87%E7%A8%8B.jpg"
+        data-srcset="/dubbo_01_introduce/%E6%A0%B8%E5%BF%83%E8%BF%87%E7%A8%8B.jpg, /dubbo_01_introduce/%E6%A0%B8%E5%BF%83%E8%BF%87%E7%A8%8B.jpg 1.5x, /dubbo_01_introduce/%E6%A0%B8%E5%BF%83%E8%BF%87%E7%A8%8B.jpg 2x"
+        data-sizes="auto"
+        alt="/dubbo_01_introduce/%E6%A0%B8%E5%BF%83%E8%BF%87%E7%A8%8B.jpg"
+        title="/dubbo_01_introduce/%E6%A0%B8%E5%BF%83%E8%BF%87%E7%A8%8B.jpg" width="614" height="398" /></p>
+<p>后续内容也是根据这个流程来展开并进行扩充。</p>
+<p>最后就是，Dubbo官方文档是最好的文档，基本看懂官方文档对Dubbo也就熟络了，这个系列主要以笔者自己结合官方文档看源码笔记为主。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-08-30</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/dubbo_01_introduce/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/dubbo_01_introduce/" data-title="Dubbo简介" data-hashtags="doubbo"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/dubbo_01_introduce/" data-hashtag="doubbo"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/dubbo_01_introduce/" data-title="Dubbo简介"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/doubbo/">doubbo</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/notes_003_socks/" class="prev" rel="prev" title="Socks协议"><i class="fas fa-angle-left fa-fw"></i>Socks协议</a>
+            <a href="/dubbo_02_extend/" class="next" rel="next" title="Dubbo自适应扩展机制">Dubbo自适应扩展机制<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

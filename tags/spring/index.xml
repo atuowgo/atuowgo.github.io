@@ -5,10 +5,10 @@
         <description>Spring - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 07 Jan 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/spring/" rel="self" type="application/rss+xml" /><item>
     <title>Spring MVC</title>
-    <link>https://atuowgo.github.io/07-spring-mvc/</link>
+    <link>https://atuowgo.github.io/spring_07_mvc/</link>
     <pubDate>Tue, 07 Jan 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/07-spring-mvc/</guid>
+    <guid>https://atuowgo.github.io/spring_07_mvc/</guid>
     <description><![CDATA[这节介绍SpringMVC，SpringMVC是一种基于Java的实现MVC设计模式的请求驱动类型的轻量级Web框架。本章会介绍相关概念，流程，再从源码进行讲解。
 1. MVC MVC(Model View Controller)是一种软件设计的框架模式，它采用模型(Model)-视图(View)-控制器(controller)的方法把业务逻辑、数据与界面显示分离。MVC框架模式是一种复合模式，MVC的三个核心部件分别是
 Model(模型)：所有的用户数据、状态以及程序逻辑，独立于视图和控制器
@@ -21,10 +21,10 @@ web.xml
 </item>
 <item>
     <title>Spring AOP</title>
-    <link>https://atuowgo.github.io/06-spring-aop/</link>
+    <link>https://atuowgo.github.io/spring_06-aop/</link>
     <pubDate>Sat, 30 Nov 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/06-spring-aop/</guid>
+    <guid>https://atuowgo.github.io/spring_06-aop/</guid>
     <description><![CDATA[这节介绍Spring AOP。关于Spring AOP的名字就不多做介绍了，网上有很多对AOP的解释。
 1. 概念术语 1.1 切面（Aspect）
 切面是一个关注点的模块化，这个关注点可能是横切多个对象；
@@ -66,10 +66,10 @@ AOP代理是指AOP框架创建的对象，用来实现切面（包括通知方�
 </item>
 <item>
     <title>Spring DestroySingleton流程</title>
-    <link>https://atuowgo.github.io/05-spring-destorybean/</link>
+    <link>https://atuowgo.github.io/spring_05-destorybean/</link>
     <pubDate>Sun, 13 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/05-spring-destorybean/</guid>
+    <guid>https://atuowgo.github.io/spring_05-destorybean/</guid>
     <description><![CDATA[ 第一节介绍Spring启动(链接)时，介绍AbstractApplicationContext的过销毁过程，主要是调用了内部的destroyBeans方法，这节便来介绍bean的销毁过程。
 一.销毁流程 destroyBeans方法内部委托给了DefaultSingletonBeanRegistry的destroySingletons方法。destroySingletons方法如下，比较清晰:
 前面介绍过，DefaultSingletonBeanRegistry用一个Map缓存着所有的单例实例，对于对象的销毁，只要简单的将其从Map中移除就行。主要处理的是依赖关系下的bean销毁顺序以及回调接口的处理。上面先对disposableBeans中所涉及到的bean逐个进行销毁，然后再清理所有的依赖关系和缓存的单例实例。
@@ -91,10 +91,10 @@ beanPostProcessors：需要处理该bean的DestructionAwareBeanPostProcessor回�
 </item>
 <item>
     <title>Spring GetBean的流程</title>
-    <link>https://atuowgo.github.io/04-spring-getbean/</link>
+    <link>https://atuowgo.github.io/spring_04_getbean/</link>
     <pubDate>Sun, 06 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/04-spring-getbean/</guid>
+    <guid>https://atuowgo.github.io/spring_04_getbean/</guid>
     <description><![CDATA[第一节讲解Spring启动（链接）的时候说到，Spring内部先解析了所有的配置，加载所有的Bean定义后，再根据需要对Bean进行实例化和初始化。除开Spring自己主动新建的对象，第一次根据Bean定义加载对象的动作出现在AbstractApplicationContext的invokeBeanFactoryPostProcessors方法，该方法会在Spring容器中找出实现了BeanFactoryPostProcessor接口的bean列表并执行。根据之前介绍的内容，内部主要调用了AbstractBeanFactory的getBean方法，这节将对该方法进行讲解。
 一、getBean 在这之前，先介绍BeanFactory的层次结构，如下：
 涉及到的接口和实现类为：
@@ -114,10 +114,10 @@ AbstractBeanFactory的getBean方法内部调用了doGetBean，该方法提供了
 </item>
 <item>
     <title>Spring BeanDefinition的加载</title>
-    <link>https://atuowgo.github.io/03-spring-bean-load/</link>
+    <link>https://atuowgo.github.io/spring_03_beanload/</link>
     <pubDate>Fri, 04 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-spring-bean-load/</guid>
+    <guid>https://atuowgo.github.io/spring_03_beanload/</guid>
     <description><![CDATA[前面提到AbstractRefreshableApplicationContext在刷新BeanFactory时，会调用loadBeanDefinitions方法以加载系统中Bean的定义，下面将讲解Bean定义的加载过程。
 一．XML定义 XML配置的加载由AbstractXmlApplicationContext实现，方法实现如下：
 主要是实例化了一个XmlBeanDefinitionReader对象，对其设置了Environment对象（具体过程可以上一篇）等后，调用XmlBeanDefinitionReader进行解析。直接跟踪进去，得到如下内容：
@@ -175,10 +175,10 @@ parseDefautlElement方法如上， 对beans空间定义的各个标签分别进�
 </item>
 <item>
     <title>Spring Environment的加载</title>
-    <link>https://atuowgo.github.io/02-spring-env/</link>
+    <link>https://atuowgo.github.io/spring_02_env/</link>
     <pubDate>Thu, 03 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-spring-env/</guid>
+    <guid>https://atuowgo.github.io/spring_02_env/</guid>
     <description><![CDATA[这节介绍environment，默认环境变量的加载以及初始化内容。
 之前在介绍spring启动过程讲到，第一步进行环境准备时就会初始化一个StandardEnvironment。下图为Environment类图的接口，可以分为4块内容：
 ConversionService（蓝）：类型转换服务
@@ -228,10 +228,10 @@ placeholder解析完后，将其作为Key从键值对源中获取对应的值pro
 </item>
 <item>
     <title>Spring启动流程</title>
-    <link>https://atuowgo.github.io/01-spring-start/</link>
+    <link>https://atuowgo.github.io/spring_01_start/</link>
     <pubDate>Wed, 02 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-spring-start/</guid>
+    <guid>https://atuowgo.github.io/spring_01_start/</guid>
     <description><![CDATA[Spring用了挺久的了，但是没系统做过总结，刚好前段时间在做一个Spring封装的项目，趁机回顾了下，便基于Spring framework 4.3.22做了源码分析。
 刚开始接触Spring时的入门例子大致如下：
 设置配置文件路径，初始化ApplicationContext然后获取Bean，处理完后关闭context即可。这一节先来了解Spring的启动过程。

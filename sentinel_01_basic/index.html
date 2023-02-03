@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Sentinel基本概念 - 程序猿二腊</title><meta name="Description" content="Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍"><meta property="og:title" content="Sentinel基本概念" />
+<meta property="og:description" content="Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/sentinel_01_basic/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-09-29T00:00:00+00:00" />
+<meta property="article:modified_time" content="2019-09-29T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Sentinel基本概念"/>
+<meta name="twitter:description" content="Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/sentinel_01_basic/" /><link rel="prev" href="https://atuowgo.github.io/notes_001_java_eof/" /><link rel="next" href="https://atuowgo.github.io/sentinel_02_module_core/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Sentinel基本概念",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/sentinel_01_basic\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "sentinel","wordcount":  237 ,
+        "url": "https:\/\/atuowgo.github.io\/sentinel_01_basic\/","datePublished": "2019-09-29T00:00:00+00:00","dateModified": "2019-09-29T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Sentinel基本概念</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2019-09-29">2019-09-29</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 237 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#resource">Resource</a></li>
+            <li><a href="#node">Node</a></li>
+            <li><a href="#context">Context</a></li>
+            <li><a href="#nullcontext">NullContext</a></li>
+            <li><a href="#entrytype">EntryType</a></li>
+            <li><a href="#slot">Slot</a></li>
+            <li><a href="#processorslotchain">ProcessorSlotChain</a></li>
+            <li><a href="#limitapp">LimitApp</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍。</p>
+<p> 这里先介绍下Sentinel中涉及到的基本概念，包括使用上或者实现上。主要是笔者在阅读文档和源码时经常会接触到的对象。</p>
+<h4 id="resource">Resource</h4>
+<p> 资源是整个Sentinel最基本的一个概念。可以是一段代码，一个http请求，一个微服务，总而言之，他是Sentinel需要保证的实体。大部分情况下，我们可以使用方法签名，URL或者是服务名称来作为资源的名称。它在Sentinel中的体现是：ResourceWrapper，他有两个子类：</p>
+<ol>
+<li>
+<p>StringResourceWrapper 使用string来标识一个资源</p>
+</li>
+<li>
+<p>MethodResouceWrapper 使用一个函数签名来标识一个资源</p>
+</li>
+</ol>
+<h4 id="node">Node</h4>
+<p> 节点是用来存储统计数据的基本数据单元，Node本身只是一个接口，它有多个实现：</p>
+<ol>
+<li>
+<p>StatisticNode 唯一的直接实现类，实现了流量统计的基本方法，在StatisticSlot中使用</p>
+</li>
+<li>
+<p>ClusterNode 继承自StatisticNode，对于某一个资源的全局统计</p>
+</li>
+<li>
+<p>DefaultNode 继承自StatisticNode，对于某一个资源在相应上下文中的实现，保存了一个指向ClusterNode的引用。另外还保存了子节点列表，当在同一个context下多次调用SphU.entry不同资源时会创建子节点</p>
+</li>
+<li>
+<p>EntranceNode 继承自DefaultNode，代表一个调用的根节点，一个Context会对应到一个EntranceNode</p>
+</li>
+</ol>
+<h4 id="context">Context</h4>
+<p> 上下文是用来保存当前调用的元数据，存储在ThreadLocal中，它包含了几个信息：</p>
+<ol>
+<li>
+<p>EntranceNode 整个调用树的根节点，即入口</p>
+</li>
+<li>
+<p>Entry 当前的调用点</p>
+</li>
+<li>
+<p>Node 关联到当前调用点的统计信息</p>
+</li>
+<li>
+<p>Origin 通常用来标识调用方，这在我们需要按照调用方来区分流控策略的时候会非常有用</p>
+</li>
+</ol>
+<p> 每当我们调用SphU.entry()或者 SphO.entry()获取访问资源许可的时候都需要当前线程处在某个context中，如果我们没有显式调用ContextUtil.enter()，默认会使用Default context。如果我们在一个上下文中多次调用SphU.entry()来获取多个资源，一个调用树就会被创建出来</p>
+<h4 id="nullcontext">NullContext</h4>
+<p> 超过系统能够创建的最大会话数则返回NullContext，后续不对该会话做过滤校验，直接放过。</p>
+<p> Entry</p>
+<p> 每次SphU.entry()调用都会返回一个Entry，Entry保持了所有关于当前资源调用的信息：</p>
+<ol>
+<li>
+<p>createTime 这个资源调用的创建时间</p>
+</li>
+<li>
+<p>currentNode SphU.entry请求进入的资源在当前上下文中的统计数据Node</p>
+</li>
+<li>
+<p>originNode SphU.entry请求进入的资源对于特定origin调用方的统计数据node</p>
+</li>
+</ol>
+<p> Entry的实现类为CtEntry，它其中除了上述信息之外，还保存了额外的信息：</p>
+<ol>
+<li>
+<p>parent 调用树链条中上一个entry</p>
+</li>
+<li>
+<p>child 调用树链条中的下一个entry</p>
+</li>
+<li>
+<p>chain 当前调用资源所使用的限流工作责任链，包括各个Slot</p>
+</li>
+<li>
+<p>context 当前调用点所属的上下文</p>
+</li>
+</ol>
+<h4 id="entrytype">EntryType</h4>
+<p> EntryType 说的是这次请求的流量类型，共有两种类型：IN 和 OUT 。</p>
+<p> IN：是指进入我们系统的入口流量，比如 http 请求或者是其他的 rpc 之类的请求。</p>
+<p> OUT：是指我们系统调用其他第三方服务的出口流量。</p>
+<p> 入口、出口流量只有在配置了系统规则时才有效。</p>
+<p> 设置Type 为 IN 是为了统计整个系统的流量水平，防止系统被打垮，用以自我保护的一种方式。</p>
+<p> 设置Type 为 OUT 一方面是为了保护第三方系统，比如我们系统依赖了一个生成订单号的接口，而这个接口是核心服务，如果我们的服务是非核心应用的话需要对他进行限流保护；另一方面也可以保护自己的系统，假设我们的服务是核心应用，而依赖的第三方应用老是超时，那这时可以通过设置依赖的服务的 rt 来进行降级，这样就不至于让第三方服务把我们的系统拖垮。</p>
+<h4 id="slot">Slot</h4>
+<p> Entry 创建的时候，同时也会创建一系列功能插槽（slot chain），这些插槽有不同的职责，例如:</p>
+<ol>
+<li>
+<p>NodeSelectorSlot 负责收集资源的路径，并将这些资源的调用路径，以树状结构存储起来，用于根据调用路径来限流降级；</p>
+</li>
+<li>
+<p>ClusterBuilderSlot 则用于存储资源的统计信息以及调用者信息，例如该资源的 RT, QPS,thread count 等等，这些信息将用作为多维度限流，降级的依据；</p>
+</li>
+<li>
+<p>LogSlot 用于打印日志</p>
+</li>
+<li>
+<p>StatisticSlot 则用于记录、统计不同纬度的 runtime 指标监控信息；</p>
+</li>
+<li>
+<p>SystemSlot 则通过系统的状态，例如 load1 等，来控制总的入口流量；</p>
+</li>
+<li>
+<p>AuthoritySlot 则根据配置的黑白名单和调用来源信息，来做黑白名单控制；</p>
+</li>
+<li>
+<p>FlowSlot 则用于根据预设的限流规则以及前面 slot 统计的状态，来进行流量控制；</p>
+</li>
+<li>
+<p>DegradeSlot 则通过统计信息以及预设的规则，来做熔断降级；</p>
+</li>
+</ol>
+<p>  Slot只绑定在CtEntry上</p>
+<h4 id="processorslotchain">ProcessorSlotChain</h4>
+<p> 功能槽处理链，entry进入一个槽可以添加自己的动作，之后后fire动作会entry下一个槽，exit同理</p>
+<p> <strong>注意，实现上相同资源共享一个ProcessorSlotChain ，可以跨Context</strong></p>
+<h4 id="limitapp">LimitApp</h4>
+<p> 流控规则中的 limitApp 字段用于根据调用来源进行流量控制。该字段的值有以下三种选项，分别对应不同的场景：</p>
+<ol>
+<li>
+<p>default：表示不区分调用者，来自任何调用者的请求都将进行限流统计。如果这个资源名的调用总和超过了这条规则定义的阈值，则触发限流。</p>
+</li>
+<li>
+<p>{some_origin_name}：表示针对特定的调用者，只有来自这个调用者的请求才会进行流量控制。例如 NodeA 配置了一条针对调用者caller1的规则，那么当且仅当来自 caller1 对 NodeA 的请求才会触发流量控制。</p>
+</li>
+<li>
+<p>other：表示针对除 {some_origin_name} 以外的其余调用方的流量进行流量控制。例如，资源NodeA配置了一条针对调用者 caller1 的限流规则，同时又配置了一条调用者为 other 的规则，那么任意来自非 caller1 对 NodeA 的调用，都不能超过 other 这条规则定义的阈值。</p>
+</li>
+</ol>
+<p> 同一个资源名可以配置多条规则，规则的生效顺序为：{some_origin_name} &gt; other &gt; default</p>
+<p> 介绍完了上面的基本概念，下面给出Sentinel的基本用法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">List&lt;FlowRule&gt; rules = new ArrayList&lt;FlowRule&gt;();
+</span></span><span class="line"><span class="cl">FlowRule rule1 = new FlowRule();
+</span></span><span class="line"><span class="cl">rule1.setResource(KEY);
+</span></span><span class="line"><span class="cl">// set limit qps to 20
+</span></span><span class="line"><span class="cl">rule1.setCount(20);
+</span></span><span class="line"><span class="cl">rule1.setGrade(RuleConstant.FLOW_GRADE_QPS);
+</span></span><span class="line"><span class="cl">rule1.setLimitApp(&#34;default&#34;);
+</span></span><span class="line"><span class="cl">rules.add(rule1);
+</span></span><span class="line"><span class="cl">​
+</span></span><span class="line"><span class="cl">Entry entry = null;
+</span></span><span class="line"><span class="cl">​
+</span></span><span class="line"><span class="cl">try {
+</span></span><span class="line"><span class="cl">        entry = SphU.entry(KEY);
+</span></span><span class="line"><span class="cl">        // token acquired, means pass,do biz logic
+</span></span><span class="line"><span class="cl">} catch (BlockException e1) {
+</span></span><span class="line"><span class="cl">        //block,handle block logic
+</span></span><span class="line"><span class="cl">} catch (Exception e2) {
+</span></span><span class="line"><span class="cl">        // biz exception,handle biz exception logic
+</span></span><span class="line"><span class="cl">} finally {
+</span></span><span class="line"><span class="cl">        if (entry != null) {
+</span></span><span class="line"><span class="cl">                entry.exit();
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">​
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> 如上，为sentinel的基本用法:</p>
+<p> 先设定好规则，在进入需要受保护的资源前，尝试获取token，若成功获取token，则可以执行相关逻辑，否则抛出异常进行处理，最后释放所获得的token 。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2019-09-29</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/sentinel_01_basic/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/sentinel_01_basic/" data-title="Sentinel基本概念" data-hashtags="sentinel"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/sentinel_01_basic/" data-hashtag="sentinel"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/sentinel_01_basic/" data-title="Sentinel基本概念"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/sentinel/">Sentinel</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/notes_001_java_eof/" class="prev" rel="prev" title="Java的EOF标识？"><i class="fas fa-angle-left fa-fw"></i>Java的EOF标识？</a>
+            <a href="/sentinel_02_module_core/" class="next" rel="next" title="Sentinel Core流程分析">Sentinel Core流程分析<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>RocketMQ Consumer接收消息流程 - 程序猿二腊</title><meta name="Description" content="这节介绍Consumer接收消息的流程，分为Pull和Push模式"><meta property="og:title" content="RocketMQ Consumer接收消息流程" />
+<meta property="og:description" content="这节介绍Consumer接收消息的流程，分为Pull和Push模式" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/rocketmq_04_consumer/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-02-25T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-02-25T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="RocketMQ Consumer接收消息流程"/>
+<meta name="twitter:description" content="这节介绍Consumer接收消息的流程，分为Pull和Push模式"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/rocketmq_04_consumer/" /><link rel="prev" href="https://atuowgo.github.io/rocketmq_03_rebalance/" /><link rel="next" href="https://atuowgo.github.io/notes-006-ginvsmvc/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "RocketMQ Consumer接收消息流程",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/rocketmq_04_consumer\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "rocketmq","wordcount":  883 ,
+        "url": "https:\/\/atuowgo.github.io\/rocketmq_04_consumer\/","datePublished": "2020-02-25T00:00:00+00:00","dateModified": "2020-02-25T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍Consumer接收消息的流程，分为Pull和Push模式"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">RocketMQ Consumer接收消息流程</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2020-02-25">2020-02-25</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 883 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 5 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-初始化">1. 初始化</a></li>
+            <li><a href="#2-push模式">2. Push模式</a></li>
+            <li><a href="#21-defaultmqpushconsumerimplpullmessagepullrequest">2.1. DefaultMQPushConsumerImpl.pullMessage(PullRequest)</a></li>
+            <li><a href="#22-consumemessageservice">2.2 ConsumeMessageService</a></li>
+            <li><a href="#221-messagelistenerconcurrentlyconsumemessage">2.2.1. MessageListenerConcurrently.consumeMessage</a></li>
+            <li><a href="#222-consumemessageconcurrentlyserviceprocessconsumeresult">2.2.2. ConsumeMessageConcurrentlyService.processConsumeResult</a></li>
+            <li><a href="#2-pull模式">2. Pull模式</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 这节介绍Consumer接收消息的流程，分为Pull和Push模式。</p>
+<h4 id="1-初始化">1. 初始化</h4>
+<p> 上一节讲Rebalance时提到，Consumer接受客户端有两种方式：</p>
+<ol>
+<li>Broker发现客户端列表有变化，通知所有Consumer执行Rebalance</li>
+<li>Consumer定时没20秒自动执行Rebalance</li>
+</ol>
+<p>其中1.的通知到达Consumer后，会立即触发Rebalance，然后会重置2.的定时器等待时间。二者最后通知Consumer的方式为</p>
+<ol>
+<li>Push模式：当有新的Queue分配给客户端时，会新包装一个PullRequest，用于后续自动拉取消息，具体到DefaultMQPushConsumerImpl的executePullRequestImmediately方法</li>
+<li>Pull模式：回调DefaultMQPullConsumerImpl的MessageQueueListener有Queue发生改变</li>
+</ol>
+<h4 id="2-push模式">2. Push模式</h4>
+<p> executePullRequestImmediately的内容为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public void executePullRequestImmediately(final PullRequest pullRequest) {
+</span></span><span class="line"><span class="cl">    this.mQClientFactory.getPullMessageService().executePullRequestImmediately(pullRequest);
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>即将PullRequest对象传给了PullMessageService的executePullRequestImmediately方法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public void executePullRequestImmediately(final PullRequest pullRequest) {
+</span></span><span class="line"><span class="cl">    try {
+</span></span><span class="line"><span class="cl">        this.pullRequestQueue.put(pullRequest);
+</span></span><span class="line"><span class="cl">    } catch (InterruptedException e) {
+</span></span><span class="line"><span class="cl">        log.error(&#34;executePullRequestImmediately pullRequestQueue.put&#34;, e);
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>PullMessageService的结构如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/1.png"
+        data-srcset="/rocketmq_04_consumer/1.png, /rocketmq_04_consumer/1.png 1.5x, /rocketmq_04_consumer/1.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/1.png"
+        title="/rocketmq_04_consumer/1.png" width="815" height="348" /></p>
+<p>内部维护着一个LinkedBlockingQueue属性pullRequestQueue，用于存储待处理的PullRequest;还有一个ScheduledExecutorService，用于延期处理PullRequest。具体流程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/2.png"
+        data-srcset="/rocketmq_04_consumer/2.png, /rocketmq_04_consumer/2.png 1.5x, /rocketmq_04_consumer/2.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/2.png"
+        title="/rocketmq_04_consumer/2.png" width="1425" height="662" /></p>
+<ol>
+<li>RebalanceImpl调用DefaultMQPushConsumerImpl的executePullRequestImmediately方法，传入PullRequest</li>
+<li>DefaultMQPushConsumerImpl内部调用PullMessageService的executePullRequestImmediately方法，该方法会把传入的PullRequest对象放到LinkedBlockingQueue中进行存储，等待后续处理。</li>
+<li>PullMessageService会循环从队列中出队一个PullRequest，并调用自身的pullMessage用于后续处理。该动作会从MQClientInstance中选择对应的客户端实例DefaultMQPushConsumerImpl，并委托给它的pullMessage方法。</li>
+<li>DefaultMQPushConsumerImpl会先判断当前请求是否满足条件，如果不满足条件，会调用PullMessage的executePullRequestLater方法，将当前请求延后处理。如果满足条件，会封装一个PullCallback对象用于处理异步消息，并调用PullAPIWrapper异步请求Broker拉取消息。</li>
+</ol>
+<p>从上面的过程可以看出，Push模式内部还是客户端主动去拉取的，即所谓的封装拉模式以实现推模式,简单示意图如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/3.png"
+        data-srcset="/rocketmq_04_consumer/3.png, /rocketmq_04_consumer/3.png 1.5x, /rocketmq_04_consumer/3.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/3.png"
+        title="/rocketmq_04_consumer/3.png" width="1748" height="500" /></p>
+<p>内部通过PullMessageService循环的从PullRequest对应MessageQueue中主动拉取数据。</p>
+<h4 id="21-defaultmqpushconsumerimplpullmessagepullrequest">2.1. DefaultMQPushConsumerImpl.pullMessage(PullRequest)</h4>
+<p> 该方法用于完成从MessageQueue拉取消息的过程，主要过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/4.png"
+        data-srcset="/rocketmq_04_consumer/4.png, /rocketmq_04_consumer/4.png 1.5x, /rocketmq_04_consumer/4.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/4.png"
+        title="/rocketmq_04_consumer/4.png" width="522" height="860" /></p>
+<ol>
+<li>
+<p>判断该MessageQueue对应的PullRequest是否已经标记为drop，如果是则直接返回</p>
+</li>
+<li>
+<p>进行一系列的检查，如果检查不通过，则等待一定时间后再放回PullMessageService的待处理队列中，主要是通过PullMessageService中的ScheduledExecutorService来做到延迟执行，涉及的情况包括：</p>
+<ol>
+<li>如果客户端未准备就绪(DefaultMQPushCOnsumerImpl执行start后status为RUNNING)，则延迟PULL_TIME_DELAY_MILLS_WHEN_EXCEPTION(3000)后再放回PullMessage的队列中</li>
+<li>如果是暂停状态，则延迟PULL_TIME_DELAY_MILLS_WHEN_SUSPEND(1000)后再放回PullMessageService的等待队列中</li>
+<li>如果缓存的消息数大于配置的拉取线程数阈值(默认1000)，则等待PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL(50)后再返回等待队列中处理</li>
+<li>如果缓存的消息大小大于配置的拉取大小阈值(默认100M)，则等待PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL(50)后再返回等待队列中处理</li>
+<li>缓存的数据offset相差的偏移量超过设定值(默认2000)，则等待PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL(50)后再返回等待队列中处理</li>
+<li>如果没有订阅MessageQueue对应的topic，则等待PULL_TIME_DELAY_MILLS_WHEN_EXCEPTION(3000)后再返回队列中处理</li>
+</ol>
+</li>
+<li>
+<p>包装PullCallback对象，并调用PullAPIWrapper发起异步请求拉取消息</p>
+</li>
+</ol>
+<p>上面通过PullAPIWrapper收到结果后会将结果包装为PullResult对象并回调PullCallback。PullCallback和PullResult的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public interface PullCallback {
+</span></span><span class="line"><span class="cl">	void onSuccess(final PullResult pullResult);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	void onException(final Throwable e);
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class PullResult {
+</span></span><span class="line"><span class="cl">    private final PullStatus pullStatus;//请求状态
+</span></span><span class="line"><span class="cl">    private final long nextBeginOffset;//Broker返回的下一次开始消费的offset
+</span></span><span class="line"><span class="cl">    private final long minOffset;
+</span></span><span class="line"><span class="cl">    private final long maxOffset;
+</span></span><span class="line"><span class="cl">    private List&lt;MessageExt&gt; msgFoundList;//消息列表，一次请求返回一批消息
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>下面为pullMessage方法处理异步返回结果的流程：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/5.png"
+        data-srcset="/rocketmq_04_consumer/5.png, /rocketmq_04_consumer/5.png 1.5x, /rocketmq_04_consumer/5.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/5.png"
+        title="/rocketmq_04_consumer/5.png" width="1334" height="1047" /></p>
+<ol>
+<li>如果请求失败，则等待PULL_TIME_DELAY_MILLS_WHEN_EXCEPTION(3000)后再放回PullMessageService的待处理队列中；处理成功则进入2.</li>
+<li>调用PullAPIWrapper对结果进行预处理</li>
+<li>根据请求状态进行处理
+<ol>
+<li>有新消息(FOUND)
+<ol>
+<li>设置PullRequest下次开始消费的起始位置为PullResult的nextBeginOffset</li>
+<li>如果结果列表为空则不延迟，立马放到PullMessageService的待处理队列中，否则进入3</li>
+<li>将PullResult中的结果List&lt;MessageExt&gt;放入ProcessQueue的缓存中，并通知ConsumeMessageService处理</li>
+<li>将该PullRequest放回待处理队列中等待再次处理，如果有设置拉取的间隔时间，则等待该时间后再翻到队列中等待处理，否则直接放到队列中等待处理</li>
+</ol>
+</li>
+<li>没有新消息(NO_NEW_MSG)
+<ol>
+<li>设置PullRequest下次开始消费的起始位置为PullResult的nextBeginOffset</li>
+<li>如果缓存的待消费消息数为0，则更新offset存储</li>
+<li>将PullRequest立马放到PullMessageService的待处理队列中</li>
+</ol>
+</li>
+<li>没有匹配的消息(NO_MATCHED_MSG)
+<ol>
+<li>设置PullRequest下次开始消费的起始位置为PullResult的nextBeginOffset</li>
+<li>如果缓存的待消费消息数为0，则更新offset存储</li>
+<li>将PullRequest立马放到PullMessageService的待处理队列中</li>
+</ol>
+</li>
+<li>不合法的偏移量(OFFSET_ILLEGAL)
+<ol>
+<li>设置PullRequest下次开始消费的起始位置为PullResult的nextBeginOffset</li>
+<li>标记该PullRequset为drop</li>
+<li>10s后再更新并持久化消费offset；再通知Rebalance移除该MessageQueue</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p> 下面先介绍下ProcessQueue，这里只标识几个相关的属性：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class ProcessQueue {
+</span></span><span class="line"><span class="cl">    private final ReadWriteLock lockTreeMap = new ReentrantReadWriteLock();
+</span></span><span class="line"><span class="cl">    //缓存的待消费消息,按照消息的起始offset排序
+</span></span><span class="line"><span class="cl">    private final TreeMap&lt;/*消息的起始offset*/Long, MessageExt&gt; msgTreeMap = new TreeMap&lt;Long, MessageExt&gt;();
+</span></span><span class="line"><span class="cl">    //缓存的待消费消息数量
+</span></span><span class="line"><span class="cl">    private final AtomicLong msgCount = new AtomicLong();
+</span></span><span class="line"><span class="cl">    //缓存的待消费消息大小
+</span></span><span class="line"><span class="cl">    private final AtomicLong msgSize = new AtomicLong();
+</span></span><span class="line"><span class="cl">    private final Lock lockConsume = new ReentrantLock();
+</span></span><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * A subset of msgTreeMap, will only be used when orderly consume
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    private final TreeMap&lt;Long, MessageExt&gt; consumingMsgOrderlyTreeMap = new TreeMap&lt;Long, MessageExt&gt;();
+</span></span><span class="line"><span class="cl">    private final AtomicLong tryUnlockTimes = new AtomicLong(0);
+</span></span><span class="line"><span class="cl">    private volatile long queueOffsetMax = 0L;
+</span></span><span class="line"><span class="cl">    private volatile boolean dropped = false;
+</span></span><span class="line"><span class="cl">    //最近执行pull的时间
+</span></span><span class="line"><span class="cl">    private volatile long lastPullTimestamp = System.currentTimeMillis();
+</span></span><span class="line"><span class="cl">    //最近被客户端消费的时间
+</span></span><span class="line"><span class="cl">    private volatile long lastConsumeTimestamp = System.currentTimeMillis();
+</span></span><span class="line"><span class="cl">    private volatile boolean locked = false;
+</span></span><span class="line"><span class="cl">    private volatile long lastLockTimestamp = System.currentTimeMillis();
+</span></span><span class="line"><span class="cl">    //当前是否在消费，用于顺序消费模式，对并行消费无效
+</span></span><span class="line"><span class="cl">    private volatile boolean consuming = false;
+</span></span><span class="line"><span class="cl">    private volatile long msgAccCnt = 0;
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>ProcessQueue展示了MessageQueue的消费情况。上面提到，发起pull请求后如果有数据，会先放到ProcessQueue的缓存中，即msgTreeMap属性，因而缓存的消息会按照消息的起始offset被排序存储。通过ProcessQueue可以查看MessageQueue当前的处理情况，ProcessQueue还用于辅助实现顺序消费。</p>
+<h4 id="22-consumemessageservice">2.2 ConsumeMessageService</h4>
+<p> 异步返回的消息内容将交给ConsumeMessageService处理，ConsumeMessageService是个接口，方法定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public interface ConsumeMessageService {
+</span></span><span class="line"><span class="cl">    void start();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void shutdown();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void updateCorePoolSize(int corePoolSize);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void incCorePoolSize();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void decCorePoolSize();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    int getCorePoolSize();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    ConsumeMessageDirectlyResult consumeMessageDirectly(final MessageExt msg, final String brokerName);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    void submitConsumeRequest(
+</span></span><span class="line"><span class="cl">        final List&lt;MessageExt&gt; msgs,
+</span></span><span class="line"><span class="cl">        final ProcessQueue processQueue,
+</span></span><span class="line"><span class="cl">        final MessageQueue messageQueue,
+</span></span><span class="line"><span class="cl">        final boolean dispathToConsume);
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过定义可见，要求实现类提供异步处理的功能。内部提供的实现类有：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/6.png"
+        data-srcset="/rocketmq_04_consumer/6.png, /rocketmq_04_consumer/6.png 1.5x, /rocketmq_04_consumer/6.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/6.png"
+        title="/rocketmq_04_consumer/6.png" width="1134" height="254" /></p>
+<p>ConsumeMessageConcurrentlyService:并行消费；ConsumeMessageOrderlyService:顺序消，这里重点看ConsumeMessageConcurrentlyService。异步请求后会将拉取的新消息列表交给submitConsumeRequest方法处理，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/7.png"
+        data-srcset="/rocketmq_04_consumer/7.png, /rocketmq_04_consumer/7.png 1.5x, /rocketmq_04_consumer/7.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/7.png"
+        title="/rocketmq_04_consumer/7.png" width="1634" height="1156" /></p>
+<p>该方法会将传入的消息列表分装为一个ConsumeRequest，并提到到线程池中等待处理。如果传入的消息列表长度超过设定值(默认为1)，则会分多个批处理。</p>
+<p> 在介绍消费具体过程之前先回顾客户端启动流程的Demo，接收消息的写法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class Consumer {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static void main (String[] args) throws InterruptedException, MQClientException {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        // 实例化消费者
+</span></span><span class="line"><span class="cl">        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer (&#34;GroupTest&#34;);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        // 设置NameServer的地址
+</span></span><span class="line"><span class="cl">        consumer.setNamesrvAddr (&#34;localhost:9876&#34;);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        // 订阅一个或者多个Topic，以及Tag来过滤需要消费的消息
+</span></span><span class="line"><span class="cl">        consumer.subscribe (&#34;TopicTest&#34;, &#34;*&#34;);
+</span></span><span class="line"><span class="cl">        // 注册回调实现类来处理从broker拉取回来的消息
+</span></span><span class="line"><span class="cl">        consumer.registerMessageListener (new MessageListenerConcurrently () {
+</span></span><span class="line"><span class="cl">            @Override
+</span></span><span class="line"><span class="cl">            public ConsumeConcurrentlyStatus consumeMessage (List&lt;MessageExt&gt; msgs, ConsumeConcurrentlyContext context) {
+</span></span><span class="line"><span class="cl">                System.out.printf (&#34;%s Receive New Messages: %s %n&#34;, Thread.currentThread ().getName (), msgs);
+</span></span><span class="line"><span class="cl">                // 标记该消息已经被成功消费
+</span></span><span class="line"><span class="cl">                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        });
+</span></span><span class="line"><span class="cl">        // 启动消费者实例
+</span></span><span class="line"><span class="cl">        consumer.start ();
+</span></span><span class="line"><span class="cl">        System.out.printf (&#34;Consumer Started.%n&#34;);
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中注册了一个MessageListenerConcurrently，该类将用于用户端处理消息。</p>
+<p> 回过来看ConsumeRequest，该类实现了Runnable接口，会在run方法完成主要的处理工作，主要动作为：</p>
+<ol>
+<li>调用DefaultMQPushConsumerImpl.executeHookBefore执行前置hook动作</li>
+<li>调用MessageListenerConcurrently.consumeMessage通知用户端处理消息，即上面demo内容，会返回处理结果ConsumeConcurrentlyStatus</li>
+<li>调用DefaultMQPushConsumerImpl.executeHookAfter执行后置hook动作</li>
+<li>ConsumeMessageConcurrentlyService.processConsumeResult根据ConsumeConcurrentlyStatus执行收尾动作</li>
+</ol>
+<h4 id="221-messagelistenerconcurrentlyconsumemessage">2.2.1. MessageListenerConcurrently.consumeMessage</h4>
+<p> 用户真正接收消息并执行处理动作的地方，需要返回ConsumeConcurrentlyStatus告知框架处理结果。这里在方法里最好不要做耗时长的任务，快速处理后返回给框架结果，避免消息堆积在线程池中。可以将消息内容复制一遍后再放到线程池中进行分发处理。</p>
+<h4 id="222-consumemessageconcurrentlyserviceprocessconsumeresult">2.2.2. ConsumeMessageConcurrentlyService.processConsumeResult</h4>
+<p> 该方法主要在用户消费完数据后进行收尾动作，过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/8.png"
+        data-srcset="/rocketmq_04_consumer/8.png, /rocketmq_04_consumer/8.png 1.5x, /rocketmq_04_consumer/8.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/8.png"
+        title="/rocketmq_04_consumer/8.png" width="443" height="1157" /></p>
+<p>ConsumerRequest在run方法的开始处，实例化了一个ConsumeConcurrentlyContext对象，用于后续传递内容,该定义为:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class ConsumeConcurrentlyContext {
+</span></span><span class="line"><span class="cl">    private final MessageQueue messageQueue;
+</span></span><span class="line"><span class="cl">    //重试的延迟级别,-1:不重试;0:由broker控制;&gt;0由客户端控制
+</span></span><span class="line"><span class="cl">    private int delayLevelWhenNextConsume = 0;
+</span></span><span class="line"><span class="cl">    //消息列表最后一个正常消费的消息索引号
+</span></span><span class="line"><span class="cl">    private int ackIndex = Integer.MAX_VALUE;
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中ackIndex表示最后一个正常消费的消息索引号(0从开始，0~ackIndex为正常消费)，该位置后的消息表示没法正常消费。该值由用户端控制,可以通过ackIndex来控制需要重发的消息。</p>
+<p> ackIndex默认值为Integer.MAX_VALUE，如果为该值则认为所有消息正常消费，不存在错误。上面流程中统计成功和失败也是根据ackIndex来判断的，对于ackIndex后的消息，如果是集群消费模式，则会先尝试发送回broker，由broker控制重试时机；如果重试失败，会收集这些失败的消息，延迟5秒后再调用一次ConsumeMessageService.submitConsumeRequest让用户端再次处理。最后会将处理成功的消息从ProcessQueue中移除，更新缓存，然后将q消费的偏移量记录下来，等待后台线程同步到broker或者本地。</p>
+<p> 综合上面的介绍，Push模式下的处理流程大致如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/9.png"
+        data-srcset="/rocketmq_04_consumer/9.png, /rocketmq_04_consumer/9.png 1.5x, /rocketmq_04_consumer/9.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/9.png"
+        title="/rocketmq_04_consumer/9.png" width="1778" height="1234" /></p>
+<p>Push模式通过PullMessageService循环从监听的MessageQueue中以Pull模式拉取消息，并分发给用户注册的MesageListenerConsurrently对象处理，完了之后会自动处理消息的重试，offset更新等动作，从而模拟消息从Broker端主动推动过来。</p>
+<h4 id="2-pull模式">2. Pull模式</h4>
+<p> 同Push模式一样，Pull模式的触发也是通过Rebalance，如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/10.png"
+        data-srcset="/rocketmq_04_consumer/10.png, /rocketmq_04_consumer/10.png 1.5x, /rocketmq_04_consumer/10.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/10.png"
+        title="/rocketmq_04_consumer/10.png" width="1816" height="476" /></p>
+<p>同开头提及的一样，会回调DefaultMQPullConsumerImpl的MessageQueueListener有Queue发生改变。</p>
+<p> 系统提供了MQPullConsumerScheduleService，可以定时以Pull模式拉取消息，并将结果通知MessageQueueListener，内部的实现为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">class MessageQueueListenerImpl implements MessageQueueListener {
+</span></span><span class="line"><span class="cl">    @Override
+</span></span><span class="line"><span class="cl">    public void messageQueueChanged(String topic, Set&lt;MessageQueue&gt; mqAll, Set&lt;MessageQueue&gt; mqDivided) {//mqAll该topic下的所有q，mqDivided该实例分配到的q
+</span></span><span class="line"><span class="cl">        MessageModel messageModel =
+</span></span><span class="line"><span class="cl">            MQPullConsumerScheduleService.this.defaultMQPullConsumer.getMessageModel();
+</span></span><span class="line"><span class="cl">        switch (messageModel) {
+</span></span><span class="line"><span class="cl">            case BROADCASTING:
+</span></span><span class="line"><span class="cl">                MQPullConsumerScheduleService.this.putTask(topic, mqAll);//通知该topic下的监听器，最新的所有q
+</span></span><span class="line"><span class="cl">                break;
+</span></span><span class="line"><span class="cl">            case CLUSTERING:
+</span></span><span class="line"><span class="cl">                MQPullConsumerScheduleService.this.putTask(topic, mqDivided);//通知该topic下的监听器，该实例分配的q
+</span></span><span class="line"><span class="cl">                break;
+</span></span><span class="line"><span class="cl">            default:
+</span></span><span class="line"><span class="cl">                break;
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>putTask会将分配到的新的MessageQueue包装为一个PullTaskImpl，PullTaskImpl实现了Runnable,会在后台一直执行；而将不属于自己处理的MessageQueue对应的PullTaskImpl停掉。PullTaskImpl会查找该MessageQueue所监听topic对应的处理类PullTaskCallback，调用doPullTask，将具体动作让用户处理。</p>
+<p> MQPullConsumerScheduleService的例子为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class PullScheduleService {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static void main(String[] args) throws MQClientException {
+</span></span><span class="line"><span class="cl">        final MQPullConsumerScheduleService scheduleService = new MQPullConsumerScheduleService(&#34;GroupName1&#34;);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        scheduleService.setMessageModel(MessageModel.CLUSTERING);
+</span></span><span class="line"><span class="cl">        scheduleService.registerPullTaskCallback(&#34;TopicTest&#34;, new PullTaskCallback() {//注册topic的监听器
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            @Override
+</span></span><span class="line"><span class="cl">            public void doPullTask(MessageQueue mq, PullTaskContext context) {
+</span></span><span class="line"><span class="cl">                MQPullConsumer consumer = context.getPullConsumer();
+</span></span><span class="line"><span class="cl">                try {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                    long offset = consumer.fetchConsumeOffset(mq, false);
+</span></span><span class="line"><span class="cl">                    if (offset &lt; 0)
+</span></span><span class="line"><span class="cl">                        offset = 0;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                    PullResult pullResult = consumer.pull(mq, &#34;*&#34;, offset, 32);
+</span></span><span class="line"><span class="cl">                    System.out.printf(&#34;%s%n&#34;, offset + &#34;\t&#34; + mq + &#34;\t&#34; + pullResult);
+</span></span><span class="line"><span class="cl">                    switch (pullResult.getPullStatus()) {
+</span></span><span class="line"><span class="cl">                        case FOUND:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                        case NO_MATCHED_MSG:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                        case NO_NEW_MSG:
+</span></span><span class="line"><span class="cl">                        case OFFSET_ILLEGAL:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                        default:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                    }
+</span></span><span class="line"><span class="cl">                    consumer.updateConsumeOffset(mq, pullResult.getNextBeginOffset());//上报消费的offset，消费完后要主动上报
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                    context.setPullNextDelayTimeMillis(100);//设置下一次触发间隔
+</span></span><span class="line"><span class="cl">                } catch (Exception e) {
+</span></span><span class="line"><span class="cl">                    e.printStackTrace();
+</span></span><span class="line"><span class="cl">                }
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        });
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        scheduleService.start();
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> 也可以自己手动执行pull，如下面的例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class PullConsumer {
+</span></span><span class="line"><span class="cl">    private static final Map&lt;MessageQueue, Long&gt; OFFSE_TABLE = new HashMap&lt;MessageQueue, Long&gt;();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static void main(String[] args) throws MQClientException {
+</span></span><span class="line"><span class="cl">        DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(&#34;please_rename_unique_group_name_5&#34;);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        consumer.start();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        Set&lt;MessageQueue&gt; mqs = consumer.fetchSubscribeMessageQueues(&#34;TopicTest1&#34;);
+</span></span><span class="line"><span class="cl">        for (MessageQueue mq : mqs) {
+</span></span><span class="line"><span class="cl">            System.out.printf(&#34;Consume from the queue: %s%n&#34;, mq);
+</span></span><span class="line"><span class="cl">            SINGLE_MQ:
+</span></span><span class="line"><span class="cl">            while (true) {
+</span></span><span class="line"><span class="cl">                try {
+</span></span><span class="line"><span class="cl">                    PullResult pullResult =
+</span></span><span class="line"><span class="cl">                        consumer.pullBlockIfNotFound(mq, null, getMessageQueueOffset(mq), 32);
+</span></span><span class="line"><span class="cl">                    System.out.printf(&#34;%s%n&#34;, pullResult);
+</span></span><span class="line"><span class="cl">                    putMessageQueueOffset(mq, pullResult.getNextBeginOffset());
+</span></span><span class="line"><span class="cl">                    switch (pullResult.getPullStatus()) {
+</span></span><span class="line"><span class="cl">                        case FOUND:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                        case NO_MATCHED_MSG:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                        case NO_NEW_MSG:
+</span></span><span class="line"><span class="cl">                            break SINGLE_MQ;
+</span></span><span class="line"><span class="cl">                        case OFFSET_ILLEGAL:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                        default:
+</span></span><span class="line"><span class="cl">                            break;
+</span></span><span class="line"><span class="cl">                    }
+</span></span><span class="line"><span class="cl">                } catch (Exception e) {
+</span></span><span class="line"><span class="cl">                    e.printStackTrace();
+</span></span><span class="line"><span class="cl">                }
+</span></span><span class="line"><span class="cl">            }
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        consumer.shutdown();
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    private static long getMessageQueueOffset(MessageQueue mq) {
+</span></span><span class="line"><span class="cl">        Long offset = OFFSE_TABLE.get(mq);
+</span></span><span class="line"><span class="cl">        if (offset != null)
+</span></span><span class="line"><span class="cl">            return offset;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        return 0;
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    private static void putMessageQueueOffset(MessageQueue mq, long offset) {
+</span></span><span class="line"><span class="cl">        OFFSE_TABLE.put(mq, offset);
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> 相较于Push模式，Pull模式则需要用户自己控制消息的重试，offset更新等动作。下面附上该部分当时源码阅读过程做的笔记简图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_04_consumer/11.png"
+        data-srcset="/rocketmq_04_consumer/11.png, /rocketmq_04_consumer/11.png 1.5x, /rocketmq_04_consumer/11.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_04_consumer/11.png"
+        title="/rocketmq_04_consumer/11.png" width="1430" height="568" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-02-25</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/rocketmq_04_consumer/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/rocketmq_04_consumer/" data-title="RocketMQ Consumer接收消息流程" data-hashtags="rocketmq"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/rocketmq_04_consumer/" data-hashtag="rocketmq"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/rocketmq_04_consumer/" data-title="RocketMQ Consumer接收消息流程"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/rocketmq_03_rebalance/" class="prev" rel="prev" title="RocketMQ RocketMQ Rebalance流程分析"><i class="fas fa-angle-left fa-fw"></i>RocketMQ RocketMQ Rebalance流程分析</a>
+            <a href="/notes-006-ginvsmvc/" class="next" rel="next" title="动态路由:Gin vs SpringMVC">动态路由:Gin vs SpringMVC<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

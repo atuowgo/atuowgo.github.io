@@ -3,14 +3,31 @@
         <title>程序猿二腊</title>
         <link>https://atuowgo.github.io/</link>
         <description>知其然而后知其所以然</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 31 May 2022 00:00:00 &#43;0000</lastBuildDate>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Thu, 02 Feb 2023 01:36:54 -0700</lastBuildDate>
             <atom:link href="https://atuowgo.github.io/index.xml" rel="self" type="application/rss+xml" />
         <item>
+    <title>深度学习-感知机</title>
+    <link>https://atuowgo.github.io/deeplearning_01_perceptron/</link>
+    <pubDate>Thu, 02 Feb 2023 01:36:54 -0700</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/deeplearning_01_perceptron/</guid>
+    <description><![CDATA[感知机 最近陈硕在给我授课，讲深度学习，第一节内容主要是感知机
+1. 什么是感知机 感知机是二分类的线性模型，其输入是实例的特征向量，输出的是实例的类别，分别为0和1，属于判别模型。感知机接收多个输入信号，输出一个信号。
+下图是一个接收两个输入信号的感知机的例子。
+其中$x_{1}、 x_{2}$是输入信号，$y$是输出信号， $w_{1}、 w_{2}$是权重。图中的○称为“神经元”或者“节点”。输入信号被送往神经元时，会被分别乘以固定的权重。神经元会计算传送过来的信号的总和（$w_{1}x_{1} + w_{2}x_{2}$），只有当这个总和超过了某个界限值时，才会输出1。这也称为“神经元被激活” 。这里将这个界限值称为阈值，用符号$\theta$表示。
+把上述内容用数学式来表示，就是下面这个式子 $$ y = \begin{cases} 0 \ (w_{1}x_{1} + w_{2}x_{2} \le \theta)\ 1 \ (w_{1}x_{1} + w_{2}x_{2} \gt \theta)\ \end{cases} \ (1.1) $$
+2. 感知机模型 感知机是有生物学上的一个启发，我们的大脑可以认为是一个神经网络，这么一个生物的神经网络是由神经元组织起来的，在这个生物的神经网络里边，神经元的一些工作机制就是通过这样一个下面图的结构来运行的。首先接收到一些信号，这些信号通过这些树突组织，树突组织接收到这些信号送到细胞里边的细胞核，这些细胞核对接收到的这些信号（如光、声音）到树突的时候会产生一些微弱的生物电，从而形成一些刺激，那么在细胞核里边对这些收集到的接收到的刺激进行综合的处理，当它的信号达到了一定的阈值之后，它就会被激活，从而产生一个刺激的输出，那么就会形成一个我们大脑接收到的进一步的信号，再通过轴突来输出计算的，这就是我们人脑的一个神经元进行感知的时候大致的一个工作原理。
+结合神经元模型有人提出了经典的抽象模型：M-P神经元模型，如下图
+而感知机模型是从神经元模型发展过来的。感知机是由两层神经元组成的一个简单模型。只有输出层是M-P 神经元，即只有输出层神经元进行激活函数处理，也称为功能神经元（ functional neuron）；输入层只是接受外界信号（样本属性）并传递给输出层（输入层的神经元个数等于样本的属性数目），而没有激活函数。
+(1.1)公式对应
+将输入和权重扩展到多维，则式子(1.1)可以表示为 $$ y = \begin{cases} 0 \ (\sum w_{i}x_{i} - \theta \le 0)\ 1 \ (\sum w_{i}x_{i} - \theta \gt 0)\ \end{cases} \ (2.1) $$]]></description>
+</item>
+<item>
     <title>golang error</title>
-    <link>https://atuowgo.github.io/007-golang-error/</link>
+    <link>https://atuowgo.github.io/notes-007-golang-error/</link>
     <pubDate>Tue, 31 May 2022 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/007-golang-error/</guid>
+    <guid>https://atuowgo.github.io/notes-007-golang-error/</guid>
     <description><![CDATA[go error 记录go1.x error相关内容
 1. 原生error error 只是一个普通的interface,在buildin.go 里给出了定义:
 1 2 3 4 5 // The error built-in interface type is the conventional interface for // representing an error condition, with the nil value representing no error. type error interface { Error() string } 当返回值为nil时，表示没有错误，所以调用方需要通过类似err != nil的方式来处理。
@@ -20,10 +37,10 @@
 </item>
 <item>
     <title>Dubbo Provider启动都做了什么</title>
-    <link>https://atuowgo.github.io/03-provider/</link>
+    <link>https://atuowgo.github.io/dubbo_03_provider/</link>
     <pubDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-provider/</guid>
+    <guid>https://atuowgo.github.io/dubbo_03_provider/</guid>
     <description><![CDATA[这节介绍Provider的启动过程，既服务发布。
 先从Demo看起：
 1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } 上面Demo主要做了几件事
@@ -42,10 +59,10 @@ PS:当id为空时，会设置默认值为default。
 </item>
 <item>
     <title>MySQL InnoDB索引那点事儿</title>
-    <link>https://atuowgo.github.io/005-mysql-innodb/</link>
+    <link>https://atuowgo.github.io/notes_005_mysql_innodb/</link>
     <pubDate>Mon, 09 Nov 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/005-mysql-innodb/</guid>
+    <guid>https://atuowgo.github.io/notes_005_mysql_innodb/</guid>
     <description><![CDATA[总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头。
 1. B+树 我们知道InnoDB的索引是以B+树的形式组织的。B+树是一种树数据结构，是一个n叉树，每个节点通常有多个孩子，一颗B+树包含根节点、内部节点和叶子节点。
 下面是B+树的示例：
@@ -81,10 +98,10 @@ InnoDB会将一个页中的所有记录划分成若干个组，每组4-8个记�
 </item>
 <item>
     <title>常见的分布式唯一ID方案</title>
-    <link>https://atuowgo.github.io/004-distrubte-id/</link>
+    <link>https://atuowgo.github.io/notes_004_distrubte_id/</link>
     <pubDate>Sun, 20 Sep 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/004-distrubte-id/</guid>
+    <guid>https://atuowgo.github.io/notes_004_distrubte_id/</guid>
     <description><![CDATA[最近看一个新系统，发现里面有很多场景用到唯一id，便搜罗了一下常见的方案。
 对于分布式id，需要满足下面的基本要求
 全局唯一 趋势递增 1. UUID UUID（Universally Unique Identifier）全局唯一标识符，定义为一个字符串主键，采用32位数字组成，编码采用16进制，定义了在时间和空间都完全惟一的系统信息。
@@ -116,10 +133,10 @@ Snowflake算法中41个bit的时间戳完全依赖于时间的，如果有时钟
 </item>
 <item>
     <title>Dubbo自适应扩展机制</title>
-    <link>https://atuowgo.github.io/02-extend/</link>
+    <link>https://atuowgo.github.io/dubbo_02_extend/</link>
     <pubDate>Mon, 07 Sep 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-extend/</guid>
+    <guid>https://atuowgo.github.io/dubbo_02_extend/</guid>
     <description><![CDATA[上一节提到过，Dubbo里除了Service和Config层为API，其它各层均为SPI。相比于Java中的SPI仅仅通过接口类名获取所有实现，Dubbo的实现可以通过接口类名和key值来获取一个具体的实现。通过SPI机制，Dubbo实现了面向插件编程，只定义了模块的接口，实现由各插件来完成。
 1. 使用方式 1.1 Java SPI 在扩展类的jar包内，放置扩展点配置文件META-INF/service/接口全限定名，内容为：扩展实现类全限定名，多个实现类用换行符分隔。
 如下为Mysql中Driver接口的实现：
@@ -129,10 +146,10 @@ Snowflake算法中41个bit的时间戳完全依赖于时间的，如果有时钟
 </item>
 <item>
     <title>Dubbo简介</title>
-    <link>https://atuowgo.github.io/01-introduce/</link>
+    <link>https://atuowgo.github.io/dubbo_01_introduce/</link>
     <pubDate>Sun, 30 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-introduce/</guid>
+    <guid>https://atuowgo.github.io/dubbo_01_introduce/</guid>
     <description><![CDATA[这篇是开门贴，内容来自网上。
 Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。(来自百度百科)
 1. 整体架构 Dubbo的整体架构如下：
@@ -145,10 +162,10 @@ Provider：
 </item>
 <item>
     <title>Socks协议</title>
-    <link>https://atuowgo.github.io/003-socks/</link>
+    <link>https://atuowgo.github.io/notes_003_socks/</link>
     <pubDate>Sat, 29 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/003-socks/</guid>
+    <guid>https://atuowgo.github.io/notes_003_socks/</guid>
     <description><![CDATA[SOCKS：防火墙安全会话转换协议 （Socks: Protocol for sessions traversal across firewall securely） SOCKS协议提供一个框架，为在 TCP和UDP域中的客户机/服务器应用程序能更方便安全地使用网络防火墙所提供的服务。协议工作在OSI参考模型的第5层(会话层)，使用TCP协议传输数据，因而不提供如传递ICMP信息之类的网络层网关服务。
 当防火墙后的客户端要访问外部的服务器时，就跟SOCKS代理服务器连接。这个代理服务器控制客户端访问外网的资格，允许的话，就将客户端的请求发往外部的服务器。Socks不要求应用程序遵循特定的操作系统平台，Socks 代理与应用层代理、 HTTP 层代理不同，Socks代理只是简单地传递数据包，而不必关心是何种应用协议（比如FTP、HTTP和NNTP请求）。所以，Socks代理比其他应用层代理要快得多。它通常绑定在代理服务器的1080端口上。
 这个协议最初由David Koblas开发，而后由NEC的Ying-Da Lee将其扩展到SOCKS4。最新协议是 SOCKS5，与前一版本相比，增加支持UDP、验证，以及IPv6。
@@ -174,10 +191,10 @@ jsocks实现功能同上面大体相同，代码也比较简单，这边不做�
 </item>
 <item>
     <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;</title>
-    <link>https://atuowgo.github.io/02-event/</link>
+    <link>https://atuowgo.github.io/sandbox_02_event/</link>
     <pubDate>Sun, 02 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-event/</guid>
+    <guid>https://atuowgo.github.io/sandbox_02_event/</guid>
     <description><![CDATA[这节介绍jvm-sandbox的事件机制，事件机制提供了切面通知的核心功能，内部主要结合asm和观察者模式来实现。jvm-sandbox提供的事件包括：
 上面的截图是官网github wiki对事件的介绍，包括提供的事件类型、事件的作用域以及状态机流转。概括的说就是，jvm-sandbox围绕了目标方法这个切面点，提供了多种通知机制。
 1.观察者模式 观察者模式的简单示意如下：
@@ -189,10 +206,10 @@ Subject都会有一个Observer列表，以及提供一个添加观察者的方�
 </item>
 <item>
     <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;</title>
-    <link>https://atuowgo.github.io/01-start/</link>
+    <link>https://atuowgo.github.io/sandbox_01_start/</link>
     <pubDate>Fri, 24 Jul 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-start/</guid>
+    <guid>https://atuowgo.github.io/sandbox_01_start/</guid>
     <description><![CDATA[1. 启动 sandbox源码各模块的结构如下:
 sandbox安装后的目录结构如下:
 按照官方的教程，启动命令如下：
@@ -205,38 +222,6 @@ targetJvmPid:目标应用pid agentJarPath:附加的agent包路径 cfg:agent-main
 1 2 3 4 5 6 7 public CoreLauncher(final String targetJvmPid, final String agentJarPath, final String token) throws Exception { attachAgent(targetJvmPid, agentJarPath, token); } 主要是以agent-main的方式执行。
 去到sandbox-agent模块的pom.xml，有如下配置
 1 2 3 4 5 6 7 8 &lt;archive&gt; &lt;manifestEntries&gt; &lt;Premain-Class&gt;com.]]></description>
-</item>
-<item>
-    <title>RocketMQ消息的存储消费模型</title>
-    <link>https://atuowgo.github.io/09-consumequeue/</link>
-    <pubDate>Mon, 18 May 2020 00:00:00 &#43;0000</pubDate>
-    <author>二腊</author>
-    <guid>https://atuowgo.github.io/09-consumequeue/</guid>
-    <description><![CDATA[这节介绍RocketMQ中消息的存储模型：CommitLog和ConsumeQueue。CommitLog用于存储Producer的消息，ConsumeQueue接受CommitLog分配的消息，等待Consumer消费。
-1. 存储消费模型 RocketMQ采用了单一的日志文件，即把同1台机器上面所有topic的所有queue消息都存放在一个文件里面，以避免随机的磁盘写入。其存储结构如下：
-Broker会把所有消息都存在一个单一的CommitLog文件里面，然后由后台线程异步的同步到ConsumeQueue中，再由Consumer进行消费。
-该模型下，ConsumeQueue中并不需要存储消息的内容，而是存储消息在CommitLog中的offset。也就是说，ConsumeQueue其实是CommitLog的一个索引文件。即CommitLog的写入是顺序的，而读取需要支持随机读的，支持该特性的实现就是上一节提到的MappedFileQueue。
-2. CommitLog CommitLog的很多操作都基于MappedFileQueue来操作，在MappedFileQueue上增加了CRUD操作。CommitLog的调用过程如下：
-初始化时会初始化相关的组件，包括MappedFileQueue、FlushCommitLogService、AppendMessageCallback等。
-MappedFileQueue主要设定了文件的路径位置和每个MappedFile的大小(1024 * 1024 * 1024 = 1G)。
-FlushCommitLogService的实现类有3个GroupCommitService、FlushRealTimeService和CommitRealTimeService。前两个用于刷盘，如果开启了异步刷盘，则使用GroupCommitService，该实现会将刷盘请求缓存起来，到时间后再执行刷盘；FlushRealTimeService，该实现直接定时刷固定页的数据，如果启用了堆外缓冲区则使用GroupCommitService，否则使用FlushRealTimeService。后面的CommitRealTimeService则用于将堆外缓冲区中的数据写到FileChannel中(如果启用了堆外缓冲，调用MappedFileQueue的commit方法)。
-AppendMessageCallback主要用于实现具体消息写入ByteBuf的方式。
-此外，还缓存了每个topic下每个queue对应的逻辑偏移量
-1 private HashMap&lt;String/* topic-queueid */, Long/* offset */&gt; topicQueueTable = new HashMap&lt;String, Long&gt;(1024); 加载主要是调用MappedFileQueue的load方法，最后启动FlushCommitLogService服务。
-同时，CommitLog还通过ReputMessageService，将消息offset放到了ConsumeQueue以及IndexService，ReputMessageService的调用在DefaultMessage里。
-2.1. 追加消息 追加消息的大致过程如下，其中写入消息时会加锁，从而保证每个CommitLog文件的写都是顺序写入的。
-其中AppendMessageCallback主要完成了对消息写入ByteBuff的处理，包括单笔和批量消息。这里主要介绍单笔消息的写入：计算一条消息每一部分的大小和内容，然后写入到byteBuffer中，byteBuffer是MappedFile slice后的内容，写入每个部分如下：
-大部分内容通过字段便能够看出具体的意思，这里不再赘述，只对一些内容进行介绍。
-计算消息的全局ID：MessageId，MessageId由存储的broker机器的ip地址+commitLog中的起始物理offset组成。MessageId会带在返回结果PutMessageResult中返回。 写入成功后会将topic-queue的逻辑偏移量+1(逻辑偏移量表示消息数量的大小，一条消息进来下标就会长1) 写入之前会计算消息的大小，如果超过设定的单条消息的大小(默认512K)则拒绝写入 写入之前会判断当前文件剩余内容是否足够，如果不够则会插入一条空白消息，将剩余部分填满，返回文件已满，上层判断文件满了，会重新生成一个文件，将消息再次写入.空白消息写入的内容为totalSize+magicCode+0值,其中正常消息的magicCode为-626843481，空白消息为-875286124 2.2. 读取消息 根据所给的起始offset(物理偏移量),确定该offset所在MappedFile后，获取从offset开始到MappedFile当前可读的所有内容。
-MappedFile里会维护一个fileFromOffset属性，标记当前文件存储消息的起始偏移量，该值也是文件的文件名，默认值每个文件为1G=1073741824,即每个文件名的步长为1073741824。对于给定的offset，只要找到符合fileFromOffset &lt;= offset &lt; fileFromOffset + mappedFileSize(1G)的MappedFile即可。找到目标MappedFile后，通过offset%mappedFileSize可以计算出所给的起始offset在当前文件中的位置。
-获得ByteBuff内容后，可以调用checkMessageAndReturnSize方法，从ByteBuff中还原消息，返回DispatchRequest(不含消息body内容)。
-前面提到，ReputMessageService会从CommitLog中读取消息，然后用于构建ConsumeQueue和IndexFile，这里传送的内容就是DispatchRequest。DefaultMessageStore会定时从CommitLog中读取消息，并将解析出的DispatchRequest对象传给ConsumeQueue和IndexService。
-2.3. 删除消息 调用MappedFileQueue，按照offset或者过期时间(默认72小时)删除物理文件
-3. ConsumeQueue 代表一个topic下一个queue的消费队列。ConsumeQueue底层基于MappedFileQueue，存储每个topic-queueId下对应消息的offset，但消息被实际消费时，再通过offset从CommitLog中查找具体的消息内容。
-ConsumeQueue的调用过程和提供方法同CommitLog类似，也是初始化时从指定的路径下重构MappedFileQueue，并提供了CRUD方法来操作文件。
-ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对应的数据存储路径为
-/DirToStore/topic/queueId/ 每次写入的数据格式(数据单元)为：
-1 物理偏移量(long/8)|消息大小(int/4)|逻辑偏移量(long/8) = 20 ConsumeQueue初始化MappedFile的默认大小为 30000 * 20，即每个文件存30万条记录，没个文件名的步长为600000，消费时只要每次读取20个字节便能查找到每个消息的offset。]]></description>
 </item>
 </channel>
 </rss>

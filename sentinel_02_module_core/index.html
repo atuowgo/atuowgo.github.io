@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Sentinel Core流程分析 - 程序猿二腊</title><meta name="Description" content="对Sentinel主要流程和实现做分析"><meta property="og:title" content="Sentinel Core流程分析" />
+<meta property="og:description" content="对Sentinel主要流程和实现做分析" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/sentinel_02_module_core/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-09-30T00:00:00+00:00" />
+<meta property="article:modified_time" content="2019-09-30T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Sentinel Core流程分析"/>
+<meta name="twitter:description" content="对Sentinel主要流程和实现做分析"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/sentinel_02_module_core/" /><link rel="prev" href="https://atuowgo.github.io/sentinel_01_basic/" /><link rel="next" href="https://atuowgo.github.io/sentinel_03_module_cluster/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Sentinel Core流程分析",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/sentinel_02_module_core\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "sentinel","wordcount":  160 ,
+        "url": "https:\/\/atuowgo.github.io\/sentinel_02_module_core\/","datePublished": "2019-09-30T00:00:00+00:00","dateModified": "2019-09-30T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "对Sentinel主要流程和实现做分析"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Sentinel Core流程分析</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2019-09-30">2019-09-30</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 160 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1token获取">1.token获取</a></li>
+            <li><a href="#2查找处理槽链">2.查找处理槽链</a></li>
+            <li><a href="#3执行处理槽链">3.执行处理槽链</a>
+              <ul>
+                <li><a href="#31-nodeselectorslot">3.1. NodeSelectorSlot</a></li>
+                <li><a href="#32clusterbuilderslot">3.2.ClusterBuilderSlot</a></li>
+                <li><a href="#33logslot">3.3.LogSlot</a></li>
+                <li><a href="#34statisticslot">3.4.StatisticSlot</a></li>
+                <li><a href="#35systemslot">3.5.SystemSlot</a></li>
+                <li><a href="#36authorityslot">3.6.AuthoritySlot</a></li>
+                <li><a href="#37flowslot">3.7.FlowSlot</a>
+                  <ul>
+                    <li><a href="#371-选择统计数据的节点">3.7.1 选择统计数据的节点</a></li>
+                    <li><a href="#372-根据限流器获取token">3.7.2 根据限流器获取token</a></li>
+                  </ul>
+                </li>
+                <li><a href="#38degradeslot">3.8.DegradeSlot</a></li>
+              </ul>
+            </li>
+            <li><a href="#4node">4.Node</a>
+              <ul>
+                <li><a href="#41-滑动窗口模型">4.1 滑动窗口模型</a></li>
+                <li><a href="#42-statisticnode">4.2 StatisticNode</a></li>
+                <li><a href="#43-leaparray">4.3 LeapArray</a></li>
+                <li><a href="#5rulemanager">5.RuleManager</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 上次介绍了Sentinel的基本概念，并在文章的最后介绍了基本的用法。这次将对用法中的主要流程和实现做说明，该部分主要涉及到源码中的sentinel-core模块。</p>
+<h4 id="1token获取">1.token获取</h4>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/1.png"
+        data-srcset="/sentinel_02_module_core/1.png, /sentinel_02_module_core/1.png 1.5x, /sentinel_02_module_core/1.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/1.png"
+        title="/sentinel_02_module_core/1.png" width="538" height="741" /></p>
+<p>  如上为token获取的主流程，首先会先获取线程的上下文对象Context，然后根据ResourceName查找对应的处理槽链，获得SlotChain后，生成该次调用动作的Entry对象，该对象会关联对应SlotChain。内部会调用SlotChain的entry方法，让entry动作进入每个槽，后续需要调用Entry的exit方法，让exit动作进入SlotChain的每个槽。</p>
+<p>  其中第三步生成的Entry对象为CtEntry对象，其模型上是一个链表，会将每次entry动作生成的Entry对象串联起来</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/2.png"
+        data-srcset="/sentinel_02_module_core/2.png, /sentinel_02_module_core/2.png 1.5x, /sentinel_02_module_core/2.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/2.png"
+        title="/sentinel_02_module_core/2.png" width="802" height="784" /></p>
+<p>  如上图，每new一个CtEntry，都会传入context对象。由于每次操作会将当前Entry赋值context的curEntry，每次new一次时，会检查该属性，如果为空，则是第一个节点，直接复制给curEntry；如果非空，则该值为上一个节点，将该值复制给当前值的parent，并将该值的child指向当前节点。做完这些动作后将context的curEntry指向当前节点。具体过程如上图示。</p>
+<p>  执行entry.exit，内部会判断context.curEntry是否是执行时的entry，此举是为了控制exit顺序保持后进先出。如果判断不通过，说明不是按照后进先出的顺序执行exit，会从执行的entry开始，到根节点逐个进行exit，并抛出异常。如果判断通过，则调用对应的SlotChain执行exit，并更改context.curEntry，将其指向当前节点的父节点，但不解除Entry链的关系。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/3.png"
+        data-srcset="/sentinel_02_module_core/3.png, /sentinel_02_module_core/3.png 1.5x, /sentinel_02_module_core/3.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/3.png"
+        title="/sentinel_02_module_core/3.png" width="644" height="917" /></p>
+<h4 id="2查找处理槽链">2.查找处理槽链</h4>
+<p>  执行时会先从本地的缓存中查找是否已经有该资源对应的处理槽链，如果没有，则重新新生成一个。新加载时，使用SPI，查找系统提供的SlotChainBuilder实现，若有除默认的DefaultSlotChainBuilder之外的实现在，则使用第一个，否则使用默认的Builder。默认的Builder提供的处理槽链如下</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/4.png"
+        data-srcset="/sentinel_02_module_core/4.png, /sentinel_02_module_core/4.png 1.5x, /sentinel_02_module_core/4.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/4.png"
+        title="/sentinel_02_module_core/4.png" width="289" height="928" /></p>
+<h4 id="3执行处理槽链">3.执行处理槽链</h4>
+<p>  槽的处理过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/5.png"
+        data-srcset="/sentinel_02_module_core/5.png, /sentinel_02_module_core/5.png 1.5x, /sentinel_02_module_core/5.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/5.png"
+        title="/sentinel_02_module_core/5.png" width="909" height="672" /></p>
+<p>  ProcessorSlotChain为一个链表，执行slot的entry方法会进入到Slot的内部，在内部可以通过fireEntry执行链表中下一个slot的entry方法(如果存在)。如上，在fireEntry之前和之后可以有每个slot自己的处理逻辑，从而形成了类似过滤器链的结构。同理，exit过程也类似</p>
+<h5 id="31-nodeselectorslot">3.1. NodeSelectorSlot</h5>
+<p>  负责收集资源的路径，并将这些资源的调用路径，以树状结构存储起来，用于根据调用路径来限流降级；该动作发生在fireEntry动作前。</p>
+<p>  如下代码将构建出相对应的调用路径:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/6.png"
+        data-srcset="/sentinel_02_module_core/6.png, /sentinel_02_module_core/6.png 1.5x, /sentinel_02_module_core/6.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/6.png"
+        title="/sentinel_02_module_core/6.png" width="453" height="877" /></p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/7.png"
+        data-srcset="/sentinel_02_module_core/7.png, /sentinel_02_module_core/7.png 1.5x, /sentinel_02_module_core/7.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/7.png"
+        title="/sentinel_02_module_core/7.png" width="966" height="570" /></p>
+<p>  执行SphU.entry时会先获取线程上下文对应的Context，如果没有则新增一个。对于node1C，直接调用SphU.entry，会自动生成一个默认的Context，内部会调用ContextUtil.enter，并设置EntranceNode(sentinel_default_context)，然后将该EntranceNode接入到虚拟EntranceNode(machine-root)的子节点列表中。对于node2A和node3A，由于调用了ContextUtil.enter，相当于显示指定了Context，并设置了EntraceNode(entrance1)和EntraceNode(entrance2)。SphU.entry在没有指定EntryType时，将设置EntryType为OUT。
+实现代码如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/8.png"
+        data-srcset="/sentinel_02_module_core/8.png, /sentinel_02_module_core/8.png 1.5x, /sentinel_02_module_core/8.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/8.png"
+        title="/sentinel_02_module_core/8.png" width="933" height="553" /></p>
+<p>  实现上，由于同一个资源共享同一个ProcessorSlotChain对象，因而不同Context调用同一个资源时会使用到同一个NodeSelectorSlot对象。代码中直接使用ContextName相当于是使用了ResourceName-ContextName进行判断。为了在对应的Context下构建调用链，内部维护了一个Map&lt;String,DefaultNode&gt;，其中key为对应线程上下文的ContextName,value为该上下文调用链中的各个Node。对于第一次访问的资源，会在对应的Context链下新增一个Node，并将该节点做为子节点链接到链上最近访问的那个节点上，从而完成调用链的构建。对于重复出现的资源，只会使用第一次出现的顺序。在该slot获得的Node节点将传入后续各个槽进行处理。</p>
+<h5 id="32clusterbuilderslot">3.2.ClusterBuilderSlot</h5>
+<p>  用于存储资源的统计信息以及调用者信息，例如该资源的 RT, QPS, thread count 等等，这些信息将用作为多维度限流，降级的依据；该动作发生在fireEntry动作前。</p>
+<p>  上面的例子经过该slot后将新增如下ClusterNode节点</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/9.png"
+        data-srcset="/sentinel_02_module_core/9.png, /sentinel_02_module_core/9.png 1.5x, /sentinel_02_module_core/9.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/9.png"
+        title="/sentinel_02_module_core/9.png" width="885" height="533" /></p>
+<p>  上面说过，由于同一个资源共享同一个ProcessorSlotChain对象，因而不同Context调用同一个资源时会使用到同一个NodeSelectorSlot对象，为了统计该种资源的Cluster信息，直接使用一个ClusterNode节点表示即可。
+实现上，ClusterBuilderSlot还持有一个静态的ClusterNodeMap，用于缓存所有资源的ClusterNode信息。当经过该slot时，会判断Map中是否有该资源的节点信息，没有则新建一个。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/10.png"
+        data-srcset="/sentinel_02_module_core/10.png, /sentinel_02_module_core/10.png 1.5x, /sentinel_02_module_core/10.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/10.png"
+        title="/sentinel_02_module_core/10.png" width="919" height="800" /></p>
+<p>  上面还有一段内容是设置节点的Origin信息节点的内容。如下图，ClusterNode统计了同一种资源的统计信息，而不区分不同的Context来源，内部使用originCountMap区分不同的来源的统计情况。
+对于默认的sentinel_default_context，其orgin设置为空(&quot;&quot;)，因而Cluster没有该Context的Origin信息</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/11.png"
+        data-srcset="/sentinel_02_module_core/11.png, /sentinel_02_module_core/11.png 1.5x, /sentinel_02_module_core/11.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/11.png"
+        title="/sentinel_02_module_core/11.png" width="638" height="241" /></p>
+<h5 id="33logslot">3.3.LogSlot</h5>
+<p>  用于打印日志，在发生限流或者降级时输出特定日志；该动作发生在fireEntry动作后。</p>
+<h5 id="34statisticslot">3.4.StatisticSlot</h5>
+<p>  用于记录、统计不同纬度的 runtime 指标监控信息；该动作发生在fireEntry动作后。</p>
+<p>  该Slot的动作发生在fireEntry后，根据上面SlotChain执行图，该动作会在后续Slot检查执行后再执行。后续检查包括了权限检查，系统指标，用户自定义的限流和降级规则。</p>
+<p>  如下图，该Slot的动作如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/12.png"
+        data-srcset="/sentinel_02_module_core/12.png, /sentinel_02_module_core/12.png 1.5x, /sentinel_02_module_core/12.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/12.png"
+        title="/sentinel_02_module_core/12.png" width="865" height="596" /></p>
+<p>  若成功经过后续各个Slot的检查，相当于获得了token，则会更新统计信息，包括增加线程数（ThreadNum），增加通过请求数（PassRequest），涉及的节点包括：</p>
+<ol>
+<li>
+<p>当前节点；当前节点的Origin节点（若存在）</p>
+</li>
+<li>
+<p>全局Entrance_Node节点（若当前节点类型为EntryType.IN）；执行后将调用onPass回调函数。</p>
+</li>
+</ol>
+<p>  其他情况如图示，包括:</p>
+<ol>
+<li>
+<p>在获取token设置了优先策略，等待超时抛出PriorityWaitExeption（注：为什么只增加ThreadNum但不增加PassRequest，却执行了onPass回调函数？这里PriorityWatitException并不是BlockException，抛出PriorityWaitException时，该请求已经获取了令牌，可以执行后续的操作，只是不在当前窗口，这点后续会说明）</p>
+</li>
+<li>
+<p>后续Slot规则不通过，抛出BlockException</p>
+</li>
+<li>
+<p>发生其他异常，这时候会设置当前节点的Error值，为exit动作做判断</p>
+</li>
+</ol>
+<p>  退出的动作如下，该行为发生在fireExit前，用于统计成功时的响应时间，减去获取token时的线程数，增加成功请求数（SuccessRequest）</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/13.png"
+        data-srcset="/sentinel_02_module_core/13.png, /sentinel_02_module_core/13.png 1.5x, /sentinel_02_module_core/13.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/13.png"
+        title="/sentinel_02_module_core/13.png" width="528" height="600" /></p>
+<p>  具体的统计方法，后续会对StatisticNode做说明。</p>
+<h5 id="35systemslot">3.5.SystemSlot</h5>
+<p>  通过系统的状态，例如 load1 等，来控制总的入口流量；</p>
+<p>  检查当前系统指标是否正常，只检查入口流量节点。包括全局QPS，全局线程数，全局平均响应时间，系统负载，CPU负载。</p>
+<h5 id="36authorityslot">3.6.AuthoritySlot</h5>
+<p>  根据配置的黑白名单和调用来源信息，来做黑白名单控制；</p>
+<h5 id="37flowslot">3.7.FlowSlot</h5>
+<p>  用于根据预设的限流规则以及前面 slot 统计的状态，来进行流量控制；</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/14.png"
+        data-srcset="/sentinel_02_module_core/14.png, /sentinel_02_module_core/14.png 1.5x, /sentinel_02_module_core/14.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/14.png"
+        title="/sentinel_02_module_core/14.png" width="626" height="381" /></p>
+<p>  首先会根据规则设定的模式，选择处理方式，有Local和Cluster两种，这里先介绍Local方式。</p>
+<p>  Local方式时，先选择统计数据的节点，再根据设定的限流器获取token，达到限流的目的。</p>
+<h6 id="371-选择统计数据的节点">3.7.1 选择统计数据的节点</h6>
+<p>  这一步将根据给定设置的应用范围，和限流策略来选择对应的节点。</p>
+<p>  这边先介绍默认的应用范围和限流策略，分为：</p>
+<ol>
+<li>
+<p>应用范围：default，other</p>
+</li>
+<li>
+<p>限流策略：DIRECT，RELATE，CHAIN</p>
+</li>
+</ol>
+<p>  选择时，将根据调用方LimitApp来选择对应的节点。若规则作用于origin上且除default和other外,如果是DIRECT策略，返回origin节点；若是作用于default上，如果是DIRECT策略，返回Cluster节点；若是作用于other上，如果是DIRECT策略，返回origin节点。上述其他情况的选择过程都是相同的，即：如果资源名为空，返回空；如果是RELATE策略，使用ClusterNode节点数据；如果是CHIAN策略，且当前节点名同规则名一致，使用当前节点数据，否则返回为空，详情可以看代码。</p>
+<p>  获得数据节点后，便可以使用规则中指定的限流器校验节点的数据，以获取token。</p>
+<h6 id="372-根据限流器获取token">3.7.2 根据限流器获取token</h6>
+<p>  系统提供的限流器包括：</p>
+<ol>
+<li>
+<p>默认限流器：直接拒绝</p>
+<p>默认限流器采用直接拒绝的方式，若当前已经被获取的token数和需要的token数大于设定的规则，则直接拒绝，支持按线程数和QPS来算。当按QPS算时，还支持优先模式，允许参照之前的使用情况，在一定期望时间内，从后续时间借用令牌，保证当前请求能够通过。支持优先模式能够充分利用系统的资源，尽可能多的接受请求，防止请求被不必要的拦截</p>
+</li>
+<li>
+<p>预热限流器：参考guava，提供带预热/冷启动功能的令牌桶方法</p>
+<p>参考guava的预热限流器，按照请求数来计算。Token个数不是一开始就达到设定的上限，而是有个预热的过程，在预热的时间内，token的生成速度是固定的，当超过该时间后将根据可用token数，调整速率，使之增加到设定的值。这样做能够有效的防止突发流量穿透到后台服务。</p>
+</li>
+<li>
+<p>恒定速率限流器：根据预设的速率进行恒定控制</p>
+<p>根据设定的QPS，可以得到每个token所需的恒定时间，对于所需的token数，能够预估所需的时间。若该等待时间大于最大等待时间，则拒绝，否则更新上次通过时间（该规则在上个请求已经获取token后的预期时间），加上该次需要的时间，并让该次请求进行等待。能够保证token的获取速率是平滑恒定的，达到削峰填谷，防止通过的请求扎堆在窗口的前段。</p>
+</li>
+<li>
+<p>预热的恒定速率限流器：前期同预热限流器相同，过了预热时间后，将按照恒定的速率获取token。</p>
+</li>
+</ol>
+<h5 id="38degradeslot">3.8.DegradeSlot</h5>
+<p>  则通过统计信息以及预设的规则，来做熔断降级；</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/15.png"
+        data-srcset="/sentinel_02_module_core/15.png, /sentinel_02_module_core/15.png 1.5x, /sentinel_02_module_core/15.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/15.png"
+        title="/sentinel_02_module_core/15.png" width="834" height="646" /></p>
+<p>  降级的流程如上：</p>
+<ol>
+<li>
+<p>流程进来时，如果该规则（资源）已经处于降级状态，则直接返回校验不通过</p>
+</li>
+<li>
+<p>若不处于降级状态，则获取该资源的ClusterNode节点数据，按照设定的降级类型进行判断：</p>
+<ol>
+<li>
+<p>根据响应时间判断：若该资源的平均响应时间小于规则的设定值，则重置不通过的次数为0，并返回true；如不通过的次数小于默认值，则返回true；否则进入降级流程</p>
+</li>
+<li>
+<p>根据异常率判断：若该资源异常次数小于默认值或者异常率小于设定值，则返回true；否则进入降级流程</p>
+</li>
+<li>
+<p>根据异常次数判断：若异常次数小于设定值，则返回true；否则进入降级流程</p>
+</li>
+</ol>
+</li>
+<li>
+<p>降级流程：将资源状态置为降级，并开启定时器，该定时器将在规则设定的时间后执行，执行时将重置该规则指定的资源降级状态</p>
+</li>
+</ol>
+<h4 id="4node">4.Node</h4>
+<h5 id="41-滑动窗口模型">4.1 滑动窗口模型</h5>
+<p>  Sentinel 底层采用高性能的滑动窗口数据结构 LeapArray 来统计实时的秒级指标数据，可以很好地支撑写多于读的高并发场景。</p>
+<p>  LeapArray主要包括如下属性 ：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/16.png"
+        data-srcset="/sentinel_02_module_core/16.png, /sentinel_02_module_core/16.png 1.5x, /sentinel_02_module_core/16.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/16.png"
+        title="/sentinel_02_module_core/16.png" width="923" height="173" /></p>
+<p>  滑动窗口模型如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/17.png"
+        data-srcset="/sentinel_02_module_core/17.png, /sentinel_02_module_core/17.png 1.5x, /sentinel_02_module_core/17.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/17.png"
+        title="/sentinel_02_module_core/17.png" width="705" height="303" /></p>
+<p>  LeapArray的主体实现如下（去除原有备注，换上自己的备注）:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/18.png"
+        data-srcset="/sentinel_02_module_core/18.png, /sentinel_02_module_core/18.png 1.5x, /sentinel_02_module_core/18.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/18.png"
+        title="/sentinel_02_module_core/18.png" width="969" height="254" /></p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/19.png"
+        data-srcset="/sentinel_02_module_core/19.png, /sentinel_02_module_core/19.png 1.5x, /sentinel_02_module_core/19.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/19.png"
+        title="/sentinel_02_module_core/19.png" width="1001" height="731" /></p>
+<p>  将array抽象为一个环，则上面的流程可以按如下图看：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/20.png"
+        data-srcset="/sentinel_02_module_core/20.png, /sentinel_02_module_core/20.png 1.5x, /sentinel_02_module_core/20.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/20.png"
+        title="/sentinel_02_module_core/20.png" width="959" height="559" /></p>
+<p>  主体流程为：</p>
+<ol>
+<li>
+<p>计算所给时间所在窗口索引号：i</p>
+</li>
+<li>
+<p>计算所给时间所在窗口开始时间：ws</p>
+</li>
+<li>
+<p>根据索引号i获取现有窗口对象:window</p>
+</li>
+<li>
+<p>根据现有窗口对象:window，判断是否需要更新当前窗口</p>
+<ol>
+<li>
+<p>如果现有窗口对象为空，则初始化当前窗口</p>
+</li>
+<li>
+<p>如果现有窗口的开始时间同ws一致，则说明现有窗口还未过期，继续使用当前窗口</p>
+</li>
+<li>
+<p>如果现有窗口的开始时间小于ws，说明现有窗口已经过期，需要更新该窗口</p>
+</li>
+</ol>
+</li>
+</ol>
+<h5 id="42-statisticnode">4.2 StatisticNode</h5>
+<p>  StatisticNode为Sentinel实现监控统计的必要组件，该组件能够实现不同粒度，不同维度的数据监控统计。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/21.png"
+        data-srcset="/sentinel_02_module_core/21.png, /sentinel_02_module_core/21.png 1.5x, /sentinel_02_module_core/21.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/21.png"
+        title="/sentinel_02_module_core/21.png" width="966" height="1092" /></p>
+<p>  上图为Statistic必要组件的组成：</p>
+<ol>
+<li>
+<p>LeapArray：滑动窗口模型，实现不同时间粒度的滑动窗口行为，LeapArray为抽象类</p>
+</li>
+<li>
+<p>BucketLeapArray：LeapArray的实现类，主要实现方法</p>
+<ol>
+<li>
+<p>newEmptyBucket：初始化窗口的动作，这里初始化时设置了包装类MetricBucket</p>
+</li>
+<li>
+<p>resetWindowTo：更新窗口的动作，这里重置了窗口的开始时间，以及重置了窗口中包装类的值</p>
+</li>
+</ol>
+</li>
+<li>
+<p>MetricBucket：存储着各个统计维度的计数，统计的维度为MetricEvent枚举值</p>
+</li>
+<li>
+<p>MetricEvent：统计维度，包括</p>
+<ol>
+<li>
+<p>PASS：获得令牌的计数</p>
+</li>
+<li>
+<p>BLOCK：未获得令牌的计数</p>
+</li>
+<li>
+<p>EXCEPTION：发生异常的计算</p>
+</li>
+<li>
+<p>SUCCESS：获得令牌并成功归还的计数</p>
+</li>
+<li>
+<p>RT：请求时间</p>
+</li>
+</ol>
+</li>
+<li>
+<p>Metric：统计接口，按接口译，可以理解为“可统计的”，聚合了采集统计信息以及生成统计信息的方法。采集统计信息为各个维度的add方法，生成统计信息使用windows和details方法，返回MetricNode包含各统计信息</p>
+<ol>
+<li>
+<p>windows：返回现在LeapArray中的统计信息，以MetricBucket形式</p>
+</li>
+<li>
+<p>details：返回现在LeapArray中的统计信息，以MetricNode的形式</p>
+</li>
+</ol>
+</li>
+<li>
+<p>MetricNode：Bean，各属性为统计信息的值，相当于当前系统的一个镜像数据，将计数数据按照维度进行运算过。</p>
+</li>
+<li>
+<p>ArrayMetric：Metric的实现类，内部使用LeapArray作为滑动窗口统计各个窗口的数据</p>
+</li>
+<li>
+<p>StatisticNode：统计节点，内部使用1秒和1分钟的滑动窗口来统计数据，同时还会记录当前的线程数</p>
+<ol>
+<li>
+<p>rollingCounterInSecond：sampleCounter为2，intervalInMs为1秒的滑动窗口</p>
+</li>
+<li>
+<p>rollingCounterInMinute：sampleCounter为60，intervalInMs为1分钟的滑动窗口</p>
+</li>
+</ol>
+</li>
+<li>
+<p>ClusterNode : 继承自StatisticNode，对于某一个资源的全局统计</p>
+</li>
+<li>
+<p>DefaultNode：继承自StatisticNode，对于某一个资源在相应上下文中的实现，保存了一个指向ClusterNode的引用。另外还保存了子节点列表，当在同一个context下多次调用SphU.entry不同资源时会创建子节点</p>
+</li>
+</ol>
+<p>  主要调用流程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/22.png"
+        data-srcset="/sentinel_02_module_core/22.png, /sentinel_02_module_core/22.png 1.5x, /sentinel_02_module_core/22.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/22.png"
+        title="/sentinel_02_module_core/22.png" width="949" height="458" /></p>
+<p>  流程到最后，将累加MetricBucket中维护的各维度计数数据。这些数据可以在调用时转为MetricNode提供格式化数据。</p>
+<h5 id="43-leaparray">4.3 LeapArray</h5>
+<p>  LeapArray的实现包括:</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/23.png"
+        data-srcset="/sentinel_02_module_core/23.png, /sentinel_02_module_core/23.png 1.5x, /sentinel_02_module_core/23.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/23.png"
+        title="/sentinel_02_module_core/23.png" width="865" height="296" /></p>
+<ol>
+<li>
+<p>BucketLeapArray：每个窗口持有一个MetricBucket，该对象存储着当前窗口内各个维度的计数值</p>
+</li>
+<li>
+<p>FutureLeapArray：只存储比当前时间大的窗口</p>
+</li>
+<li>
+<p>BorrowBucketLeapArray：持有FutureLeapArray，支持从后续窗口中借用资源</p>
+</li>
+<li>
+<p>LeapArray的默认实现上，每个窗口在intervalInMs内都是有效的</p>
+</li>
+</ol>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/24.png"
+        data-srcset="/sentinel_02_module_core/24.png, /sentinel_02_module_core/24.png 1.5x, /sentinel_02_module_core/24.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/24.png"
+        title="/sentinel_02_module_core/24.png" width="667" height="190" /></p>
+<p>  如图，在某个时间800时，intervalInMs内的各个窗口都是有效的，这时候计算qps将使用各个窗口的统计值之和。</p>
+<p>  FutureLeapArray重写了isWindowDeprecated方法，如下</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/25.png"
+        data-srcset="/sentinel_02_module_core/25.png, /sentinel_02_module_core/25.png 1.5x, /sentinel_02_module_core/25.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/25.png"
+        title="/sentinel_02_module_core/25.png" width="865" height="124" /></p>
+<p>  只要给定时间大于给定窗口的起始时间则算窗口失效;当给定时间为当前时间，窗口为上一个窗口或者当前时间所在窗口时，都是失效的，只能存给定时间后的窗口。上图中，在给定的时间为800时，只有1000这个窗口是有效的。</p>
+<p>  BorrowBucketLeapArray，主要用于在进行限流时支持有限模式，当当前的token不够时，允许先从后续窗口中获取token。内部持有一个FutureLeapArray，该窗口队列用于存储在当前时间后的窗口。通过重写LeapArray的addWaiting方法，占用指定的后续窗口计数值，再通过currentWaiting方法，可以获取当前时间已经占用后后续窗口多少个资源。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/26.png"
+        data-srcset="/sentinel_02_module_core/26.png, /sentinel_02_module_core/26.png 1.5x, /sentinel_02_module_core/26.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/26.png"
+        title="/sentinel_02_module_core/26.png" width="865" height="431" /></p>
+<p>  因为borrowArray中的窗口可能在之前已经初始化或者使用过，因而，BorrowBucketLeapArray在初始化窗口或者更新窗口时，会考虑borrowArray中已有的窗口数据，如下重写的newEmptyBucket方法和resetWindowTo方法。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/27.png"
+        data-srcset="/sentinel_02_module_core/27.png, /sentinel_02_module_core/27.png 1.5x, /sentinel_02_module_core/27.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/27.png"
+        title="/sentinel_02_module_core/27.png" width="865" height="525" /></p>
+<p>  newEmptyBucket方法初始化时，如果发现该时间所在的窗口已经在FutureBucketArray中出现过，将会使用该窗口的值。同理，restWindowTo在更新时，如果所给时间窗口已经存在，则加上之前已经存在的计数值。</p>
+<p>  StatisticNode在使用时还会根据之前统计的请求，估算后续窗口的可用请求，再从后续窗口借用token，具体实现如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/28.png"
+        data-srcset="/sentinel_02_module_core/28.png, /sentinel_02_module_core/28.png 1.5x, /sentinel_02_module_core/28.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/28.png"
+        title="/sentinel_02_module_core/28.png" width="865" height="448" /></p>
+<p>  执行时会先计算离当前时间最远的一个有效窗口的开始值，如下图，假设当前窗口为curr，则earliestTime落在earliest 1的开始处。然后从earliest 1开始，逐次增加一个窗口，以逐步根据之前的Pass值，估算后续可能出现的请求，如果根据之前的某个窗口的值估算出后续某个窗口存在空闲的token，且等待时间在期望的时间内，则hold住当前请求，使之到达特定窗口后再继续通过。下图假设设定规则的最大QPS为20，在前3个窗口时，每次都没有达到最大限定的最大值，则可以认为，在curr值后的一个窗口内也是该种情况。当curr突然到来22个请求时，根据规则将有2个请求被拒接掉，但根据之前窗口的情况，这两个请求可以在后续的第二个请求中完成，以此充分的利用系统的资源。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/29.png"
+        data-srcset="/sentinel_02_module_core/29.png, /sentinel_02_module_core/29.png 1.5x, /sentinel_02_module_core/29.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/29.png"
+        title="/sentinel_02_module_core/29.png" width="865" height="328" /></p>
+<h5 id="5rulemanager">5.RuleManager</h5>
+<p>  各规则管理的模式都一致，主要用到如下3个组件</p>
+<ol>
+<li>
+<p>RuleManager，具体的规则实现类，没有具体的实现接口，但是都有loadRules方法</p>
+</li>
+<li>
+<p>ProertyListener，规则监听器</p>
+</li>
+<li>
+<p>SentinelProperty，观察者，持有各监听器</p>
+</li>
+</ol>
+<p>  RuleManaer内部持有PropertyListener和SentinelProerty，并且RuleManager有PropertyListener的内部实现类</p>
+<p>  具体流程为，初始化时RuleManager调用SentinelProepety.addListener，设置监听器。SentinelProperty会调用PropertyListener.configLoad，完成初始化。后面调用RuleManager.loadRules重新更改规则时，内部调用者SentinelProerty.updateValue，该方法会遍历SentinelProperty内部持有的所有Listener，逐个执行PropertyListner.configUpdate，从而通知到RuleManager规则发生了改变，以便让RuleManager做出处理。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/sentinel_02_module_core/30.png"
+        data-srcset="/sentinel_02_module_core/30.png, /sentinel_02_module_core/30.png 1.5x, /sentinel_02_module_core/30.png 2x"
+        data-sizes="auto"
+        alt="/sentinel_02_module_core/30.png"
+        title="/sentinel_02_module_core/30.png" width="834" height="600" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2019-09-30</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/sentinel_02_module_core/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/sentinel_02_module_core/" data-title="Sentinel Core流程分析" data-hashtags="sentinel"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/sentinel_02_module_core/" data-hashtag="sentinel"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/sentinel_02_module_core/" data-title="Sentinel Core流程分析"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/sentinel/">Sentinel</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/sentinel_01_basic/" class="prev" rel="prev" title="Sentinel基本概念"><i class="fas fa-angle-left fa-fw"></i>Sentinel基本概念</a>
+            <a href="/sentinel_03_module_cluster/" class="next" rel="next" title="Sentinel Culster流程分析">Sentinel Culster流程分析<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

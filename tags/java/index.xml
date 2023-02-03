@@ -5,10 +5,10 @@
         <description>Java - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Mon, 16 Mar 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/java/" rel="self" type="application/rss+xml" /><item>
     <title>动态路由:Gin vs SpringMVC</title>
-    <link>https://atuowgo.github.io/006-ginvsmvc/</link>
+    <link>https://atuowgo.github.io/notes-006-ginvsmvc/</link>
     <pubDate>Mon, 16 Mar 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/006-ginvsmvc/</guid>
+    <guid>https://atuowgo.github.io/notes-006-ginvsmvc/</guid>
     <description><![CDATA[这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比。
 1.简介 Gin是使用Go/golang语言实现的HTTP Web框架。接口简洁,性能极高。截止1.4.0版本,包含测试代码,仅14K,其中测试代码9K左右,也就是说框架源码仅5K左右。SpringMVC不用过多介绍，Java市场的一把手。
 Gin支持动态路由，简单示例如下：
@@ -17,10 +17,10 @@ Gin支持动态路由，简单示例如下：
 </item>
 <item>
     <title>Java的EOF标识？</title>
-    <link>https://atuowgo.github.io/001-java-eof/</link>
+    <link>https://atuowgo.github.io/notes_001_java_eof/</link>
     <pubDate>Sat, 28 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/001-java-eof/</guid>
+    <guid>https://atuowgo.github.io/notes_001_java_eof/</guid>
     <description><![CDATA[这篇是关于JAVA中EOF标识的讲解，之前在工作上碰到过一个问题，有人问过，不能通过判断EOF来知道文件有没有读取完毕吗？其实，还真不能。
 直接从JDK接口文档入手，以FileInputStream为例，JDK接口文档给出了明确的说明：
 使用FileInputStream的read方法读取文件时，当返回-1就表明读到了文件末尾，如果期间出现IO异常，则会抛出一个IOException。而对于EOF文件结束符，其实是不存在的。在Linux系统之中，EOF根本不是一个字符，而是当系统读取到文件结尾，所返回的一个信号值，例如在C语言中，EOF是一个定义在头文件stdio.h的常量，一般等于-1。对于JAVA的实现，我们可以通过查看FileInputStream的源码查看，如下：

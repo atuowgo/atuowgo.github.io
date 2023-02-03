@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>Redis集群 - 程序猿二腊</title><meta name="Description" content="这节介绍Redis的集群模式"><meta property="og:title" content="Redis集群" />
+<meta property="og:description" content="这节介绍Redis的集群模式" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/redis_06_cluster/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-09-26T00:00:00+00:00" />
+<meta property="article:modified_time" content="2019-09-26T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="Redis集群"/>
+<meta name="twitter:description" content="这节介绍Redis的集群模式"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/redis_06_cluster/" /><link rel="prev" href="https://atuowgo.github.io/redis_05_sentinel/" /><link rel="next" href="https://atuowgo.github.io/notes_000_distrubte_protocol/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Redis集群",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/redis_06_cluster\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "redis","wordcount":  133 ,
+        "url": "https:\/\/atuowgo.github.io\/redis_06_cluster\/","datePublished": "2019-09-26T00:00:00+00:00","dateModified": "2019-09-26T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍Redis的集群模式"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Redis集群</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2019-09-26">2019-09-26</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 133 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1-服务端模式">1 服务端模式</a>
+              <ul>
+                <li><a href="#11-集群的建立">1.1 集群的建立</a></li>
+                <li><a href="#12-槽指派">1.2 槽指派</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 这节介绍Redis的集群模式</p>
+<p> 主从模式提供了读写分离的支持，Sentinel提供了高可用的保障，满足了读模式下的横向扩展，但主节点只有一个，集中式的写模式无法应对不断增长的写需求。</p>
+<p> Redis 3.x 版本提供了Redis <code>cluster</code>功能，服务端sharding使用槽作为分布式的解决方案。对于 2.x版本，则通过客户端API提供的客户端sharding方式，使用一致性哈希来实现数据分片。此外，twiter开源的<code>twemproxy</code> 和豌豆荚的<code>codis</code>，则采用代理模式来实现。</p>
+<h4 id="1-服务端模式">1 服务端模式</h4>
+<p> 对于客户端来说，整个集群被看做一个整体，客户端可以连接任意一个节点进行操作，就像操作单一Redis数据库一样。当客户端操作的key没有分配到该节点上时，会返回转向指令，指向正确的节点。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/redis_06_cluster/1.png"
+        data-srcset="/redis_06_cluster/1.png, /redis_06_cluster/1.png 1.5x, /redis_06_cluster/1.png 2x"
+        data-sizes="auto"
+        alt="/redis_06_cluster/1.png"
+        title="/redis_06_cluster/1.png" width="587" height="462" /></p>
+<h5 id="11-集群的建立">1.1 集群的建立</h5>
+<p> 3.x 版本的Redis节点可以通过打开<code>clustrer-enabled</code>选项来开启服务器的集群模式，再通过</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">	CLUSTER MEET	&lt;ip&gt;	  &lt;port&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>命令连接其他节点。</p>
+<p> 新加入的节点B通过<code>CLUSTER MEET</code>命令同节点A建立连接后，节点A会通过<code>Gossip协议</code>将节点B的信息传播给集群中的其他节点，当其他节点发现新加入的节点B后也会主动同它建立连接。处于集群状态的节点同单机模式下的服务器实例没什么区别，只是只能使用<code>db 0</code> 数据库，同时除了执行单机模式下的任务外还会执行集群所需的任务，如Gossip的消息的传播。</p>
+<h5 id="12-槽指派">1.2 槽指派</h5>
+<p> Redis集群使用槽来存储分片信息，集群中的每个节点负责处理16384个槽中的一部分。对于每个写操作，通过计算<code>crc(key)%16384</code>对key值进行hashing，分配到16384个槽中的一个，然后由对应的节点处理。</p>
+<p> 节点负责哪些槽信息可以通过向节点发送</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">	CLUSTER ADDSLOTS	  &lt;slot&gt;  [slot …]
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>来指派。分配完槽信息后，该节点会将自身的信息传播给集群中的机器节点，使得集群中的所有节点都有全部的槽分配信息。当16384个槽都有节点在处理时，节点处于上线状态；相反的，如果有任何一个槽没有得到处理，那么集群处于下线状态。</p>
+<p> 集群中的某个节点在收到一个请求时，会先判断是否由自己来处理，如果不是，则会向客户端返回</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">	MOVE &lt;slot&gt; &lt;ip&gt;:&lt;port&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>错误命令，该命令给出了请求所属的槽以及对应节点的ip和端口号。客户端在收到<code>MOVE</code>错误时，会转到对应的节点重新发送之前的命令。注意，需要使用客户端的集群模式才会自动跳转,如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-mysql" data-lang="mysql"><span class="line"><span class="cl"><span class="w">	</span><span class="n">redis</span><span class="o">-</span><span class="n">cli</span><span class="w"> </span><span class="o">-</span><span class="n">c</span><span class="w"> </span><span class="o">-</span><span class="n">h</span><span class="w"> </span><span class="n">xxx</span><span class="w"> </span><span class="o">-</span><span class="n">p</span><span class="w"> </span><span class="n">xxx</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">```</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="err">当动态添加或者减少节点时，需要将</span><span class="mi">16384</span><span class="err">个槽做重新分片，槽中的键值也要迁移。重新分片可以在线执行，使用自带的</span><span class="o">```</span><span class="n">redis</span><span class="o">-</span><span class="n">trib</span><span class="o">```</span><span class="err">工具。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">##### 1.3 高可用和故障转移
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="n">Redis</span><span class="err">集群，要保证</span><span class="o">```</span><span class="mi">16384</span><span class="o">```</span><span class="err">个槽对应的节点都正常工作，如果某个节点发生故障，那它负责的槽也就失效，整个集群将不能工作。可以使</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">```</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="n">CLUSTER</span><span class="w"> </span><span class="n">REPLICATE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">node_id</span><span class="o">&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">```</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="err">将节点配置成主从结构来增加节点的可用行。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="err">集群中的每个节点会定期的向其他节点发送</span><span class="n">PING</span><span class="err">消息来检测对方的状态，一个节点的状态可以为</span><span class="o">```</span><span class="err">在线</span><span class="o">```</span><span class="err">，</span><span class="o">```</span><span class="err">疑似下线</span><span class="o">```</span><span class="err">和</span><span class="o">```</span><span class="err">下线</span><span class="o">```</span><span class="err">。当某个节点</span><span class="n">n</span><span class="err">发现半数以上负责处理槽的主节点都将某个主节点</span><span class="n">x</span><span class="err">标记为疑似下线状态时，节点</span><span class="n">n</span><span class="err">将节点</span><span class="n">x</span><span class="err">标记为下线状态，并向集群广播消息。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="err">当节点</span><span class="n">x</span><span class="err">的从节点收到主节点下线的消息时，会对该节点进行故障转移。同</span><span class="n">Sentinel</span><span class="err">选举新的</span><span class="n">leader</span><span class="w"> </span><span class="n">Sentinel</span><span class="err">节点一样，节点</span><span class="n">x</span><span class="err">的从节点会向集群中负责处理槽的其余主节点获取选票，以在节点</span><span class="n">x</span><span class="err">的从节点中选出新的主节点。新的主节点会撤销已下线主节点的槽指派，并分配给自己，然后向集群中的其他节点广播自己为新主节点的消息。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">#### 2 客户端模式
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="err">客户端模式下每个节点都是单一的实例，需要由客户端应用自己管理</span><span class="n">key</span><span class="err">所在的分片，以及处理节点的故障转移，</span><span class="n">Redis</span><span class="err">的客户端</span><span class="n">Jedis</span><span class="err">提供了分片的支持。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">!</span><span class="p">[](</span><span class="mi">2</span><span class="p">.</span><span class="n">png</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="n">Jedis</span><span class="err">对</span><span class="n">Sharded</span><span class="err">的实现主要是在</span><span class="o">```</span><span class="n">ShardedJedis</span><span class="p">.</span><span class="n">java</span><span class="o">```</span><span class="err">和</span><span class="o">```</span><span class="n">ShardedJedisPool</span><span class="p">.</span><span class="n">java</span><span class="o">```</span><span class="err">中</span><span class="p">,</span><span class="err">可以见</span><span class="p">[</span><span class="err">这里</span><span class="p">](</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">segmentfault</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">a</span><span class="o">/</span><span class="mi">1190000002691429</span><span class="p">)</span><span class="err">。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="n">Jedis</span><span class="err">的</span><span class="n">Redis</span><span class="w"> </span><span class="n">Sharding</span><span class="err">实现具有如下特点：</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">1</span><span class="p">.</span><span class="w">	</span><span class="err">采用</span><span class="p">[</span><span class="err">一致性哈希算法</span><span class="p">](</span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="p">.</span><span class="n">cnblogs</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">lpfuture</span><span class="o">/</span><span class="n">p</span><span class="o">/</span><span class="mi">5796398</span><span class="p">.</span><span class="n">html</span><span class="p">)</span><span class="err">，将</span><span class="n">key</span><span class="err">和节点</span><span class="n">name</span><span class="err">同时</span><span class="n">hashing</span><span class="err">，然后进行映射匹配，采用的算法是</span><span class="o">```</span><span class="n">MURMUR_HASH</span><span class="o">```</span><span class="err">。采用一致性哈希而不是采用简单类似哈希求模映射的主要原因是当增加或减少节点时，不会产生由于重新匹配造成的</span><span class="n">rehashing</span><span class="err">。一致性哈希只影响相邻节点</span><span class="n">key</span><span class="err">分配，影响量小。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">2</span><span class="p">.</span><span class="w">	</span><span class="err">为了避免一致性哈希只影响相邻节点造成节点分配压力，</span><span class="n">ShardedJedis</span><span class="err">会对每个</span><span class="n">Redis</span><span class="err">节点根据名字</span><span class="p">(</span><span class="err">没有的话，</span><span class="n">Jedis</span><span class="err">会赋予缺省名字</span><span class="p">)</span><span class="err">会虚拟化出</span><span class="mi">160</span><span class="err">个虚拟节点进行散列。根据权重也可虚拟化出</span><span class="mi">160</span><span class="err">倍数的虚拟节点。用虚拟节点做映射匹配，可以在增加或减少</span><span class="n">Redis</span><span class="err">节点时，</span><span class="n">key</span><span class="err">在各</span><span class="w"> </span><span class="n">Redis</span><span class="err">节点移动再分配更均匀，而不是只有相邻节点受影响。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">3</span><span class="p">.</span><span class="w">	</span><span class="n">Sharded</span><span class="w"> </span><span class="n">Jedis</span><span class="err">支持</span><span class="o">```</span><span class="n">keyTagPattern</span><span class="o">```</span><span class="err">模式，即抽取</span><span class="n">key</span><span class="err">的一部分</span><span class="n">keyTag</span><span class="err">做</span><span class="n">sharding</span><span class="err">，这样通过合理命名</span><span class="n">key</span><span class="err">，可以将一组相关联的</span><span class="n">key</span><span class="err">放入同一个</span><span class="n">Redis</span><span class="err">节点，这在避免跨节点访问相关数据时很重要。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">#### 3 代理模式
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="err">通过在客户端和实际</span><span class="n">Redis</span><span class="err">服务中间增加代理层，代理模块实现</span><span class="n">Redis</span><span class="err">协议，客户端连接代理和连接原生的</span><span class="n">Redis</span><span class="err">实例没有什么区别，上层应用可以像使用单机的</span><span class="n">Redis</span><span class="err">一样使用，代理会处理请求的转发，不停机的数据迁移等工作，所有后边的一切事情，对于前面客户端来说是透明的，可以简单的认为后边连接是一个内存无限大的</span><span class="n">Redis</span><span class="err">服务。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">!</span><span class="p">[](</span><span class="mi">3</span><span class="p">.</span><span class="n">png</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="n">Twitter</span><span class="err">的</span><span class="o">```</span><span class="n">twemproxy</span><span class="o">```</span><span class="err">和豌豆荚的</span><span class="o">```</span><span class="n">codis</span><span class="o">```</span><span class="err">就是该模式的实现。关于</span><span class="o">```</span><span class="n">codis</span><span class="o">```</span><span class="err">的介绍，可以看</span><span class="p">[</span><span class="err">这里</span><span class="p">](</span><span class="w"> </span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="p">.</span><span class="n">cnblogs</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">wangdaijun</span><span class="o">/</span><span class="n">p</span><span class="o">/</span><span class="mi">6156397</span><span class="p">.</span><span class="n">html</span><span class="p">)</span><span class="err">。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="o">&amp;</span><span class="n">emsp</span><span class="p">;</span><span class="err">同前面两种模式相比，代理模式的好处在于，客户端和服务端无需作出变更，主要维护工作在于代理模块中；同后端实际实例的连接数落在了代理上，能够有效的控制客户端过多造成的连接数暴增；提供</span><span class="n">sharding</span><span class="err">功能，支持服务器集群水平扩展。同时，由于增加了代理，客户端到真正的实例服务器需要走两次网络。</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div></div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2019-09-26</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/redis_06_cluster/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/redis_06_cluster/" data-title="Redis集群" data-hashtags="redis"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/redis_06_cluster/" data-hashtag="redis"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/redis_06_cluster/" data-title="Redis集群"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/redis/">Redis</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/redis_05_sentinel/" class="prev" rel="prev" title="Redis Sentinel"><i class="fas fa-angle-left fa-fw"></i>Redis Sentinel</a>
+            <a href="/notes_000_distrubte_protocol/" class="next" rel="next" title="分布式一致性协议">分布式一致性协议<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

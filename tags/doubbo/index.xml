@@ -5,10 +5,10 @@
         <description>doubbo - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/doubbo/" rel="self" type="application/rss+xml" /><item>
     <title>Dubbo Provider启动都做了什么</title>
-    <link>https://atuowgo.github.io/03-provider/</link>
+    <link>https://atuowgo.github.io/dubbo_03_provider/</link>
     <pubDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-provider/</guid>
+    <guid>https://atuowgo.github.io/dubbo_03_provider/</guid>
     <description><![CDATA[这节介绍Provider的启动过程，既服务发布。
 先从Demo看起：
 1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } 上面Demo主要做了几件事
@@ -27,10 +27,10 @@ PS:当id为空时，会设置默认值为default。
 </item>
 <item>
     <title>Dubbo自适应扩展机制</title>
-    <link>https://atuowgo.github.io/02-extend/</link>
+    <link>https://atuowgo.github.io/dubbo_02_extend/</link>
     <pubDate>Mon, 07 Sep 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-extend/</guid>
+    <guid>https://atuowgo.github.io/dubbo_02_extend/</guid>
     <description><![CDATA[上一节提到过，Dubbo里除了Service和Config层为API，其它各层均为SPI。相比于Java中的SPI仅仅通过接口类名获取所有实现，Dubbo的实现可以通过接口类名和key值来获取一个具体的实现。通过SPI机制，Dubbo实现了面向插件编程，只定义了模块的接口，实现由各插件来完成。
 1. 使用方式 1.1 Java SPI 在扩展类的jar包内，放置扩展点配置文件META-INF/service/接口全限定名，内容为：扩展实现类全限定名，多个实现类用换行符分隔。
 如下为Mysql中Driver接口的实现：
@@ -40,10 +40,10 @@ PS:当id为空时，会设置默认值为default。
 </item>
 <item>
     <title>Dubbo简介</title>
-    <link>https://atuowgo.github.io/01-introduce/</link>
+    <link>https://atuowgo.github.io/dubbo_01_introduce/</link>
     <pubDate>Sun, 30 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-introduce/</guid>
+    <guid>https://atuowgo.github.io/dubbo_01_introduce/</guid>
     <description><![CDATA[这篇是开门贴，内容来自网上。
 Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。(来自百度百科)
 1. 整体架构 Dubbo的整体架构如下：

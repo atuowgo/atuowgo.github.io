@@ -5,10 +5,10 @@
         <description>JVM-SandBox - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Sun, 02 Aug 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/jvm-sandbox/" rel="self" type="application/rss+xml" /><item>
     <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;</title>
-    <link>https://atuowgo.github.io/02-event/</link>
+    <link>https://atuowgo.github.io/sandbox_02_event/</link>
     <pubDate>Sun, 02 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-event/</guid>
+    <guid>https://atuowgo.github.io/sandbox_02_event/</guid>
     <description><![CDATA[这节介绍jvm-sandbox的事件机制，事件机制提供了切面通知的核心功能，内部主要结合asm和观察者模式来实现。jvm-sandbox提供的事件包括：
 上面的截图是官网github wiki对事件的介绍，包括提供的事件类型、事件的作用域以及状态机流转。概括的说就是，jvm-sandbox围绕了目标方法这个切面点，提供了多种通知机制。
 1.观察者模式 观察者模式的简单示意如下：
@@ -20,10 +20,10 @@ Subject都会有一个Observer列表，以及提供一个添加观察者的方�
 </item>
 <item>
     <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;</title>
-    <link>https://atuowgo.github.io/01-start/</link>
+    <link>https://atuowgo.github.io/sandbox_01_start/</link>
     <pubDate>Fri, 24 Jul 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-start/</guid>
+    <guid>https://atuowgo.github.io/sandbox_01_start/</guid>
     <description><![CDATA[1. 启动 sandbox源码各模块的结构如下:
 sandbox安装后的目录结构如下:
 按照官方的教程，启动命令如下：

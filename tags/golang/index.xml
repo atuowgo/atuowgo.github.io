@@ -5,10 +5,10 @@
         <description>Golang - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 31 May 2022 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/golang/" rel="self" type="application/rss+xml" /><item>
     <title>golang error</title>
-    <link>https://atuowgo.github.io/007-golang-error/</link>
+    <link>https://atuowgo.github.io/notes-007-golang-error/</link>
     <pubDate>Tue, 31 May 2022 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/007-golang-error/</guid>
+    <guid>https://atuowgo.github.io/notes-007-golang-error/</guid>
     <description><![CDATA[go error 记录go1.x error相关内容
 1. 原生error error 只是一个普通的interface,在buildin.go 里给出了定义:
 1 2 3 4 5 // The error built-in interface type is the conventional interface for // representing an error condition, with the nil value representing no error. type error interface { Error() string } 当返回值为nil时，表示没有错误，所以调用方需要通过类似err != nil的方式来处理。
@@ -18,10 +18,10 @@
 </item>
 <item>
     <title>动态路由:Gin vs SpringMVC</title>
-    <link>https://atuowgo.github.io/006-ginvsmvc/</link>
+    <link>https://atuowgo.github.io/notes-006-ginvsmvc/</link>
     <pubDate>Mon, 16 Mar 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/006-ginvsmvc/</guid>
+    <guid>https://atuowgo.github.io/notes-006-ginvsmvc/</guid>
     <description><![CDATA[这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比。
 1.简介 Gin是使用Go/golang语言实现的HTTP Web框架。接口简洁,性能极高。截止1.4.0版本,包含测试代码,仅14K,其中测试代码9K左右,也就是说框架源码仅5K左右。SpringMVC不用过多介绍，Java市场的一把手。
 Gin支持动态路由，简单示例如下：

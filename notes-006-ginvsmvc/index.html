@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>动态路由:Gin vs SpringMVC - 程序猿二腊</title><meta name="Description" content="这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比"><meta property="og:title" content="动态路由:Gin vs SpringMVC" />
+<meta property="og:description" content="这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/notes-006-ginvsmvc/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-03-16T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-03-16T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="动态路由:Gin vs SpringMVC"/>
+<meta name="twitter:description" content="这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/notes-006-ginvsmvc/" /><link rel="prev" href="https://atuowgo.github.io/rocketmq_04_consumer/" /><link rel="next" href="https://atuowgo.github.io/rocketmq_05_netty/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "动态路由:Gin vs SpringMVC",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/notes-006-ginvsmvc\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "java, golang","wordcount":  270 ,
+        "url": "https:\/\/atuowgo.github.io\/notes-006-ginvsmvc\/","datePublished": "2020-03-16T00:00:00+00:00","dateModified": "2020-03-16T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">动态路由:Gin vs SpringMVC</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2020-03-16">2020-03-16</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 270 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li>
+              <ul>
+                <li><a href="#1简介">1.简介</a></li>
+                <li><a href="#2gin">2.Gin</a></li>
+                <li><a href="#21-建树过程">2.1. 建树过程</a></li>
+                <li><a href="#22-查找过程">2.2. 查找过程</a></li>
+                <li><a href="#3springmvc">3.SpringMVC</a></li>
+                <li><a href="#4参考">4.参考</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 这两天在接触Gin，对它的动态路由功能比较感兴趣，特意做了笔记，顺便跟SpringMVC作下对比。</p>
+<h5 id="1简介">1.简介</h5>
+<p> Gin是使用Go/golang语言实现的HTTP Web框架。接口简洁,性能极高。截止1.4.0版本,包含测试代码,仅14K,其中测试代码9K左右,也就是说框架源码仅5K左右。SpringMVC不用过多介绍，Java市场的一把手。</p>
+<p> Gin支持动态路由，简单示例如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">import (
+</span></span><span class="line"><span class="cl">&#34;github.com/gin-gonic/gin&#34;
+</span></span><span class="line"><span class="cl">&#34;net/http&#34;
+</span></span><span class="line"><span class="cl">)
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">func main() {
+</span></span><span class="line"><span class="cl">    r := gin.Default()
+</span></span><span class="line"><span class="cl">    r.GET(&#34;/hello/:name&#34;, func(context *gin.Context) {
+</span></span><span class="line"><span class="cl">        context.String(http.StatusOK, &#34;Hello : &#34;+context.Param(&#34;name&#34;))
+</span></span><span class="line"><span class="cl">    })
+</span></span><span class="line"><span class="cl">    r.Run()
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>对比SpringMVC的例子为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">import org.springframework.web.bind.annotation.PathVariable;
+</span></span><span class="line"><span class="cl">import org.springframework.web.bind.annotation.RequestMapping;
+</span></span><span class="line"><span class="cl">import org.springframework.web.bind.annotation.RestController;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">@RestController
+</span></span><span class="line"><span class="cl">public class HelloWorldController {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">@RequestMapping(&#34;/hello/{name}&#34;)
+</span></span><span class="line"><span class="cl">public String antUser (@PathVariable(&#34;name&#34;) String name) {
+</span></span><span class="line"><span class="cl">    return &#34;Hello : &#34; + name;
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>二者有相似的地方。</p>
+<h5 id="2gin">2.Gin</h5>
+<p> Gin使用Trie树来实现动态路由。Trie树,即字典树,又称单词查找树或键树,是一种树形结构,是一种哈希树的变种。典型应用是用于统计和排序大量的字符串（但不仅限于字符串），所以经常被搜索引擎系统用于文本词频统计。它的优点是：最大限度地减少无谓的字符串比较，查询效率比哈希表高。</p>
+<p> Trie的核心思想是空间换时间。利用字符串的公共前缀来降低查询时间的开销以达到提高效率的目的。它有3个基本性质：</p>
+<ol>
+<li>根节点不包含字符，除根节点外每一个节点都只包含一个字符。</li>
+<li>从根节点到某一节点，路径上经过的字符连接起来，为该节点对应的字符串。</li>
+<li>每个节点的所有子节点包含的字符都不相同。</li>
+</ol>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/notes-006-ginvsmvc/0.png"
+        data-srcset="/notes-006-ginvsmvc/0.png, /notes-006-ginvsmvc/0.png 1.5x, /notes-006-ginvsmvc/0.png 2x"
+        data-sizes="auto"
+        alt="/notes-006-ginvsmvc/0.png"
+        title="/notes-006-ginvsmvc/0.png" width="500" height="469" /></p>
+<p>如上图示，为一个保存了8个键的trie结构，&ldquo;A&rdquo;, &ldquo;to&rdquo;, &ldquo;tea&rdquo;, &ldquo;ted&rdquo;, &ldquo;ten&rdquo;, &ldquo;i&rdquo;, &ldquo;in&rdquo;, &ldquo;inn&rdquo;。其中，键标注在节点中，值标注在节点之下。每一个完整的英文单词对应一个特定的整数。Trie可以看作是一个确定有限状态自动机，尽管边上的符号一般是隐含在分支的顺序中的。</p>
+<p> Trie数的常见应用场景包括：</p>
+<ol>
+<li>字符串检索</li>
+<li>词频统计</li>
+<li>前缀检索</li>
+<li>前缀词频统计</li>
+<li>对所有的字符串按照字典序排序</li>
+</ol>
+<p> Gin的路由实现也是跟上面的例子类似，具体实现在tree.go文件里，主要包括trie树的构建和查找过程。</p>
+<h5 id="21-建树过程">2.1. 建树过程</h5>
+<p> 先看node的定义</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">type node struct {
+</span></span><span class="line"><span class="cl">    path      string           // 当前节点相对路径,即公共前缀
+</span></span><span class="line"><span class="cl">    indices   string           // 所有孩子节点的path[0]组成的字符串，如果子节点有通配符，则为空
+</span></span><span class="line"><span class="cl">    children  []*node          // 孩子节点
+</span></span><span class="line"><span class="cl">    handlers  HandlersChain    // 当前节点的处理函数（包括中间件）
+</span></span><span class="line"><span class="cl">    priority  uint32           // 当前节点及子孙节点的实际路由数量
+</span></span><span class="line"><span class="cl">    nType     nodeType         // 节点类型
+</span></span><span class="line"><span class="cl">    maxParams uint8            // 子孙节点的最大参数数量
+</span></span><span class="line"><span class="cl">    wildChild bool             // 孩子节点是否有通配符（wildcard）
+</span></span><span class="line"><span class="cl">    fullPath  string           // 完整的请求路径，各中间节点也有
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>建树过程主要由两个方法来完成</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">// 根据给定的路径增加一个节点，主要用于处理公共前缀的分割
+</span></span><span class="line"><span class="cl">func (n *node) addRoute(path string, handlers HandlersChain) {}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">// 主要用于处理新节点的插入
+</span></span><span class="line"><span class="cl">func (n *node) insertChild(numParams uint8, path string, fullPath string, handlers HandlersChain) {}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>流程如下：
+<img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/notes-006-ginvsmvc/1.png"
+        data-srcset="/notes-006-ginvsmvc/1.png, /notes-006-ginvsmvc/1.png 1.5x, /notes-006-ginvsmvc/1.png 2x"
+        data-sizes="auto"
+        alt="/notes-006-ginvsmvc/1.png"
+        title="/notes-006-ginvsmvc/1.png" width="649" height="667" /></p>
+<p>使用addRoute方法从根节点添加一个新的路径P，如果树为空，则作为新节点直接插入，此时该节点为树中的第一个节点(根节点)，path和fullPath值都为P。如果根节点存在子节点，则找到P跟根节点path的公共前缀，如果不存在公共前缀，则将新节点作为根节点的子节点加入，使用insertChild方法。如果存在公共前缀，则分裂当前节点，将根节点(当前节点)公共前缀后的内容独立为一个子节点，并挂到当前节点下，更新indices；接着获取P去掉公共前缀的第一个字符，判断当前节点indices列表是否存在相同的字符，即判断剩下的内容是要作为新节点加入，还是要继续分裂，如果需要继续分裂，则重复addRoute方法。</p>
+<p> 以下面这段代码为例，</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">r.GET(&#34;/q/query&#34;, func(context *gin.Context) {
+</span></span><span class="line"><span class="cl">    context.String(http.StatusOK,&#34;Hello &#34;+context.Query(&#34;name&#34;))
+</span></span><span class="line"><span class="cl">})
+</span></span><span class="line"><span class="cl">r.GET(&#34;/q/qaz/:name&#34;, func(context *gin.Context) {
+</span></span><span class="line"><span class="cl">    context.String(http.StatusOK,&#34;Hello &#34;+context.Query(&#34;name&#34;))
+</span></span><span class="line"><span class="cl">})
+</span></span><span class="line"><span class="cl">r.GET(&#34;/q/qaj/:name/l&#34;, func(context *gin.Context) {
+</span></span><span class="line"><span class="cl">    context.String(http.StatusOK,&#34;Hello &#34;+context.Query(&#34;name&#34;))
+</span></span><span class="line"><span class="cl">})
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>构建的trie树为：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/notes-006-ginvsmvc/2.png"
+        data-srcset="/notes-006-ginvsmvc/2.png, /notes-006-ginvsmvc/2.png 1.5x, /notes-006-ginvsmvc/2.png 2x"
+        data-sizes="auto"
+        alt="/notes-006-ginvsmvc/2.png"
+        title="/notes-006-ginvsmvc/2.png" width="934" height="493" /></p>
+<p>这里需要指出的是，对于通配符，:xxxx或者*，会作为一个单独的节点出现。</p>
+<h5 id="22-查找过程">2.2. 查找过程</h5>
+<p>查找过程比较简单，直接从根节点往下找，知道找到匹配的节点，过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/notes-006-ginvsmvc/3.png"
+        data-srcset="/notes-006-ginvsmvc/3.png, /notes-006-ginvsmvc/3.png 1.5x, /notes-006-ginvsmvc/3.png 2x"
+        data-sizes="auto"
+        alt="/notes-006-ginvsmvc/3.png"
+        title="/notes-006-ginvsmvc/3.png" width="951" height="634" /></p>
+<h5 id="3springmvc">3.SpringMVC</h5>
+<p> 如下为一个简单的示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">@RestController
+</span></span><span class="line"><span class="cl">public class HelloWorldController {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">@RequestMapping(&#34;/hello/{name}&#34;)
+</span></span><span class="line"><span class="cl">public String antUser (@PathVariable(&#34;name&#34;) String name) {
+</span></span><span class="line"><span class="cl">    return &#34;hello : &#34; + name;
+</span></span><span class="line"><span class="cl">}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> 之前在介绍《SpringMVC加载流程》是说过，Spring MVC路由的加载是由RequestMappingHandlerMapping来处理的。该类会查找所有符合条件的Method上的注解，然后添加到父类AbstractHandlerMethodMapping的MappingRegistry中封装为HandlerMethod进行缓存，直接以HashMap的方式。除了RequestMappingHandlerMapping外还有其他HandlerMapping,如SimpleUrlHandlerMapping,BeanNameUrlHandlerMapping等。</p>
+<p> 当查找符合的HandlerMethod时会遍历所有的HandlerMapping，如果某HandlerMapping能够处理，返回对应的HandlerExecutionChain,同时退出循环，由HandlerAdapter来执行具体的Method,Apdater会完成入参的注入。而RequestMappingHandler的动态路由则体现在HandlerMethod的查找上，该功能主要由AbstractHandlerMethodMapping的lookupHandlerMethod方法来实现。lookupHandlerMethod方法会遍历MappingRegistry中的所有注册对象，通过PatternsRequestCondition的getMatchingCondition来判断，具体交由AntPathMatcher来实现。</p>
+<p> AntPathMatcher主要用来做类URLs字符串匹配,可以匹配的规则如下：</p>
+<ul>
+<li>？匹配一个字符</li>
+<li>*匹配0个或多个字符</li>
+<li>**匹配0个或多个目录</li>
+</ul>
+<p>具体实现在doMatch方法中。</p>
+<p>即SpringMVC是通过遍历所有注册的Url，对每个Url应用AntPathMatcher来判断当前请求的Url是否符合注册的通配符写法，从而找到对应的处理函数。</p>
+<p>如下为简单的示意图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/notes-006-ginvsmvc/4.png"
+        data-srcset="/notes-006-ginvsmvc/4.png, /notes-006-ginvsmvc/4.png 1.5x, /notes-006-ginvsmvc/4.png 2x"
+        data-sizes="auto"
+        alt="/notes-006-ginvsmvc/4.png"
+        title="/notes-006-ginvsmvc/4.png" width="1566" height="772" /></p>
+<h5 id="4参考">4.参考</h5>
+<p><a href="https://zh.wikipedia.org/wiki/Trie" target="_blank" rel="noopener noreffer ">https://zh.wikipedia.org/wiki/Trie</a></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-03-16</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/notes-006-ginvsmvc/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/notes-006-ginvsmvc/" data-title="动态路由:Gin vs SpringMVC" data-hashtags="java,golang"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/notes-006-ginvsmvc/" data-hashtag="java"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/notes-006-ginvsmvc/" data-title="动态路由:Gin vs SpringMVC"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/java/">Java</a>,&nbsp;<a href="/tags/golang/">Golang</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/rocketmq_04_consumer/" class="prev" rel="prev" title="RocketMQ Consumer接收消息流程"><i class="fas fa-angle-left fa-fw"></i>RocketMQ Consumer接收消息流程</a>
+            <a href="/rocketmq_05_netty/" class="next" rel="next" title="Netty-RocketMQ底层通信的利器">Netty-RocketMQ底层通信的利器<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

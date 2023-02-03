@@ -5,10 +5,10 @@
         <description>日常记录 - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Mon, 09 Nov 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/work/" rel="self" type="application/rss+xml" /><item>
     <title>MySQL InnoDB索引那点事儿</title>
-    <link>https://atuowgo.github.io/005-mysql-innodb/</link>
+    <link>https://atuowgo.github.io/notes_005_mysql_innodb/</link>
     <pubDate>Mon, 09 Nov 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/005-mysql-innodb/</guid>
+    <guid>https://atuowgo.github.io/notes_005_mysql_innodb/</guid>
     <description><![CDATA[总结下之前看到的一些关于MySQL索引原理的内容，好记性不如烂笔头。
 1. B+树 我们知道InnoDB的索引是以B+树的形式组织的。B+树是一种树数据结构，是一个n叉树，每个节点通常有多个孩子，一颗B+树包含根节点、内部节点和叶子节点。
 下面是B+树的示例：
@@ -44,10 +44,10 @@ InnoDB会将一个页中的所有记录划分成若干个组，每组4-8个记�
 </item>
 <item>
     <title>常见的分布式唯一ID方案</title>
-    <link>https://atuowgo.github.io/004-distrubte-id/</link>
+    <link>https://atuowgo.github.io/notes_004_distrubte_id/</link>
     <pubDate>Sun, 20 Sep 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/004-distrubte-id/</guid>
+    <guid>https://atuowgo.github.io/notes_004_distrubte_id/</guid>
     <description><![CDATA[最近看一个新系统，发现里面有很多场景用到唯一id，便搜罗了一下常见的方案。
 对于分布式id，需要满足下面的基本要求
 全局唯一 趋势递增 1. UUID UUID（Universally Unique Identifier）全局唯一标识符，定义为一个字符串主键，采用32位数字组成，编码采用16进制，定义了在时间和空间都完全惟一的系统信息。
@@ -79,10 +79,10 @@ Snowflake算法中41个bit的时间戳完全依赖于时间的，如果有时钟
 </item>
 <item>
     <title>Socks协议</title>
-    <link>https://atuowgo.github.io/003-socks/</link>
+    <link>https://atuowgo.github.io/notes_003_socks/</link>
     <pubDate>Sat, 29 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/003-socks/</guid>
+    <guid>https://atuowgo.github.io/notes_003_socks/</guid>
     <description><![CDATA[SOCKS：防火墙安全会话转换协议 （Socks: Protocol for sessions traversal across firewall securely） SOCKS协议提供一个框架，为在 TCP和UDP域中的客户机/服务器应用程序能更方便安全地使用网络防火墙所提供的服务。协议工作在OSI参考模型的第5层(会话层)，使用TCP协议传输数据，因而不提供如传递ICMP信息之类的网络层网关服务。
 当防火墙后的客户端要访问外部的服务器时，就跟SOCKS代理服务器连接。这个代理服务器控制客户端访问外网的资格，允许的话，就将客户端的请求发往外部的服务器。Socks不要求应用程序遵循特定的操作系统平台，Socks 代理与应用层代理、 HTTP 层代理不同，Socks代理只是简单地传递数据包，而不必关心是何种应用协议（比如FTP、HTTP和NNTP请求）。所以，Socks代理比其他应用层代理要快得多。它通常绑定在代理服务器的1080端口上。
 这个协议最初由David Koblas开发，而后由NEC的Ying-Da Lee将其扩展到SOCKS4。最新协议是 SOCKS5，与前一版本相比，增加支持UDP、验证，以及IPv6。
@@ -108,10 +108,10 @@ jsocks实现功能同上面大体相同，代码也比较简单，这边不做�
 </item>
 <item>
     <title>扩展阿里p3c实现自定义代码规范检查</title>
-    <link>https://atuowgo.github.io/002-p3c/</link>
+    <link>https://atuowgo.github.io/notes_002_p3c/</link>
     <pubDate>Fri, 25 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/002-p3c/</guid>
+    <guid>https://atuowgo.github.io/notes_002_p3c/</guid>
     <description><![CDATA[前段时间fastjson报出了漏洞，只要打开setAutoType特性就会存在风险，自己测试环境的一个项目被揪出来了-_-!。虽然改动很小，但就是觉得憋屈。fastjson还是挺好的，想着禁用的话太可惜，用的话又要注意安全，就想着找款工具提示下在用fastjson的时候不要打开这个特性。刚好阿里开源了p3c（https://github.com/alibaba/p3c），一款代码规范的检查工具，有对应的ide插件，能在编码过程中对设置的规则进行提示，便打算对它进行拓展，增加对fastjson检查是否打开setAutoType特性的检查。
 p3c主要包括3部分：
 PMD实现(p3c-pmd)：使用PMDhttps://pmd.github.io/来实现代码规范检查 Intellij IDEA插件 Eclipse插件 《阿里巴巴Java开发手册》中的大部分规则都是在p3c-pmd模块中实现的，该部分也是这节研究的主要部分。
@@ -127,10 +127,10 @@ AST是源代码的抽象语法结构的树状表示 抽象语法树并不依赖�
 </item>
 <item>
     <title>Java的EOF标识？</title>
-    <link>https://atuowgo.github.io/001-java-eof/</link>
+    <link>https://atuowgo.github.io/notes_001_java_eof/</link>
     <pubDate>Sat, 28 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/001-java-eof/</guid>
+    <guid>https://atuowgo.github.io/notes_001_java_eof/</guid>
     <description><![CDATA[这篇是关于JAVA中EOF标识的讲解，之前在工作上碰到过一个问题，有人问过，不能通过判断EOF来知道文件有没有读取完毕吗？其实，还真不能。
 直接从JDK接口文档入手，以FileInputStream为例，JDK接口文档给出了明确的说明：
 使用FileInputStream的read方法读取文件时，当返回-1就表明读到了文件末尾，如果期间出现IO异常，则会抛出一个IOException。而对于EOF文件结束符，其实是不存在的。在Linux系统之中，EOF根本不是一个字符，而是当系统读取到文件结尾，所返回的一个信号值，例如在C语言中，EOF是一个定义在头文件stdio.h的常量，一般等于-1。对于JAVA的实现，我们可以通过查看FileInputStream的源码查看，如下：

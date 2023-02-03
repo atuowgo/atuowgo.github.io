@@ -5,10 +5,10 @@
         <description>分布式 - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Fri, 27 Sep 2019 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/distrubute/" rel="self" type="application/rss+xml" /><item>
     <title>分布式一致性协议</title>
-    <link>https://atuowgo.github.io/000-distrubte-protocol/</link>
+    <link>https://atuowgo.github.io/notes_000_distrubte_protocol/</link>
     <pubDate>Fri, 27 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/000-distrubte-protocol/</guid>
+    <guid>https://atuowgo.github.io/notes_000_distrubte_protocol/</guid>
     <description><![CDATA[介绍常见的分布式一致性协议
 一．CAP/BASE 1. CAP理论 CAP理论又称之为布鲁尔定理（Brewer’S theorem），认为在设计一个大规模可扩放的网络服务时候不能同时兼容：一致性（consistency）、可用性（Availability）、分区容错（Partition-tolerance）。
 一致性：在分布式系统中的所有数据备份，在同一时刻是否有同样的值。（等同于所有节点访问同一份最新的数据副本）

@@ -5,10 +5,10 @@
         <description>RocketMQ - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Mon, 18 May 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/rocketmq/" rel="self" type="application/rss+xml" /><item>
     <title>RocketMQ消息的存储消费模型</title>
-    <link>https://atuowgo.github.io/09-consumequeue/</link>
+    <link>https://atuowgo.github.io/rocketmq_09_consumequeue/</link>
     <pubDate>Mon, 18 May 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/09-consumequeue/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_09_consumequeue/</guid>
     <description><![CDATA[这节介绍RocketMQ中消息的存储模型：CommitLog和ConsumeQueue。CommitLog用于存储Producer的消息，ConsumeQueue接受CommitLog分配的消息，等待Consumer消费。
 1. 存储消费模型 RocketMQ采用了单一的日志文件，即把同1台机器上面所有topic的所有queue消息都存放在一个文件里面，以避免随机的磁盘写入。其存储结构如下：
 Broker会把所有消息都存在一个单一的CommitLog文件里面，然后由后台线程异步的同步到ConsumeQueue中，再由Consumer进行消费。
@@ -37,10 +37,10 @@ ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对
 </item>
 <item>
     <title>RocketMQ文件存储的基础:MappedFile和MappedFileQueue</title>
-    <link>https://atuowgo.github.io/08-mappedfile/</link>
+    <link>https://atuowgo.github.io/rocketmq_08_mappedfile/</link>
     <pubDate>Thu, 14 May 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/08-mappedfile/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_08_mappedfile/</guid>
     <description><![CDATA[RocketMQ文件存储的基础:MappedFile和MappedFileQueue RocketMQ中的MappedFile类对应一个文件的mmap映射,是RocketMQ实现高效存储的基础。本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡。
 1. 零拷贝 零拷贝（zero copy）指的是当拷贝发生时，CPU并不参与实际的拷贝过程。CPU可以切换到其他线程，数据的拷贝过程异步进行，异步过程通常要由硬件DMA实现。常用的零拷贝有 mmap 和 sendFile。
 采用传统的读写操作将磁盘中的数据发送到网络中，通常经历2次用户态/内核态的切换，并且读和写操作CPU分别要参与一次拷贝过程。
@@ -61,10 +61,10 @@ FileChannel本身不是基于零拷贝实现的，而是是基于块来实现的
 </item>
 <item>
     <title>RocketMQ的心脏:Broker</title>
-    <link>https://atuowgo.github.io/07-broker/</link>
+    <link>https://atuowgo.github.io/rocketmq_07_broker/</link>
     <pubDate>Mon, 04 May 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/07-broker/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_07_broker/</guid>
     <description><![CDATA[RocketMQ的心脏:Broker 这节介绍下RocketMQ中最后的一个部分，也是内容较多的一部分：Broker。
 Broker的启动同其他几个组件一样，从XXXStartup(BrokerStartup)类的main方法开始，首先加载对应的配置文件XXXConfig(BrokerConfig、NettyServerConfig、NettyClientConfig、MessageStoreConfig)，然后实例化XXXController(BrokerController)，接着调用Controller的initialize方法，最后注册ShutdownHook。
 Broker在构造方法中，会进行如下的实例化动作：
@@ -85,10 +85,10 @@ PullMessageProcessor主要的工作是根据客户端提供的offset，从Consum
 </item>
 <item>
     <title>轻量级注册中心：RocketMQ NameServer</title>
-    <link>https://atuowgo.github.io/06-nameserver/</link>
+    <link>https://atuowgo.github.io/rocketmq_06_nameserver/</link>
     <pubDate>Wed, 15 Apr 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/06-nameserver/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_06_nameserver/</guid>
     <description><![CDATA[NameServer实现比较简单，主要包括配置管理、路由管理两块。其主要功能是为整个MQ集群提供服务协调与治理，具体就是记录维护Topic、Broker的信息，及监控Broker的运行状态，为client提供路由能力。NameServer是一个几乎无状态节点，可集群部署，节点之间无任何信息同步。
 NameServer为生产者和消费者提供Meta数据，以确定消息该发往哪个Broker或者该从哪个Broker拉取消息。有了Meta数据后，生产者和消费者就可以直接和 Broker交互了。这种点对点的交互方式最大限度降低了消息传递的中间环节，缩短了链路耗时。
 1. 启动 NameServer的启动过程如下：
@@ -103,10 +103,10 @@ Topic对应的Queue列表 Queue所在的Broker，以及Queue对应的属性 Brok
 </item>
 <item>
     <title>Netty-RocketMQ底层通信的利器</title>
-    <link>https://atuowgo.github.io/05-netty/</link>
+    <link>https://atuowgo.github.io/rocketmq_05_netty/</link>
     <pubDate>Mon, 30 Mar 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/05-netty/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_05_netty/</guid>
     <description><![CDATA[这节介绍RocketMQ底层通信的原理
 在之前的内容中有介绍过RocketMQ底层用了Netty来进行通信，下图为RocketMQ通信的大致过程，主要分为Server端和Client端。
 客户端通过invokeSyncImpl、invokeAsyncImpl、invokeOnewayImpl这几个方法同服务端交互。
@@ -136,10 +136,10 @@ RemotingCommand对象分为Header部分和Body部分。Header部分包括固定�
 </item>
 <item>
     <title>RocketMQ Consumer接收消息流程</title>
-    <link>https://atuowgo.github.io/04-consumer/</link>
+    <link>https://atuowgo.github.io/rocketmq_04_consumer/</link>
     <pubDate>Tue, 25 Feb 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/04-consumer/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_04_consumer/</guid>
     <description><![CDATA[这节介绍Consumer接收消息的流程，分为Pull和Push模式。
 1. 初始化 上一节讲Rebalance时提到，Consumer接受客户端有两种方式：
 Broker发现客户端列表有变化，通知所有Consumer执行Rebalance Consumer定时没20秒自动执行Rebalance 其中1.的通知到达Consumer后，会立即触发Rebalance，然后会重置2.的定时器等待时间。二者最后通知Consumer的方式为
@@ -156,10 +156,10 @@ RebalanceImpl调用DefaultMQPushConsumerImpl的executePullRequestImmediately方�
 </item>
 <item>
     <title>RocketMQ RocketMQ Rebalance流程分析</title>
-    <link>https://atuowgo.github.io/03-rebalance/</link>
+    <link>https://atuowgo.github.io/rocketmq_03_rebalance/</link>
     <pubDate>Sat, 22 Feb 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-rebalance/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_03_rebalance/</guid>
     <description><![CDATA[这节介绍Rebalance流程。在介绍Consumer消费消息流程前，先介绍Rebalance得流程，该过程涉及到Consumer的启动。
 之前介绍过，Topic是一个逻辑概念，Topic下可以划分多个Queue以增加Consumer消费的并行度。在一个Consumer Group内，Queue和Consumer之间的对应关系是一对多的关系：一个Queue最多只能分配给一个Consumer，一个Cosumer可以分配得到多个Queue，如下图
 而Rebalance是一种协议，规定了一个 Consumer Group 下的所有 consumer如何达成一致来分配Queue。当Consumer订阅的Topic发生变化，或者Consumer Group内的Consumer实例发送变化时便会触发Rebalance以重新分配每个实例对应的Queue。
@@ -173,20 +173,20 @@ MQClientInstance.doRebalance会调用MQConsumerInner.doRebalance。MQConsumerInn
 </item>
 <item>
     <title>RocketMQ Producer发送消息流程</title>
-    <link>https://atuowgo.github.io/02-producer/</link>
+    <link>https://atuowgo.github.io/rocketmq_02_producer/</link>
     <pubDate>Wed, 05 Feb 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-producer/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_02_producer/</guid>
     <description><![CDATA[这节介绍Producer发送消息的流程。
 接上一节开头的Demo，发送消息的写法如下：
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 public class SyncProducer { public static void main (String[] args) throws Exception { // 实例化消息生产者Producer DefaultMQProducer producer = new DefaultMQProducer (&#34;GroupTest&#34;); // 设置NameServer的地址 producer.setNamesrvAddr (&#34;localhost:9876&#34;); // 启动Producer实例 producer.start (); for (int i = 0; i &lt; 100; i++) { // 创建消息，并指定Topic，Tag和消息体 Message msg = new Message (&#34;TopicTest&#34; /* Topic */, &#34;TagA&#34; /* Tag */, (&#34;Hello RocketMQ &#34; + i).]]></description>
 </item>
 <item>
     <title>RocketMQ客户端加载流程</title>
-    <link>https://atuowgo.github.io/01-client-start/</link>
+    <link>https://atuowgo.github.io/rocketmq_01_client/</link>
     <pubDate>Wed, 08 Jan 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-client-start/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_01_client/</guid>
     <description><![CDATA[这节介绍RocketMQ客户端的启动流程，即Consumer和Producer的启动流程。
 1. 客户端demo 首先先看下客户端的demo
 Producer:
@@ -194,10 +194,10 @@ Producer:
 </item>
 <item>
     <title>RocketMQ介绍</title>
-    <link>https://atuowgo.github.io/00-basic/</link>
+    <link>https://atuowgo.github.io/rocketmq_00_basic/</link>
     <pubDate>Sat, 28 Dec 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/00-basic/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_00_basic/</guid>
     <description><![CDATA[ 消息队列是分布式系统中重要的组件，使用消息队列主要是为了通过异步处理提高系统性能和削峰、降低系统耦合性。Apache RocketMQ是由阿里巴巴开源的可支撑万亿级数据洪峰的分布式消息和流计算平台，于2016年捐赠给Apache Software Foundation，2017年9月25日成为Apache 顶级项目。由于其高稳定性、低延时、高吞吐量等特点，被大规模应用于金融、互联网、物流公司的核心交易支付、实时位置追踪、大数据分析等场景，同时也被电力、交通、汽车、零售等十几个行业的数万家企业广泛使用，是企业数字化转型的核心基础性软件。​
 网上对RocketMQ的介绍很多，还有中文开发者网站http://rocketmq.cloud/zh-cn/index.html，大家可以自行搜索。本章结合网上的各种介绍（内容均来自网上），只对相关的内容、概念进行说明，为后续文章做准备。
 工作中也比较多的接触RocketMQ，之前看过RocketMQ的源码，梳理过流程，但是没有输出文档。为此，这边将以RocketMQ 4.4.0版本为例，重新整理源码中相应的流程。

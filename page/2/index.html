@@ -99,7 +99,20 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/003-socks/">Socks协议</a>
+        <a href="/dubbo_01_introduce/">Dubbo简介</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这篇是开门贴，内容来自网上。
+Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。(来自百度百科)
+1. 整体架构 Dubbo的整体架构如下：
+涉及到的组件包括：
+Provider：暴露服务的服务提供方 Consumer：调用远程服务的服务消费方 Registry：服务注册与发现的注册中心 Monitor：统计服务的调用次数和调用时间的监控中心 Container：服务运行容器 调用流程为：
+服务容器负责启动，加载，运行服务提供者。服务提供者在启动时，向注册中心注册自己提供的服务。服务消费者在启动时，向注册中心订阅自己所需的服务。注册中心返回服务提供者地址列表给消费者，如果有变更，注册中心将基于长连接推送变更数据给消费者。服务消费者，从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心。(上面内容来自Dubbo官方文档)
+2. 使用demo 2.1 Api方式 纯Api方式调用模式如下：
+Provider：
+1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } Consumer：</div><div class="post-footer">
+        <a href="/dubbo_01_introduce/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/doubbo/">doubbo</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/notes_003_socks/">Socks协议</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">SOCKS：防火墙安全会话转换协议 （Socks: Protocol for sessions traversal across firewall securely） SOCKS协议提供一个框架，为在 TCP和UDP域中的客户机/服务器应用程序能更方便安全地使用网络防火墙所提供的服务。协议工作在OSI参考模型的第5层(会话层)，使用TCP协议传输数据，因而不提供如传递ICMP信息之类的网络层网关服务。
 当防火墙后的客户端要访问外部的服务器时，就跟SOCKS代理服务器连接。这个代理服务器控制客户端访问外网的资格，允许的话，就将客户端的请求发往外部的服务器。Socks不要求应用程序遵循特定的操作系统平台，Socks 代理与应用层代理、 HTTP 层代理不同，Socks代理只是简单地传递数据包，而不必关心是何种应用协议（比如FTP、HTTP和NNTP请求）。所以，Socks代理比其他应用层代理要快得多。它通常绑定在代理服务器的1080端口上。
 这个协议最初由David Koblas开发，而后由NEC的Ying-Da Lee将其扩展到SOCKS4。最新协议是 SOCKS5，与前一版本相比，增加支持UDP、验证，以及IPv6。
@@ -122,10 +135,10 @@ Socks5的建立过程如下：
 jsocks实现功能同上面大体相同，代码也比较简单，这边不做说明。这里只提一点jsocks里的认证方式，在源码的IdentAuthenticator类里。这个类没有使用用户名密码方式，也没有自定义认证协议，而是直接通过判断协议里的用户名跟客户端的发起方是否是同一个人来进行验证。
 实现上在验证方式上选择无需验证，然后为每个请求方的ip范围分配一个用户，只有对应用户才能继续往下走。jsocks通过访问客户端的113端口来判断发起方同配置中的用户是否一致，只有匹配的用户流程才能继续玩下走。113端口是一个许多计算机上运行的协议，用于鉴别TCP连接的用户。相当于把socks5原来的认证流程换为了代理服务器主动访问客户端进行验证。当验证通过后，jsocks这时候会持有客户端的socket(RemoteSocket)，并代替客户端向目标地址发起socket(OutSocket)连接，后面会循环把RemoteSocket的数据流写入到OutSocket里以完成数据的传输。
 4. 参考资料 https://zh.wikipedia.org/wiki/SOCKS</div><div class="post-footer">
-        <a href="/003-socks/">阅读全文</a><div class="post-tags">
+        <a href="/notes_003_socks/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/work/">日常记录</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/02-event/">JVM层面的切面实现 : jvm-sandbox 之 <事件机制></a>
+        <a href="/sandbox_02_event/">JVM层面的切面实现 : jvm-sandbox 之 <事件机制></a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍jvm-sandbox的事件机制，事件机制提供了切面通知的核心功能，内部主要结合asm和观察者模式来实现。jvm-sandbox提供的事件包括：
 上面的截图是官网github wiki对事件的介绍，包括提供的事件类型、事件的作用域以及状态机流转。概括的说就是，jvm-sandbox围绕了目标方法这个切面点，提供了多种通知机制。
 1.观察者模式 观察者模式的简单示意如下：
@@ -134,10 +147,10 @@ Observer(观察者)观察Subject(目标)，Subject在发生变化时通知Observ
 Subject都会有一个Observer列表，以及提供一个添加观察者的方法(add) 用户通过调用Subject的add方法，触发观察，把Observer添加到Observer列表中 Subject在事件发生时，遍历Observer列表，通知到Observer 以此达到目的。下面来看jvm-sandbox如何实现该过程。
 2. 触发观察DefaultModuleEventWatcher.watch 从官网的例子开始
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 /** * 一个损坏的钟实现 */ static class BrokenClock extends Clock { @Override void checkState() { throw new IllegalStateException(); } @Override void delay() throws InterruptedException { Thread.sleep(10000L); } } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 /** * 修复损坏的钟模块 */ @Information(id = &#34;broken-clock-tinker&#34;) public class BrokenClockTinkerModule implements Module { @Resource private ModuleEventWatcher moduleEventWatcher; @Http(&#34;/repairCheckState&#34;) public void repairCheckState() { moduleEventWatcher.</div><div class="post-footer">
-        <a href="/02-event/">阅读全文</a><div class="post-tags">
+        <a href="/sandbox_02_event/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/jvm-sandbox/">JVM-SandBox</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/01-start/">JVM层面的切面实现 : jvm-sandbox 之 <应用启动></a>
+        <a href="/sandbox_01_start/">JVM层面的切面实现 : jvm-sandbox 之 <应用启动></a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">1. 启动 sandbox源码各模块的结构如下:
 sandbox安装后的目录结构如下:
 按照官方的教程，启动命令如下：
@@ -150,10 +163,10 @@ targetJvmPid:目标应用pid agentJarPath:附加的agent包路径 cfg:agent-main
 1 2 3 4 5 6 7 public CoreLauncher(final String targetJvmPid, final String agentJarPath, final String token) throws Exception { attachAgent(targetJvmPid, agentJarPath, token); } 主要是以agent-main的方式执行。
 去到sandbox-agent模块的pom.xml，有如下配置
 1 2 3 4 5 6 7 8 &lt;archive&gt; &lt;manifestEntries&gt; &lt;Premain-Class&gt;com.</div><div class="post-footer">
-        <a href="/01-start/">阅读全文</a><div class="post-tags">
+        <a href="/sandbox_01_start/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/jvm-sandbox/">JVM-SandBox</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/09-consumequeue/">RocketMQ消息的存储消费模型</a>
+        <a href="/rocketmq_09_consumequeue/">RocketMQ消息的存储消费模型</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍RocketMQ中消息的存储模型：CommitLog和ConsumeQueue。CommitLog用于存储Producer的消息，ConsumeQueue接受CommitLog分配的消息，等待Consumer消费。
 1. 存储消费模型 RocketMQ采用了单一的日志文件，即把同1台机器上面所有topic的所有queue消息都存放在一个文件里面，以避免随机的磁盘写入。其存储结构如下：
 Broker会把所有消息都存在一个单一的CommitLog文件里面，然后由后台线程异步的同步到ConsumeQueue中，再由Consumer进行消费。
@@ -179,10 +192,10 @@ ConsumeQueue的调用过程和提供方法同CommitLog类似，也是初始化�
 ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对应的数据存储路径为
 /DirToStore/topic/queueId/ 每次写入的数据格式(数据单元)为：
 1 物理偏移量(long/8)|消息大小(int/4)|逻辑偏移量(long/8) = 20 ConsumeQueue初始化MappedFile的默认大小为 30000 * 20，即每个文件存30万条记录，没个文件名的步长为600000，消费时只要每次读取20个字节便能查找到每个消息的offset。</div><div class="post-footer">
-        <a href="/09-consumequeue/">阅读全文</a><div class="post-tags">
+        <a href="/rocketmq_09_consumequeue/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/08-mappedfile/">RocketMQ文件存储的基础:MappedFile和MappedFileQueue</a>
+        <a href="/rocketmq_08_mappedfile/">RocketMQ文件存储的基础:MappedFile和MappedFileQueue</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">RocketMQ文件存储的基础:MappedFile和MappedFileQueue RocketMQ中的MappedFile类对应一个文件的mmap映射,是RocketMQ实现高效存储的基础。本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡。
 1. 零拷贝 零拷贝（zero copy）指的是当拷贝发生时，CPU并不参与实际的拷贝过程。CPU可以切换到其他线程，数据的拷贝过程异步进行，异步过程通常要由硬件DMA实现。常用的零拷贝有 mmap 和 sendFile。
 采用传统的读写操作将磁盘中的数据发送到网络中，通常经历2次用户态/内核态的切换，并且读和写操作CPU分别要参与一次拷贝过程。
@@ -200,28 +213,7 @@ Java里的写操作都是写到PageCache里便认为逻辑落盘成功，后续�
 Java类库通过java.nio.channels.FileChannel的transgerTo方法支持零拷贝。而在Netty中也通过在FileRegion中包装了NIO的FileChannel.transferTo()方法实现了零拷贝。RocketMQ在涉及到网络传输的地方也使用了该方法。
 FileChannel本身不是基于零拷贝实现的，而是是基于块来实现的。FileChannel配合着ByteBuffer，将读写的数据缓存到内存中，然后以批量/缓存的方式read/write，省去了非批量操作时的重复中间操作，操纵大文件时可以显著提高效率。FileChannel的write方法将数据写入PageCache后就认为落盘了，最终还是要操作系统完成PageCache到磁盘的最终写入。FileChannel的force方法则是用于通知操作系统进行及时的刷盘。
 1.3. mmap mmap也是零拷贝实现的一种，它利用共享内存空间的方式, 把文件映射到用户空间里的虚拟内存，省去了从内核缓冲区复制到用户空间的过程。</div><div class="post-footer">
-        <a href="/08-mappedfile/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/07-broker/">RocketMQ的心脏:Broker</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">RocketMQ的心脏:Broker 这节介绍下RocketMQ中最后的一个部分，也是内容较多的一部分：Broker。
-Broker的启动同其他几个组件一样，从XXXStartup(BrokerStartup)类的main方法开始，首先加载对应的配置文件XXXConfig(BrokerConfig、NettyServerConfig、NettyClientConfig、MessageStoreConfig)，然后实例化XXXController(BrokerController)，接着调用Controller的initialize方法，最后注册ShutdownHook。
-Broker在构造方法中，会进行如下的实例化动作：
-包括：
-配置类：BrokerConfig、NettyServerConfig、NettyClientConfig、MessageStoreConfig 管理类：ConsumerOffsetManager(偏移量管理)、TopicConfigManager(topic配置管理)、ConsumerManager(消费者管理)、ConsumerFilterManager(消费者过滤管理)、ProducerManager(生产者管理)、SubscriptionGroupManager(订阅组管理)、FilterServerManager(服务端过滤管理)、BrokerStatsManager(broker状态管理) 服务类：PullMessageProcessor(拉取消息处理器)、PullRequestHoldService(拉取请求缓存服务)、ClientHousekeepingService(客户端长连接服务)、SlaveSynchronize(slave同步) 监听类：NotifyMessageArrivingListener(通知消息到达监听器)、DefaultConsumerIdsChangeListener(客户端id改变监听器) 工具类：Broker2Client、BrokerOuterAPI 线程队列类：发送线程、拉取线程、查询线程、客户端管理线程、消费者管理线程、心跳线程、事务线程 Broker的初始化和启动过程如下：
-初始化的步骤为：
-加载配置文件,由TopicConfigManager处理:存储每个topic的配置信息；ConsumerOffsetManager:缓存所有topic@group对应的queue的偏移量；SubscriptionGroupManager:存储每个group的配置信息；ConsumerFilterManager:Topic的过滤表达式信息 加载消息存储内容,由MessageStore处理 注册请求处理器，由NettyRequestProcesser处理，根据RequestCode，分发远程请求给对应的Processer，包括SendMessageProcessor、QueryMessageProcessor、ClientManageProcessor、ConsumerManageProcessor、AdminBrokerProcessor 每隔一天记录broker状态，BrokerStats会打印当天接受/处理的消息总数 每一段时间（默认5s）记录消费者消费的偏移量，ConsumerOffsetManager会将缓存topic下每个q对应的消费偏移量进行持久化存储为json 每10s记录消费者过滤情况，ConsumerFilterManager会将缓存topic的过滤表达式持久化存储为json 每3min“保护”broker，BrokerStatsManager会每秒/分钟/小时记录各字表的次数和消费消息的大小，如果记录的客户端消费失败字节数大于配置的参数，会将该topic设置为不可消费 每1s打印打印消息队列水位线，包括发送Queue数量、拉取Queue数量、查询Queue数量 每1分钟打印处理的消息量 同步namesrv地址列表，由BrokerOutterAPI处理，如果指定了namesrv地址，则使用该列表；否则从配置的网络路径上同步 (slave)每1min同步slave，SlaveSynchronize会通过BrokerOutterApi向master请求数据同步 (master)每1min打印slave比master落后的消息数，MessageStore会打印最大的消费偏移量-已经同步给slave的偏移量 初始化事务服务 启动步骤包括：
-启动消息存储服务MessageStore 启动Netty服务RemotingServer 启动文件监听服务FileWatchService，监听tls证书，在发生变化时重新加载 启动API服务BrokerOuterAPI 启动缓存pull请求处理服务PullRequestHoldService，对每个topic下的q的pull请求，定时再次执行 启动客户端连接服务ClientHouseKeepingService，每10s清除超时没有消息的客户端连接 启动服务端过滤服务FilterServerManager，每30s执行本地脚本 注册broker，后面每一段时间(不超过1分钟)注册broker，首次启动会向所有namesrv同步broker信息和所持有的topic信息，后面每隔一段时间同步一次 启动broker状态管理BrokerStatsManager 启动请求过期清理任务BrokerFastFailure，如果开启了快速失效的配置，会定时清理缓存中的过期请求 启动事务消息检查服务TransactionalMessageCheckService 下面将介绍其中几块内容。
-1. SendMessageProcessor 消息发送处理器，主要处理Producer发送的消息和Consumer的重试消息。
-1.1. 处理发送消息请求 主要过程为：
-解析请求头，得到SendMessageRequestHeader 构建上下文对象，SendMessageContext 执行前置hook，调用SendMessageHook的sendMessageBefore方法 执行核心处理逻辑，分为单消息和批量消息的处理，主要是先进行前置检查，如判断MesageStore是否已经启动、Queue是否正确等，然后将请求内容包装为Broker内部处理的形式，交由MessageStore处理放入CommitLog中。其中单消息包装为MessageExtBrokerInner、批量消息包装为MessageExtBatch 执行后置hook，调用SendMessageHook的sendMessageAfter方法 1.2. 处理Consumer的重试消息 在介绍Consumer消费消息过程时提到过，在Push模式下，如果消息消费失败，可以将消息重新返回Consumer实例的内存缓存队里中等待消费，也可以由Consumer模拟Producer角色，将消息发送到Broker，等待再次消费。
-主要过程为：
-解析请求头，得到ConsumerSendMsgBackRequestHeader 如果原消息Id不为空，执行消费后置hook，调用ConsumeMessageHook.consumeMessageAfter 检查前置判断条件，包括所在Group是否存在、是否有权限等 默认放到Retry重试队列中，分配新的topic，格式为 ``%RETRY%+Group```` 检查重试队列配置，包括重试队列配置是否为空、重置队列是否可写等 根据原消息的偏移量offset在CommitLog中查找原消息内容(MessageExt格式) 判断该消息的重试次数是否已经超过设定的最大值(默认16次)，如果是，则将放到DLQ死信队列中，将topic格式更新为``%DLQ%+Group```` 将原消息重新包装为MessageExtBrokerInner对象，并调用MessageStore放到CommitLog中 2. PullMessageProcessor 消息拉取处理器，在介绍消费者消费消息过程时提到过，RocketMQ内部都是通过Pull方式从Broker拉取消息的，Push模式是通过包装Pull方式，由RocketMQ定时发起，并自动处理offset、消息重试动作。
-PullMessageProcessor主要的工作是根据客户端提供的offset，从ConsumeQueue中获取到该topic-queueId在CommitLog中的起始位置，每次读取消息都会从ConsumeQueue中尽可能多的读取消息，并计算出客户端下次的offset,把结果返回。如果提供的offset过大，会将请求暂缓，在超时时间内或者ConsumeQueue的数据符合后，再次处理请求。
-具体的处理流程如下：
-上面过程比较清晰，大多是前置检查，主要看&quot;判断GetMessageResult&quot;的过程，如下：
-该过程主要是设置返回结果RemotingCommand的值，包括：</div><div class="post-footer">
-        <a href="/07-broker/">阅读全文</a><div class="post-tags">
+        <a href="/rocketmq_08_mappedfile/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></div></div>
 </article><ul class="pagination"><li class="page-item ">
                     <span class="page-link">
@@ -243,7 +235,7 @@ PullMessageProcessor主要的工作是根据客户端提供的offset，从Consum
                     <span class="page-link" aria-hidden="true">&hellip;</span>
                 </li><li class="page-item ">
                     <span class="page-link">
-                        <a href="/page/7/">7</a>
+                        <a href="/page/8/">8</a>
                     </span>
                 </li></ul></div></div>
             </main><footer class="footer">
@@ -290,5 +282,5 @@ PullMessageProcessor主要的工作是根据客户端提供的offset，从Consum
             </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
                 <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
             </a>
-        </div><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
 </html>

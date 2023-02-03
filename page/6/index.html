@@ -99,7 +99,57 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/01-spring-start/">Spring启动流程</a>
+        <a href="/spring_02_env/">Spring Environment的加载</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍environment，默认环境变量的加载以及初始化内容。
+之前在介绍spring启动过程讲到，第一步进行环境准备时就会初始化一个StandardEnvironment。下图为Environment类图的接口，可以分为4块内容：
+ConversionService（蓝）：类型转换服务
+PropertySource（绿）:键值对数据源
+PropertyResolver（红）:键值对服务，包括类型转换
+Environment（紫）:环境配置数据服务
+1.ConversionService 提供了类型转换服务，能将源目标转换为目标类型，同时提供了管理功能，内部维护了各类型转换映射关系。其实从ConversionService和ConverterRegistry接口就能看出该模块的功能，如下：
+ConversionService接口为主要的对外功能接口，提供查询的能力。
+ConverterRegistry接口为主要的管理接口，提供添加和删除的能力。而ConfigurableConversionService继承自上面二者，则提供了Converter的CRUD功能。结构上也延续了Spring固有的风格，将执行接口作为主要功能对外提供单一的接口，再通过继承的方式，以Configurable开头的子接口，扩展出管理功能，使得责任分离更加立体。
+接下来是GenericConversionService类，该类提供了接口全部实现，下图展示了其主要实现:
+GenericConversionService结构上可以说是一个小型的管理系统，内部维护了一个Converters对象，用于“底层”管理所有的GenericConverter。同时还维护了一个ConcurrentReferenceHashMap用于缓存常用的GenericConverter。
+Converters在存储GenericConverter时还进行了分类，如果GenericConverter有指定能够解析的类别（ConvertiablePair：包括SourceType和TargetType）时，则使用一个LinkedHashMap按Key Value进行存储，在存储时会遍历可解析的类别，将该GenericConverter追加到对应的Value列表末尾，因而可以看到该Map的Value是一个LinkedList。对应没有指定能解析的类别的GenericConverter，则直接放到LinkedHashSet维护的集合中。
+Converters在查询时会遍历源类型和目标类型的组合结果，以查找匹配的目标GenericConverter对象。如下：
+对于getRegisteredConverter方法，会先使用Key从LinkedHashMap中查找是否有匹配的Converter,再遍历相应的Value,查找到能处理的转换器。若Map中无法查到，则遍历LinkedHashSet，以查到到能处理的转换器。
+由上知道，Converters在查找时存在多次遍历列表的过程，在频率过多时效率会比较低下，因而GenericConversionService内部维护了一个ConcurrentReferenceHashMap提供缓存的功能，该Map提供了同ConcurrentHashMap相同的功能，但是能够存储对应的软引用，从而能在内存不足时自动进行内存回收。在查到转换器时，会先试着从缓存中查找，如果获取不到，则会转而从Converters中查找，当从Converters中查找到后便会put到ConcurrentReferenceHashMap缓存中。
+DefaultConversionService是一个单例，继承自GenericConversionService，在初始化后自动添加了默认的转换器，包括Scalar相关的、集合相关的等转换器。
+####2.PropertySource
+PropertySource代表了一个包含键值对的数据源。从类定义上看，有一个表示数据源名字的name字段，还有一个表示具体数据源泛型T的source字段。而数据源的设置则是通过构造方法传入的，同时方法提供了通过键名获取键值的抽象方法getProperty。此外还有其他抽象方法，如containsProperty等。
+EnumerablePropertySource继承自PropertySource，增加了getPropertyNames方法，要求子类返回内存持有的键名列表。同时实现了containsProperty方法，通过判断所给的键名是否存在上述返回的键名列表中从而判断是否包含该键名。
+MapPropertySource继承自EnumerablePropertySource，顾名思义，内部通过Map维护各键值对内容。类似的还有PropertiesPropertySource，内部通过Properties维护各键值对内容。
+SystemEnvironmentPropertySource是MapPropertySource的装饰器，继承自MapPropertySource，为其添加了键名转换功能，以应对环境变量、shell参数的环境。在通过键名获取键值时，会先根据原键名进行查找，查找不到则通过对键进行转换再尝试查找，具体查找过程为：
+通过name查找
+将name中的 . 转换为 _ 查找
+将name中的 – 转换为 _ 查找
+将name中的 . 和 _ 转换为 – 查找
+将name转换为大写，再进行（1） - （4）的过程
+PropertySources的实现如下，扩展了PropertySource接口，将单个数据源的能力扩展到了多个。MutablePropertySources作为PropertySources的实现，内部维护了一个List对象，用以存储给个数据源，并将自身的行为封装为List。
+3.PropertyResolver PropertyResolver定义了一系列接口，以提供了对外根据键名获取相应值的功能，同时提供了类型转换和占位符替换的功能，是ConversionService和PropertySource的结合。ConfigurablePropertyResolver接口继承自PropertyResolver接口，老规则，扩展了设置的功能，主要是设置类型转换器和占位符的相关属性。
+AbstractPropertyResolver提供了除PropertySource功能外的其余实现。使用DefaultConversionService作为默认的类型转换实现，使用 ${ 和 } 作为占位符的前后缀，使用:作为默认值分割符，同时引入PropertyPlaceholderHelper用于占位符的解析和替换。而getProperty的实现则留到了了子类PropertySourcesPropertyResolver中，其引入了PropertySources用以维护多个键值对数据源。获取指定属性值过程如下：
+通过遍历数据源的方式，查到对应的值后，会进行占位符的替换，替换完占位符后会进行类型的转换。类型转换直接用的DefaultConversionService，这个上面已经介绍过了，下面介绍占位符替换。
+占位符替换的功能是在PropertyResolver接口中定义的，分为严格和不严格模式，如下：
+resolvePlaceholders为不严格模式，如果没法替换占位符，则直接忽略，resolveRequiredPlaceholders为严格模式，如果占位符没法替换则会抛出异常。如上面说的，AbstractPropertyResolver实现时都委托给PropertyPlaceholderHelper的replacePlaceholders方法。
+如上，该方法要求传入一个源字符串，同时提供一个PlaceholderResolver数据源，一遍解析出占位符内容后能够从数据源中获取对应的值。为了保持类功能的单一职责，从而增加了一个内部接口PlaceholderResolver。上面提到，在这个模块中的键值对数据源都是由PropertySourcesPropertyResolver维护的，事实上上面方法截图的实现中，getPropertyAsRawString方法也确实是由PropertySourcesPropertyResolver提供实现的，下面看下占位符的解析。
+占位符的解析过程如上流程，主要过程为：
+根据${前缀得到startIndex
+查找跟${前缀配对的}后缀，如${xxx${yy}z}，得到第二个}后缀的下标endIndex
+截取${和}中间的内容得到placeholder
+由于placeholder的内容可能也可能包含占位符，因而要递归处理placeholder，既占位符可以嵌套，内层的结果可以当做外层的Key使用
+placeholder解析完后，将其作为Key从键值对源中获取对应的值propVal
+如果propVal值为空，则判断是否存在:分割符，如果有分割符，则进行分割，并使用前端内容作为Key再次查找值。若该次查找结果不为空，则使用该次结果为propVal的值，否则使用第二段内容作为默认值
+若第（5）/（6）步中propVal结果不为空，则判断从键值对源中获取的值是否也有占位符，若有占位符，则再次进行解析，若没有，则将结果替换回原字段中，更新startIndex，继续下次解析。
+若第（5）/（6）步中propVal结果不空，则会根据设置的解析模式来判断下一步行为，如果未不严格模式，则跳过该次内容，更新startIndex，继续下一次解析，若为严格模式，则抛出异常，流程结束。
+下面以一个例子进行演示，如下
+输出结果为：
+若将解析模式设置为严格模式则会抛出异常
+4.Environment Environment继承自PropertyResolver接口，增加了Profiles功能，即我们平时看到的，多环境特性，能够在不同环境下加载不同的配置。ConfigurableEnvironment继承自Environment，老规矩，又是添加了修改的扩展接口，同时增加了获取系统参数的接口。另外，该接口也继承自ConfigurablePropertyResolver，有了键值对数据源管理、获取和处理的能力，集合Environment接口的功能，能够达到在不同环境下通过加载不同配置源实现环境隔离的效果。</div><div class="post-footer">
+        <a href="/spring_02_env/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/spring_01_start/">Spring启动流程</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">Spring用了挺久的了，但是没系统做过总结，刚好前段时间在做一个Spring封装的项目，趁机回顾了下，便基于Spring framework 4.3.22做了源码分析。
 刚开始接触Spring时的入门例子大致如下：
 设置配置文件路径，初始化ApplicationContext然后获取Bean，处理完后关闭context即可。这一节先来了解Spring的启动过程。
@@ -149,10 +199,10 @@ PS：根据以上的顺序，在这之前实例化的Bean，都不会经过BeanF
 9.onRefresh 模板方法，可用于refresh动作的扩展，默认为空实现。在SpringBoot中主要用于启动内嵌的web服务器。
 10.registerListeners 找出系统中的ApplicationListener对象，注册到时间广播器中。如果有需要提前进行广播的时间，则执行广播.
 11.finishBeanFactoryInitialization 实例化BeanFactory中已经被注册但是未实例化的所有实例(懒加载的不需要实例化)，主要操作是BeanFacotry的preInstantiateSingletons方法。该方法分为两部分：</div><div class="post-footer">
-        <a href="/01-spring-start/">阅读全文</a><div class="post-tags">
+        <a href="/spring_01_start/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/03-module-cluster/">Sentinel Culster流程分析</a>
+        <a href="/sentinel_03_module_cluster/">Sentinel Culster流程分析</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">前面介绍了sentinel-core的流程，提到在进行流控判断时，会判断当前是本地限流，还是集群限流，若是集群模式，则会走另一个分支，这节便对集群模式做分析。
 一.基本概念 namespace：限流作用于，用于区分一个规则作用于什么范围
 flowId：代表全局唯一的规则 ID，Sentinel 集群限流服务端通过此 ID 来区分各个规则，因此务必保持全局唯一。一般 flowId 由统一的管控端进行分配，或写入至 DB 时生成。
@@ -183,10 +233,10 @@ DefaultEmbeddedClusterTokenServer：主要组合了DefaultTokenService和Sentine
 当请求requestToken方法时，请求参数包括:
 ruleId：规则id
 acquireCount：需要获取的token数</div><div class="post-footer">
-        <a href="/03-module-cluster/">阅读全文</a><div class="post-tags">
+        <a href="/sentinel_03_module_cluster/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/sentinel/">Sentinel</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/02-module-core/">Sentinel Core流程分析</a>
+        <a href="/sentinel_02_module_core/">Sentinel Core流程分析</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">上次介绍了Sentinel的基本概念，并在文章的最后介绍了基本的用法。这次将对用法中的主要流程和实现做说明，该部分主要涉及到源码中的sentinel-core模块。
 1.token获取 如上为token获取的主流程，首先会先获取线程的上下文对象Context，然后根据ResourceName查找对应的处理槽链，获得SlotChain后，生成该次调用动作的Entry对象，该对象会关联对应SlotChain。内部会调用SlotChain的entry方法，让entry动作进入每个槽，后续需要调用Entry的exit方法，让exit动作进入SlotChain的每个槽。
 其中第三步生成的Entry对象为CtEntry对象，其模型上是一个链表，会将每次entry动作生成的Entry对象串联起来
@@ -229,10 +279,10 @@ Local方式时，先选择统计数据的节点，再根据设定的限流器获
 选择时，将根据调用方LimitApp来选择对应的节点。若规则作用于origin上且除default和other外,如果是DIRECT策略，返回origin节点；若是作用于default上，如果是DIRECT策略，返回Cluster节点；若是作用于other上，如果是DIRECT策略，返回origin节点。上述其他情况的选择过程都是相同的，即：如果资源名为空，返回空；如果是RELATE策略，使用ClusterNode节点数据；如果是CHIAN策略，且当前节点名同规则名一致，使用当前节点数据，否则返回为空，详情可以看代码。
 获得数据节点后，便可以使用规则中指定的限流器校验节点的数据，以获取token。
 3.7.2 根据限流器获取token 系统提供的限流器包括：</div><div class="post-footer">
-        <a href="/02-module-core/">阅读全文</a><div class="post-tags">
+        <a href="/sentinel_02_module_core/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/sentinel/">Sentinel</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/01-basic/">Sentinel基本概念</a>
+        <a href="/sentinel_01_basic/">Sentinel基本概念</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍。
 这里先介绍下Sentinel中涉及到的基本概念，包括使用上或者实现上。主要是笔者在阅读文档和源码时经常会接触到的对象。
 Resource 资源是整个Sentinel最基本的一个概念。可以是一段代码，一个http请求，一个微服务，总而言之，他是Sentinel需要保证的实体。大部分情况下，我们可以使用方法签名，URL或者是服务名称来作为资源的名称。它在Sentinel中的体现是：ResourceWrapper，他有两个子类：
@@ -266,10 +316,10 @@ OUT：是指我们系统调用其他第三方服务的出口流量。
 入口、出口流量只有在配置了系统规则时才有效。
 设置Type 为 IN 是为了统计整个系统的流量水平，防止系统被打垮，用以自我保护的一种方式。
 设置Type 为 OUT 一方面是为了保护第三方系统，比如我们系统依赖了一个生成订单号的接口，而这个接口是核心服务，如果我们的服务是非核心应用的话需要对他进行限流保护；另一方面也可以保护自己的系统，假设我们的服务是核心应用，而依赖的第三方应用老是超时，那这时可以通过设置依赖的服务的 rt 来进行降级，这样就不至于让第三方服务把我们的系统拖垮。</div><div class="post-footer">
-        <a href="/01-basic/">阅读全文</a><div class="post-tags">
+        <a href="/sentinel_01_basic/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/sentinel/">Sentinel</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/001-java-eof/">Java的EOF标识？</a>
+        <a href="/notes_001_java_eof/">Java的EOF标识？</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">这篇是关于JAVA中EOF标识的讲解，之前在工作上碰到过一个问题，有人问过，不能通过判断EOF来知道文件有没有读取完毕吗？其实，还真不能。
 直接从JDK接口文档入手，以FileInputStream为例，JDK接口文档给出了明确的说明：
 使用FileInputStream的read方法读取文件时，当返回-1就表明读到了文件末尾，如果期间出现IO异常，则会抛出一个IOException。而对于EOF文件结束符，其实是不存在的。在Linux系统之中，EOF根本不是一个字符，而是当系统读取到文件结尾，所返回的一个信号值，例如在C语言中，EOF是一个定义在头文件stdio.h的常量，一般等于-1。对于JAVA的实现，我们可以通过查看FileInputStream的源码查看，如下：
@@ -279,55 +329,8 @@ OUT：是指我们系统调用其他第三方服务的出口流量。
 搓这里io_util.c（http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/5b86f66575b7/src/share/native/java/io/io_util.c） 跟踪IO_Read方法，可以得到如下源码实现：
 源文件分别位于io_util_md.h(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.h)和io_util_md.c(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.c)
 所以，其实read方法最后还是调用了操作系统的read方法,该方法跟具体的操作系统相关，在linux下，有如下的说明 也就是，当使用read方法去读文件时，如果读到了文件末尾，没有字符返回时，则该方法返回0，如果出现异常，则返回-1.然后，JDK在readSingle方法里进行了包装，如果返回0，则在JDK层面返回-1，如果返回-1，则抛出IOException.因而，JAVA中没有EOF这个标识符，而是使用-1来标识文件结束。</div><div class="post-footer">
-        <a href="/001-java-eof/">阅读全文</a><div class="post-tags">
+        <a href="/notes_001_java_eof/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/work/">日常记录</a>,&nbsp;<a href="/tags/java/">Java</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/000-distrubte-protocol/">分布式一致性协议</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">介绍常见的分布式一致性协议
-一．CAP/BASE 1. CAP理论 CAP理论又称之为布鲁尔定理（Brewer’S theorem），认为在设计一个大规模可扩放的网络服务时候不能同时兼容：一致性（consistency）、可用性（Availability）、分区容错（Partition-tolerance）。
-一致性：在分布式系统中的所有数据备份，在同一时刻是否有同样的值。（等同于所有节点访问同一份最新的数据副本）
-可用性：在集群中一部分节点故障后，集群整体是否还能响应客户端的读写请求。
-分区容忍性：以实际效果而言，分区相当于对通信的时限要求。系统如果不能在时限内达成数据一致性，就意味着发生了分区的情况，必须就当前操作在C和A之间做出选择
-CAP理论容易理解，网上也有关于该理论的说明，包括模型的简易证明；弱条件下模型的成立等。
-参考资料：
-http://www.cnblogs.com/mmjx/archive/2011/12/19/2290540.html
-http://nathanmarz.com/blog/how-to-beat-the-cap-theorem.html
-2. BASE理论 BASE是Basically Available（基本可用）、Soft state（软状态）和Eventually consistent（最终一致性）三个短语的简写，BASE是对CAP中一致性和可用性权衡的结果，其来源于对大规模互联网系统分布式实践的结论，是基于CAP定理逐步演化而来的，其核心思想是即使无法做到强一致性（Strong consistency），但每个应用都可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性（Eventual consistency）
-基本可用：分布式系统在出现故障的时候，允许损失部分可用性，即保证核心可用。
-软状态：允许系统存在中间状态，而该中间状态不会影响系统整体可用性
-最终一致性：系统中的所有数据副本经过一定时间后，最终能够达到一致的状态
-二．两阶段提交 两阶段提交(Two-phaseCommit)是指，在计算机网络以及数据库领域内，为了使基于分布式系统架构下的所有节点在进行事务提交时保持一致性而设计的一种算法。
-在分布式系统中，每个节点虽然可以知晓自己的操作时成功或者失败，却无法知道其他节点的操作的成功或失败。当一个事务跨越多个节点时，为了保持事务的ACID特性，需要引入一个作为协调者的组件来统一掌控所有节点(称作参与者)的操作结果并最终指示这些节点是否要把操作结果进行真正的提交。
-如上图示，该协议分为两个阶段：
-请求阶段（commit-request phase，或称表决阶段，voting phase）
-在请求阶段，协调者将通知事务参与者准备提交或取消事务，然后进入表决过程。在表决过程中，参与者将告知协调者自己的决策：同意（事务参与者本地作业执行成功）或取消（本地作业执行故障）。
-提交阶段（commit phase）
-在该阶段，协调者将基于第一个阶段的投票结果进行决策：提交或取消。当且仅当所有的参与者同意提交事务协调者才通知所有的参与者提交事务，否则协调者将通知所有的参与者取消事务。参与者在接收到协调者发来的消息后将执行相应的操作。
-二阶段提交算法的最大缺点就在于它在执行过程中间，节点都处于阻塞态。即节点之间在等待对方的响应消息时，它将什么也做不了。特别是，当一个节点在已经占有了某项资源的情况下，为了等待其他节点的响应消息而陷入阻塞状态时，当第三个节点尝试访问该节点占有的资源时，这个节点也将连带陷入阻塞状态。
-另外，协调者节点指示参与者节点进行提交等操作时，如有参与者节点出现了崩溃等情况而导致协调者始终无法获取所有参与者的响应信息，这时协调者将只能依赖协调者自身的超时机制来生效。但往往超时机制生效时，协调者都会指示参与者进行回滚操作。这样的策略显得比较保守。
-参考资料
-https://en.wikipedia.org/wiki/Two-phase_commit_protocol 三．三阶段提交 与两阶段提交不同的是，三阶段提交是“非阻塞”协议。三阶段提交在两阶段提交的第一阶段与第二阶段之间插入了一个准备阶段，同时对于协调者和参与者都设置了超时机制，使得原先在两阶段提交中，参与者在投票之后，由于协调者发生崩溃或错误，而导致参与者处于无法知晓是否提交或者中止的“不确定状态”所产生的可能相当长的延时的问题得以解决。
-如上图示，该协议分为三个阶段：
-canCommit 协调者向参与者发送commit请求，参与者如果可以提交就返回Yes响应，否则返回No响应。
-preCommit
-协调者根据参与者的反应情况来决定是否可以进行事务的PreCommit操作。根据响应情况，有以下两种可能.
-假如协调者从所有的参与者获得的反馈都是Yes响应，那么就会执行事务的预执行。 发送预提交请求,Coordinator向Cohort发送PreCommit请求，并进入Prepared阶段。
-事务预提交,Cohort接收到PreCommit请求后，会执行事务操作，并将undo和redo信息记录到事务日志中。
-响应反馈,如果Cohort成功的执行了事务操作，则返回ACK响应，同时开始等待最终指令。
-假如有任何一个参与者向协调者发送了No响应，或者等待超时之后，协调者都没有接到参与者的响应，那么就执行事务的中断。 发送中断请求,Coordinator向所有Cohort发送abort请求。
-中断事务,Cohort收到来自Coordinator的abort请求之后（或超时之后，仍未收到Cohort的请求），执行事务的中断。
-doCommit
-该阶段进行真正的事务提交，也可以分为以下两种情况:
-执行提交 A.发送提交请求。Coordinator接收到Cohort发送的ACK响应，那么他将从预提交状态进入到提交状态。并向所有Cohort发送doCommit请求。
-B.事务提交。Cohort接收到doCommit请求之后，执行正式的事务提交。并在完成事务提交之后释放所有事务资源。
-C.响应反馈。事务提交完之后，向Coordinator发送ACK响应。
-D.完成事务。Coordinator接收到所有Cohort的ACK响应之后，完成事务。
-中断事务 协调者没有接收到参与者发送的ACK响应（可能是接受者发送的不是ACK响应，也可能响应超时），那么就会执行中断事务。 参考资料：
-https://en.wikipedia.org/wiki/Three-phase_commit_protocol
-https://my.oschina.net/wangzhenchao/blog/736909
-四. Paxos 1.背景 在常见的分布式系统中，总会发生诸如机器宕机或网络异常等情况。Paxos算法需要解决的问题就是如何在一个可能发生上述异常的分布式系统中，快速且正确地在集群内部对某个数据的值达成一致，并且保证不论发生以上任何异常，都不会破坏整个系统的一致性。这里某个数据的值并不只是狭义上的某个数，它可以是一条日志，也可以是一条命令（command）等，根据应用场景不同，某个数据的值有不同的含义。</div><div class="post-footer">
-        <a href="/000-distrubte-protocol/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/distrubute/">分布式</a></div></div>
 </article><ul class="pagination"><li class="page-item ">
                     <span class="page-link">
                         <a href="/">1</a>
@@ -349,6 +352,10 @@ https://my.oschina.net/wangzhenchao/blog/736909
                 </li><li class="page-item ">
                     <span class="page-link">
                         <a href="/page/7/">7</a>
+                    </span>
+                </li><li class="page-item ">
+                    <span class="page-link">
+                        <a href="/page/8/">8</a>
                     </span>
                 </li></ul></div></div>
             </main><footer class="footer">
@@ -395,5 +402,5 @@ https://my.oschina.net/wangzhenchao/blog/736909
             </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
                 <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
             </a>
-        </div><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
 </html>

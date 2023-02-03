@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>RocketMQ Producer发送消息流程 - 程序猿二腊</title><meta name="Description" content="这节介绍Producer发送消息的流程。"><meta property="og:title" content="RocketMQ Producer发送消息流程" />
+<meta property="og:description" content="这节介绍Producer发送消息的流程。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/rocketmq_02_producer/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-02-05T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-02-05T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="RocketMQ Producer发送消息流程"/>
+<meta name="twitter:description" content="这节介绍Producer发送消息的流程。"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/rocketmq_02_producer/" /><link rel="prev" href="https://atuowgo.github.io/rocketmq_01_client/" /><link rel="next" href="https://atuowgo.github.io/rocketmq_03_rebalance/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "RocketMQ Producer发送消息流程",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/rocketmq_02_producer\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "rocketmq","wordcount":  348 ,
+        "url": "https:\/\/atuowgo.github.io\/rocketmq_02_producer\/","datePublished": "2020-02-05T00:00:00+00:00","dateModified": "2020-02-05T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍Producer发送消息的流程。"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">RocketMQ Producer发送消息流程</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2020-02-05">2020-02-05</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 348 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents"></nav></div>
+            </div><div class="content" id="content"><p> 这节介绍Producer发送消息的流程。</p>
+<p> 接上一节开头的Demo，发送消息的写法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public class SyncProducer {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public static void main (String[] args) throws Exception {
+</span></span><span class="line"><span class="cl">        // 实例化消息生产者Producer
+</span></span><span class="line"><span class="cl">        DefaultMQProducer producer = new DefaultMQProducer (&#34;GroupTest&#34;);
+</span></span><span class="line"><span class="cl">        // 设置NameServer的地址
+</span></span><span class="line"><span class="cl">        producer.setNamesrvAddr (&#34;localhost:9876&#34;);
+</span></span><span class="line"><span class="cl">        // 启动Producer实例
+</span></span><span class="line"><span class="cl">        producer.start ();
+</span></span><span class="line"><span class="cl">        for (int i = 0; i &lt; 100; i++) {
+</span></span><span class="line"><span class="cl">            // 创建消息，并指定Topic，Tag和消息体
+</span></span><span class="line"><span class="cl">            Message msg = new Message (&#34;TopicTest&#34; /* Topic */,
+</span></span><span class="line"><span class="cl">                &#34;TagA&#34; /* Tag */,
+</span></span><span class="line"><span class="cl">                (&#34;Hello RocketMQ &#34; + i).getBytes (RemotingHelper.DEFAULT_CHARSET) /* Message body */
+</span></span><span class="line"><span class="cl">            );
+</span></span><span class="line"><span class="cl">            // 发送消息到一个Broker
+</span></span><span class="line"><span class="cl">            SendResult sendResult = producer.send (msg);
+</span></span><span class="line"><span class="cl">            // 通过sendResult返回消息是否成功送达
+</span></span><span class="line"><span class="cl">            System.out.printf (&#34;%s%n&#34;, sendResult);
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">        // 如果不再发送消息，关闭Producer实例。
+</span></span><span class="line"><span class="cl">        producer.shutdown ();
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>发送消息的方法为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">SendResult sendResult = producer.send (msg);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其send方法内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">public SendResult send(
+</span></span><span class="line"><span class="cl">    Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+</span></span><span class="line"><span class="cl">    return this.defaultMQProducerImpl.send(msg);
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>主要调用了DefaulMQProducerImpl，委托给了DefaultMQProducerImpl的send方法。而DefaultMQProducerImpl又调用了自身的sendDefaultImpl，该方法完成了发送的主要动作。sendDefaultImpl的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private SendResult sendDefaultImpl(
+</span></span><span class="line"><span class="cl">        Message msg,
+</span></span><span class="line"><span class="cl">        final CommunicationMode communicationMode,
+</span></span><span class="line"><span class="cl">        final SendCallback sendCallback,
+</span></span><span class="line"><span class="cl">        final long timeout
+</span></span><span class="line"><span class="cl">    ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>参数包括：</p>
+<ul>
+<li>Message:消息内容</li>
+<li>CommunicationMode:通讯模式，包括同步、异步、单步</li>
+<li>SendCallback:异步模式下的回调接口，包括成功和异常通知</li>
+<li>timeout:超时时间</li>
+</ul>
+<p>如下为SendDefaultImpl的主要执行过程：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_02_producer/1.png"
+        data-srcset="/rocketmq_02_producer/1.png, /rocketmq_02_producer/1.png 1.5x, /rocketmq_02_producer/1.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_02_producer/1.png"
+        title="/rocketmq_02_producer/1.png" width="690" height="895" /></p>
+<p>(1) 确保客户端已经初始化成功</p>
+<p> 主要确保DefaultMQProducerImpl的状态为RUNNING</p>
+<p>(2) 查询topic的发布信息</p>
+<p> 从内部维护的ConcurrentMap&lt;String/* topic */, TopicPublishInfo&gt;中获取topic对应的发布信息，上一节介绍过，该信息会通过后台线程定时更新，如果当前没有topic对应的信息，则会立即调用updateTopicRouteInfoFromNameServer方法实时同步。</p>
+<p> TopicPlushInfo用于表示Topic的路由信息，第一节介绍RocketMQ时说过，Topic的数据分布在多个Broker上，同时在一个broker上还会分为若干个Queue以增加并行度。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_02_producer/2.png"
+        data-srcset="/rocketmq_02_producer/2.png, /rocketmq_02_producer/2.png 1.5x, /rocketmq_02_producer/2.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_02_producer/2.png"
+        title="/rocketmq_02_producer/2.png" width="1068" height="242" /></p>
+<p>上图的关系图中，TopicPlushInfo持有一个MessageQueue列表和一个TopicRouteData。MessageQueue表示了各个Queue的映射信息，即上面提到的各个Broker上的Queue。而TopicRouteData则用于描述Broker的位置信息和Queue的配置信息。</p>
+<p>(3) 判断是否有路由信息</p>
+<p> 如果上一步没有查询到topic对应的发布信息，则抛出异常结束，否则转到(4)</p>
+<p>(4) 计算重试次数</p>
+<p> 根据通讯模式计算重试次数</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>即如果是同步模式，则在失败时会再重试配置的次数(默认为2次)，其他情况不进行重试。</p>
+<p>(5) 判断当前是否需要重试</p>
+<p> 即判断当前执行次数是否已经超过重试次数，如果已经超过，则说明重试次数用完，没法继续尝试，判断当前是否有结果，如果有结果则返回，否则抛出异常结束。如果重试次数没用完，则转到(6)</p>
+<p>(6) 选取一个延迟较短的broker</p>
+<p> 选取一个延迟较短的broker,该功能由MQFaultStrategy提供。这里先介绍MQFaultStrategy，其提供了可选的故障延迟机制，对于请求响应较慢的broker，可以在一段时间内将其状态置为不可用。如下图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_02_producer/3.png"
+        data-srcset="/rocketmq_02_producer/3.png, /rocketmq_02_producer/3.png 1.5x, /rocketmq_02_producer/3.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_02_producer/3.png"
+        title="/rocketmq_02_producer/3.png" width="867" height="547" /></p>
+<p>可以通过MQFaultStrategy的sendLatencyFaultEnable属性控制是否打开故障延迟机制开关，默认为false不打开。在打开该开关时，则每次选取topic下对应的queue时，会基于之前执行的耗时，在有存在符合条件的broker的前提下，优选选取一个延迟较短的broker，否则再考虑随机选取。</p>
+<p> LatencyFaultTolerance用于维护有“故障”broker的“可用”状态。对于每一个被定义为“故障”的broker，LatencyFaultTolerance内部都会有一个对应的FaultItem来表示，其主要内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">class FaultItem implements Comparable&lt;FaultItem&gt; {
+</span></span><span class="line"><span class="cl">    private final String name;//brokername
+</span></span><span class="line"><span class="cl">    private volatile long currentLatency;//最近发生延迟的时间点
+</span></span><span class="line"><span class="cl">    private volatile long startTimestamp;//下一次开始可用的时间点
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public FaultItem(final String name) {
+</span></span><span class="line"><span class="cl">        this.name = name;
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    public boolean isAvailable() {//判断当前时间是否已经过了设置的开始可用时间点
+</span></span><span class="line"><span class="cl">        return (System.currentTimeMillis() - startTimestamp) &gt;= 0;
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>即当一个broker发送故障时，会记录其最近发生延迟的时间点和下一次开始可用的时间点，而一个broker“可用”的意思是指：该broker不存在LatencyFaultTolerance维护的faultItemTable属性中，或者当前时间已经大于该broker下一次开始可用的时间点。</p>
+<p> LatencyFaultTolerance通过updateFaultItem方法更新“故障”broker的可用状态，该方法会直接更新faultItemTable中broker对应FaultItem的最近延迟时间和最近开始可用时间点。该方法需要给定指定broker的不可用时间。而判断一个broker是否有故障以及不可用时间的方法，则在MQFaultStrategy的computNotAvaliableDuration方法中,如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private long computeNotAvailableDuration(final long currentLatency) {
+</span></span><span class="line"><span class="cl">    for (int i = latencyMax.length - 1; i &gt;= 0; i--) {
+</span></span><span class="line"><span class="cl">        if (currentLatency &gt;= latencyMax[i])
+</span></span><span class="line"><span class="cl">            return this.notAvailableDuration[i];
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    return 0;
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中延迟级别数组latencyMax和不可用时长数组notAvailableDuration的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">private long[] latencyMax = {50L, 100L, 550L, 1000L, 2000L, 3000L, 15000L};
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">private long[] notAvailableDuration = {0L, 0L, 30000L, 60000L, 120000L, 180000L, 600000L};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>即如果当前请求的“延迟时间”超过latencyMax的某个级别，则认为该broker已经是“故障”状态，会从notAvailableDuration中选择该broke对应的不可用时间。从这两组数组的定义也可以看出来，当延迟时间小于50ms则认为该broker状态正常，不用进行故障延迟处理。而“延迟时间”则是指：调用remotingclient发送netty请求这一步的耗时，会在后面进行说明。</p>
+<p> 现在回过头来看当前步骤的动作，MQFaultStrategy的selectOneMessageQueue方法用于选取指定topic下的queue，其内容如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_02_producer/4.png"
+        data-srcset="/rocketmq_02_producer/4.png, /rocketmq_02_producer/4.png 1.5x, /rocketmq_02_producer/4.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_02_producer/4.png"
+        title="/rocketmq_02_producer/4.png" width="1948" height="1128" /></p>
+<p>上面selectOneMessageQueue方法已经添加了注释，在开启了故障延迟机制时，该方法首先从topic下可选的queue列表中轮训选择一个broker“可用”的，并且brokerName=lastBrokerName(lastBrokerName表示上次使用过的broker，可以为空，表示第一次选择)上的queue。如果没有符合要求的broker，则会选择一个“相对好”的broker上的queue，最后才会从该topic下可选的列表中随机选择一个queue。如果没有开启故障延迟机制，则会直接从该topic下最近使用过的broker上的可选queue列表中随机选择一个queue。</p>
+<p>(7)调用remotingclient发送netty请求</p>
+<p> 使用MQClientAPIImpl发送消息(内部使用RemotingClient)，发送模式包括单步、异步、同步。步骤为：</p>
+<ol>
+<li>从缓存中获取broker的ip和端口，如果缓存中没有该broker的信息则从nameserver同步一次到缓存，再从缓存中获取信息</li>
+</ol>
+<ul>
+<li>包装一个发送的上下文对象SendMessageContext</li>
+<li>如果不是批量消息，则设置唯一的ID，ID值为:应用启动到当前的时间差+当前消息计数</li>
+<li>尝试压缩消息体，目前，批量消息不压缩；单条消息，超过配置的长度会进行压缩，使用Deflater算法。因为上层会在该步骤失败时进行重试，因而改不在最后会使用finally将压缩后的消息体重新设置为未压缩前的内容</li>
+<li>如果存在CheckForbiddenHook，则执行</li>
+<li>如果存在sendHook，则执行发送前回调动作executeSendMessageHookBefore</li>
+<li>包装请求头SendMessageRequestHeader</li>
+<li>使用MQClientAPIImpl的sendMessage方法发送消息，得到SendResult结果</li>
+<li>如果存在sendHook，则执行发送后回调动作executeSendMessageHookAfter，当抛出异常也会执行发送后回调动作executeSendMessageHookAfter</li>
+<li>发送完后将消息体设置回原值(还原Message被压缩过的body值),为重试做准备</li>
+<li>返回SendResult</li>
+</ul>
+<p>(8) 更新broker的故障状态</p>
+<p> (7)调用remotingclient执行完请求后，可以得到该步的耗时，再根据(6)指出的，如果打开了故障延迟开关，会根据该耗时来确定该broker是否有故障，然后让其“不可用”一段时间，具体可看(6)的内容。</p>
+<p>(9) 判断结果是否有有效</p>
+<p> 判断该次请求是否有效，有效包括：执行过程无异常，(7)正确返回结果，如果无效，则会执行(8)更新broker的故障状态，然后跳到(5)进行重试</p>
+<p> 以上就是Producer发送消息的主要流程，其中涉及到很多缓存数据很多都是上一节客户端启动过程中讲过的后台任务同步的.下面附上该部分当时源码阅读过程做的笔记简图，该图描述了Producer发送消息的大致过程：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_02_producer/6.png"
+        data-srcset="/rocketmq_02_producer/6.png, /rocketmq_02_producer/6.png 1.5x, /rocketmq_02_producer/6.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_02_producer/6.png"
+        title="/rocketmq_02_producer/6.png" width="957" height="439" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-02-05</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/rocketmq_02_producer/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/rocketmq_02_producer/" data-title="RocketMQ Producer发送消息流程" data-hashtags="rocketmq"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/rocketmq_02_producer/" data-hashtag="rocketmq"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/rocketmq_02_producer/" data-title="RocketMQ Producer发送消息流程"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/rocketmq_01_client/" class="prev" rel="prev" title="RocketMQ客户端加载流程"><i class="fas fa-angle-left fa-fw"></i>RocketMQ客户端加载流程</a>
+            <a href="/rocketmq_03_rebalance/" class="next" rel="next" title="RocketMQ RocketMQ Rebalance流程分析">RocketMQ RocketMQ Rebalance流程分析<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

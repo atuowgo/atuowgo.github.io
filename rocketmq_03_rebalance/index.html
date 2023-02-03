@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>RocketMQ RocketMQ Rebalance流程分析 - 程序猿二腊</title><meta name="Description" content="这节介绍Rebalance流程"><meta property="og:title" content="RocketMQ RocketMQ Rebalance流程分析" />
+<meta property="og:description" content="这节介绍Rebalance流程" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/rocketmq_03_rebalance/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-02-22T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-02-22T00:00:00+00:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="RocketMQ RocketMQ Rebalance流程分析"/>
+<meta name="twitter:description" content="这节介绍Rebalance流程"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/rocketmq_03_rebalance/" /><link rel="prev" href="https://atuowgo.github.io/rocketmq_02_producer/" /><link rel="next" href="https://atuowgo.github.io/rocketmq_04_consumer/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "RocketMQ RocketMQ Rebalance流程分析",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/rocketmq_03_rebalance\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "rocketmq","wordcount":  235 ,
+        "url": "https:\/\/atuowgo.github.io\/rocketmq_03_rebalance\/","datePublished": "2020-02-22T00:00:00+00:00","dateModified": "2020-02-22T00:00:00+00:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "这节介绍Rebalance流程"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">RocketMQ RocketMQ Rebalance流程分析</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2020-02-22">2020-02-22</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 235 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li>
+          <ul>
+            <li><a href="#1rebalanceservice">1.RebalanceService</a></li>
+            <li><a href="#2rebalanceimpl">2.RebalanceImpl</a>
+              <ul>
+                <li><a href="#21-从broker查找该topic对应的客户端id列表">2.1. 从broker查找该topic对应的客户端id列表</a></li>
+                <li><a href="#22-分配客户端实例所属queue集合">2.2. 分配客户端实例所属Queue集合</a></li>
+                <li><a href="#23-updateprocessqueuetableinrebalance">2.3. updateProcessQueueTableInRebalance</a></li>
+                <li><a href="#24-messagequeuechanged">2.4. messageQueueChanged</a></li>
+                <li><a href="#25-truncatemessagequeuenotmytopic">2.5. truncateMessageQueueNotMyTopic</a></li>
+              </ul>
+            </li>
+            <li><a href="#3-broker端通知rebalance">3. Broker端通知Rebalance</a></li>
+            <li><a href="#4-rebalance的潜在危害">4. Rebalance的潜在危害</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p> 这节介绍Rebalance流程。在介绍Consumer消费消息流程前，先介绍Rebalance得流程，该过程涉及到Consumer的启动。</p>
+<p> 之前介绍过，Topic是一个逻辑概念，Topic下可以划分多个Queue以增加Consumer消费的并行度。在一个Consumer Group内，Queue和Consumer之间的对应关系是一对多的关系：一个Queue最多只能分配给一个Consumer，一个Cosumer可以分配得到多个Queue，如下图</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/0.png"
+        data-srcset="/rocketmq_03_rebalance/0.png, /rocketmq_03_rebalance/0.png 1.5x, /rocketmq_03_rebalance/0.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/0.png"
+        title="/rocketmq_03_rebalance/0.png" width="1038" height="778" /></p>
+<p>而Rebalance是一种协议，规定了一个 Consumer Group 下的所有 consumer如何达成一致来分配Queue。当Consumer订阅的Topic发生变化，或者Consumer Group内的Consumer实例发送变化时便会触发Rebalance以重新分配每个实例对应的Queue。</p>
+<h4 id="1rebalanceservice">1.RebalanceService</h4>
+<p> 前面介绍客户端启动流程时提到，MQClientInstance在start方法中会启动一系列后台任务，其中就包括Rebalance任务，主要调用了RebalanceService的start方法。RebalanceService继承自ServiceThread，start方法会启动一个后台线程，确保每隔一段时间（默认20秒）会调用一次MQClientInstance的doRebalance方法。如下图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/1.png"
+        data-srcset="/rocketmq_03_rebalance/1.png, /rocketmq_03_rebalance/1.png 1.5x, /rocketmq_03_rebalance/1.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/1.png"
+        title="/rocketmq_03_rebalance/1.png" width="1307" height="456" /></p>
+<p>MQClientInstance.doRebalance会调用MQConsumerInner.doRebalance。MQConsumerInner是DefaultMQPullConsumerImpl和DefaultMQPushConsumerImp的父接口，如下，即MQClientInstance将doRebalance方法交给了Consumer实例处理。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/2.png"
+        data-srcset="/rocketmq_03_rebalance/2.png, /rocketmq_03_rebalance/2.png 1.5x, /rocketmq_03_rebalance/2.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/2.png"
+        title="/rocketmq_03_rebalance/2.png" width="1356" height="334" /></p>
+<p>接着Consumer实例会调用内部RebalnaceImpl的doRebalance方法完成真正的，动作。</p>
+<p> 这里提一点，RebalanceService被MQClientInstane持有，一个MQClientInstance只有一个Rebalance实例，之前在讲客户端启动时提到，MQClientInstance由MQClientManager管理，跟本机ip,进程pid有关。RebalanceImpl跟Consumer实例相关，一个Consumer实例对应一个RebalanceImpl对象。</p>
+<h4 id="2rebalanceimpl">2.RebalanceImpl</h4>
+<p> 先介绍该类的基本情况</p>
+<p>1.属性</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">protected final ConcurrentMapConcurrentMap&lt;/*Queue*/MessageQueue, /*Queue消费进度镜像*/ProcessQueue&gt; processQueueTable = new ConcurrentHashMap&lt;MessageQueue, ProcessQueue&gt;(64);
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">//DefaultMQXxxxConsumerImpl updateTopicSubscribeInfo时添加
+</span></span><span class="line"><span class="cl">protected final ConcurrentMap&lt;String/* topic */, Set&lt;MessageQueue&gt;&gt; topicSubscribeInfoTable = new ConcurrentHashMap&lt;String, Set&lt;MessageQueue&gt;&gt;();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">//DefaultMQXxxxConsumerImpl subscript时会添加
+</span></span><span class="line"><span class="cl">protected final ConcurrentMap&lt;String /* topic */, /*消息的过滤条件*/SubscriptionData&gt; subscriptionInner = new ConcurrentHashMap&lt;String, SubscriptionData&gt;();
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">protected String consumerGroup;//Consumer实例所在的ConsumerGroup
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">protected MessageModel messageModel;//消息消费模式
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">protected AllocateMessageQueueStrategy allocateMessageQueueStrategy;//Queue分配策略，默认为AllocateMessageQueueAveragely
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>2.继承关系</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/3.png"
+        data-srcset="/rocketmq_03_rebalance/3.png, /rocketmq_03_rebalance/3.png 1.5x, /rocketmq_03_rebalance/3.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/3.png"
+        title="/rocketmq_03_rebalance/3.png" width="737" height="376" /></p>
+<p> 接第一Part的内容，会调用该类的doRebalce方法，主要逻辑如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/4.png"
+        data-srcset="/rocketmq_03_rebalance/4.png, /rocketmq_03_rebalance/4.png 1.5x, /rocketmq_03_rebalance/4.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/4.png"
+        title="/rocketmq_03_rebalance/4.png" width="801" height="1190" /></p>
+<p>(1) 轮训该实例订阅的所有topic，通过遍历subscriptionInner的值来获取topic信息，该属性内容会在客户端实例调用subscript时增加</p>
+<p>(2) 根据topic调用rebalanceByTopic执行rebalance</p>
+<p>(3)如果是广播模式，则从topicSubscribeInfoTable获取该topic下的所有Queue，用于后续更新。即广播模式，每个客户端都能收到topic下的所有q,为客户端分配的Queue集合为全量的集合。</p>
+<p>(4)如果是集群模式，会获取topic下的所有Queue；从broker获取该topic下所有客户端id列表；排序后调用AllocateMessageAueueStrateg获得ConsumerGroup下该客户端应该分配到的Queue集合。即集群模式，每个客户端分到的q列表由AllocateMessageQueueStrategy来分配。</p>
+<p>(5) 获取该客户端所属的Queue集合后，调用updateProcessQueueTableInRebalance更新。</p>
+<p>(6) 执行完后，如果有发生变化，则调用messageQueueChanged交给子类具体处理。</p>
+<p>(7) 调用truncateMessageQueueNotMyTopic移除缓存中不是该实例处理的Queue。</p>
+<h5 id="21-从broker查找该topic对应的客户端id列表">2.1. 从broker查找该topic对应的客户端id列表</h5>
+<p> 从MQClientInstance的缓存中获取该topic对应的broker地址，然后调用Netty直接访问broker获取结果</p>
+<h5 id="22-分配客户端实例所属queue集合">2.2. 分配客户端实例所属Queue集合</h5>
+<p> 前面说过，广播模式每个客户端实例分配到全量的Queue集合，这里主要介绍集群模式下AllocateMessageQueueStrategy的处理情况。默认为平均分配，实现类为AllocateMessageQueueAveragely。</p>
+<p> 先看AllocateMessageQueueStrategy的定义</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">List&lt;MessageQueue&gt; allocate(
+</span></span><span class="line"><span class="cl">        final String consumerGroup,//当前Consumer实例所属ConsumerGroup
+</span></span><span class="line"><span class="cl">        final String currentCID,//当前客户端应用ID
+</span></span><span class="line"><span class="cl">        final List&lt;MessageQueue&gt; mqAll,//待分配的Queue列表
+</span></span><span class="line"><span class="cl">        final List&lt;String&gt; cidAll //该topic，该ConsumerGroup下的所有客户端应用ID列表
+</span></span><span class="line"><span class="cl">    );
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该方法会选出currentCID所属的Queue列表。AllocateMessageQueueAveragely则是按照currentCID所属的位置进行平均分配，过程如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/5.png"
+        data-srcset="/rocketmq_03_rebalance/5.png, /rocketmq_03_rebalance/5.png 1.5x, /rocketmq_03_rebalance/5.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/5.png"
+        title="/rocketmq_03_rebalance/5.png" width="1430" height="890" /></p>
+<p>上面在源码里加上了对应的注释。前面提到传进来的mqAll和cidAll都是排过序的，该过程就是按照客户端序号，从所有Queue列表中平均分配自己所属的Queue，涉及到的各种可能如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/6.png"
+        data-srcset="/rocketmq_03_rebalance/6.png, /rocketmq_03_rebalance/6.png 1.5x, /rocketmq_03_rebalance/6.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/6.png"
+        title="/rocketmq_03_rebalance/6.png" width="1834" height="798" /></p>
+<p>大概过程就是：能整除，则平均分；不能整除，则cid在mod数内的则多分1个Queue，在mod数外的则少分一个。</p>
+<p> 前面说过，该分配策略执行时，会将topic下的Queue列表和客户端进行排序，在分配时便会导致排在前面的客户端能分到Queue，且分的Queue会多点。考虑一种情况，如果一个ConsumerGroup订阅了2个topic，Topic_X和Topic_Y,每个topic都有2个Queue，同时该ConsumerGroup下有4个客户端实例，因为Rebalance是根据topic来的，所以不会出现4个Queue被平均消费的情况，结果如下如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/7.png"
+        data-srcset="/rocketmq_03_rebalance/7.png, /rocketmq_03_rebalance/7.png 1.5x, /rocketmq_03_rebalance/7.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/7.png"
+        title="/rocketmq_03_rebalance/7.png" width="640" height="346" /></p>
+<p>因而在初始化时，最好保证ConsumerGroup下的客户端数量&lt;=Topic下的Queue数量。</p>
+<h5 id="23-updateprocessqueuetableinrebalance">2.3. updateProcessQueueTableInRebalance</h5>
+<p> 该方法的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">    /**
+</span></span><span class="line"><span class="cl">     * @param topic topic
+</span></span><span class="line"><span class="cl">     * @param mqSet Rebalance后该客户端实例，该topic下的所有现有分配到的q集合
+</span></span><span class="line"><span class="cl">     * @param isOrder 是否为顺序消费
+</span></span><span class="line"><span class="cl">     * @return
+</span></span><span class="line"><span class="cl">     */
+</span></span><span class="line"><span class="cl">    private boolean updateProcessQueueTableInRebalance(final String topic, final Set&lt;MessageQueue&gt; mqSet,final boolean isOrder) {}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>前面提到，RebalanceImpl只有一个processQueueTable属性，该属性维护了当前客户端真在处理的所有Queue，以及Queue对应的消费进度，updateProcessQueueTableInRebalance则会更新该属性。</p>
+<p>1 找出rebalance后不属于当前客户端实例的Queue或者已经过期的Queue,标记为drop，并由子类判断是否是否需要移除，如果需要移除，则该客户端实例所属的Queue便有改变。</p>
+<p>2 判断Rebalance后分配的Queue是否有新增的Queue，如果有则移除缓存中该Queue的消费偏移量（保底操作），计算该Queue的消费偏移量，然后构造一个PullRequest对象存到列表里，标记Rebalane后处理的Queue有改变</p>
+<p>3 分发rebalance后新增的Queue列表，即PullRequest列表，由具体的子类处理。pull模式不处理，push模式，则会放到PullMessageService中，循环处理，具体在RebalancePushImpl的dispatchPullRequest方法中</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">@Override
+</span></span><span class="line"><span class="cl">    public void dispatchPullRequest(List&lt;PullRequest&gt; pullRequestList) {
+</span></span><span class="line"><span class="cl">        for (PullRequest pullRequest : pullRequestList) {
+</span></span><span class="line"><span class="cl">            this.defaultMQPushConsumerImpl.executePullRequestImmediately(pullRequest);
+</span></span><span class="line"><span class="cl">            log.info(&#34;doRebalance, {}, add a new pull request {}&#34;, consumerGroup, pullRequest);
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">    }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这一步中，会调回DefaultMQPushConsumerImpl的executePullRequestImmediately方法，往里面加PullRequest对象，以触发整个Push模式的执行，具体过程会在下节介绍&lt;1&gt;。</p>
+<h5 id="24-messagequeuechanged">2.4. messageQueueChanged</h5>
+<p> Rebalance后如果处理的Queue列表发生了变更，则执行相应的动作。对于Push模式，会更新客户端订阅topic的版本号（以当前时间时间戳）并通知broker；对于Pull模式，会回调DefaultMQPullConsumerImpl的MessageQueueListener有Queue发生改变。在MQPullConsumerScheduleService中会用到，用于Pull模式定时消费消息&lt;2&gt;。</p>
+<h5 id="25-truncatemessagequeuenotmytopic">2.5. truncateMessageQueueNotMyTopic</h5>
+<p> 移除Queue中topic不是该实例订阅的对象。</p>
+<p> 上面介绍的&lt;1&gt;,&lt;2&gt;点可以用于触发Consumer自动/定时拉取消息，具体会在下节客户端消费过程时介绍。</p>
+<h4 id="3-broker端通知rebalance">3. Broker端通知Rebalance</h4>
+<p> 上面提到的Rebalance是客户端自己定时(默认20秒)执行的，还存在一种Broker端主动通知的情况。</p>
+<p> Broker有一个ConsumerManager，当客户端实例发生变更时(上下线)会通知到各个客户端，客户端收到通知后会调用MQClientInstance的rebalanceImmediately直接执行rebalance。该方法会唤醒ServiceThread，使的RebalanceService不再等待，直接执行。</p>
+<p> RocketMQ与Kafka Rebalance机制类似，二者Rebalance分配都是在客户端进行，不同的是：</p>
+<ol>
+<li>Kafka：会在消费者组的多个消费者实例中，选出一个作为Group Leader，由这个Group Leader来进行分区分配，分配结果通过Cordinator(特殊角色的broker)同步给其他消费者。相当于Kafka的分区分配只有一个大脑，就是Group Leader。</li>
+<li>RocketMQ：每个消费者，自己负责给自己分配队列，相当于每个消费者都是一个大脑。</li>
+</ol>
+<h4 id="4-rebalance的潜在危害">4. Rebalance的潜在危害</h4>
+<ol>
+<li>消费暂停：考虑在只有Consumer 1的情况下，其负责消费所有5个队列；在新增Consumer 2，触发Rebalance时，需要分配2个队列给其消费。那么Consumer 1就需要停止这2个队列的消费，等到这两个队列分配给Consumer 2后，这两个队列才能继续被消费。</li>
+</ol>
+<ul>
+<li>重复消费：Consumer 2 在消费分配给自己的2个队列时，必须接着从Consumer 1之前已经消费到的offset继续开始消费。然而默认情况下，offset是异步提交的，如consumer 1当前消费到offset为10，但是异步提交给broker的offset为8；那么如果consumer 2从8的offset开始消费，那么就会有2条消息重复。也就是说，Consumer 2 并不会等待Consumer1提交完offset后，再进行Rebalance，因此提交间隔越长，可能造成的重复消费就越多。</li>
+<li>消费突刺：由于rebalance可能导致重复消费，如果需要重复消费的消息过多；或者因为rebalance暂停时间过长，导致积压了部分消息。那么都有可能导致在rebalance结束之后瞬间可能需要消费很多消息。</li>
+</ul>
+<p>附上该部分当时源码阅读过程做的笔记简图：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/rocketmq_03_rebalance/8.png"
+        data-srcset="/rocketmq_03_rebalance/8.png, /rocketmq_03_rebalance/8.png 1.5x, /rocketmq_03_rebalance/8.png 2x"
+        data-sizes="auto"
+        alt="/rocketmq_03_rebalance/8.png"
+        title="/rocketmq_03_rebalance/8.png" width="1140" height="451" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020-02-22</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/rocketmq_03_rebalance/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/rocketmq_03_rebalance/" data-title="RocketMQ RocketMQ Rebalance流程分析" data-hashtags="rocketmq"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/rocketmq_03_rebalance/" data-hashtag="rocketmq"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/rocketmq_03_rebalance/" data-title="RocketMQ RocketMQ Rebalance流程分析"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/rocketmq_02_producer/" class="prev" rel="prev" title="RocketMQ Producer发送消息流程"><i class="fas fa-angle-left fa-fw"></i>RocketMQ Producer发送消息流程</a>
+            <a href="/rocketmq_04_consumer/" class="next" rel="next" title="RocketMQ Consumer接收消息流程">RocketMQ Consumer接收消息流程<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

@@ -5,10 +5,10 @@
         <description>源码系列 - 分类 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/categories/srccode/" rel="self" type="application/rss+xml" /><item>
     <title>Dubbo Provider启动都做了什么</title>
-    <link>https://atuowgo.github.io/03-provider/</link>
+    <link>https://atuowgo.github.io/dubbo_03_provider/</link>
     <pubDate>Thu, 10 Dec 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-provider/</guid>
+    <guid>https://atuowgo.github.io/dubbo_03_provider/</guid>
     <description><![CDATA[这节介绍Provider的启动过程，既服务发布。
 先从Demo看起：
 1 2 3 4 5 6 7 8 9 10 11 12 public class ApplicationApi { public static void main(String[] args) throws Exception { ServiceConfig&lt;DemoServiceImpl&gt; service = new ServiceConfig&lt;&gt;(); service.setApplication(new ApplicationConfig(&#34;dubbo-demo-api-provider&#34;)); service.setRegistry(new RegistryConfig(&#34;zookeeper://127.0.0.1:2181&#34;)); service.setInterface(DemoService.class); service.setRef(new DemoServiceImpl()); service.export(); System.in.read(); } } 上面Demo主要做了几件事
@@ -27,10 +27,10 @@ PS:当id为空时，会设置默认值为default。
 </item>
 <item>
     <title>Dubbo自适应扩展机制</title>
-    <link>https://atuowgo.github.io/02-extend/</link>
+    <link>https://atuowgo.github.io/dubbo_02_extend/</link>
     <pubDate>Mon, 07 Sep 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-extend/</guid>
+    <guid>https://atuowgo.github.io/dubbo_02_extend/</guid>
     <description><![CDATA[上一节提到过，Dubbo里除了Service和Config层为API，其它各层均为SPI。相比于Java中的SPI仅仅通过接口类名获取所有实现，Dubbo的实现可以通过接口类名和key值来获取一个具体的实现。通过SPI机制，Dubbo实现了面向插件编程，只定义了模块的接口，实现由各插件来完成。
 1. 使用方式 1.1 Java SPI 在扩展类的jar包内，放置扩展点配置文件META-INF/service/接口全限定名，内容为：扩展实现类全限定名，多个实现类用换行符分隔。
 如下为Mysql中Driver接口的实现：
@@ -40,10 +40,10 @@ PS:当id为空时，会设置默认值为default。
 </item>
 <item>
     <title>Dubbo简介</title>
-    <link>https://atuowgo.github.io/01-introduce/</link>
+    <link>https://atuowgo.github.io/dubbo_01_introduce/</link>
     <pubDate>Sun, 30 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-introduce/</guid>
+    <guid>https://atuowgo.github.io/dubbo_01_introduce/</guid>
     <description><![CDATA[这篇是开门贴，内容来自网上。
 Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。(来自百度百科)
 1. 整体架构 Dubbo的整体架构如下：
@@ -56,10 +56,10 @@ Provider：
 </item>
 <item>
     <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;事件机制&gt;</title>
-    <link>https://atuowgo.github.io/02-event/</link>
+    <link>https://atuowgo.github.io/sandbox_02_event/</link>
     <pubDate>Sun, 02 Aug 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-event/</guid>
+    <guid>https://atuowgo.github.io/sandbox_02_event/</guid>
     <description><![CDATA[这节介绍jvm-sandbox的事件机制，事件机制提供了切面通知的核心功能，内部主要结合asm和观察者模式来实现。jvm-sandbox提供的事件包括：
 上面的截图是官网github wiki对事件的介绍，包括提供的事件类型、事件的作用域以及状态机流转。概括的说就是，jvm-sandbox围绕了目标方法这个切面点，提供了多种通知机制。
 1.观察者模式 观察者模式的简单示意如下：
@@ -71,10 +71,10 @@ Subject都会有一个Observer列表，以及提供一个添加观察者的方�
 </item>
 <item>
     <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;</title>
-    <link>https://atuowgo.github.io/01-start/</link>
+    <link>https://atuowgo.github.io/sandbox_01_start/</link>
     <pubDate>Fri, 24 Jul 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-start/</guid>
+    <guid>https://atuowgo.github.io/sandbox_01_start/</guid>
     <description><![CDATA[1. 启动 sandbox源码各模块的结构如下:
 sandbox安装后的目录结构如下:
 按照官方的教程，启动命令如下：
@@ -90,10 +90,10 @@ targetJvmPid:目标应用pid agentJarPath:附加的agent包路径 cfg:agent-main
 </item>
 <item>
     <title>RocketMQ消息的存储消费模型</title>
-    <link>https://atuowgo.github.io/09-consumequeue/</link>
+    <link>https://atuowgo.github.io/rocketmq_09_consumequeue/</link>
     <pubDate>Mon, 18 May 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/09-consumequeue/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_09_consumequeue/</guid>
     <description><![CDATA[这节介绍RocketMQ中消息的存储模型：CommitLog和ConsumeQueue。CommitLog用于存储Producer的消息，ConsumeQueue接受CommitLog分配的消息，等待Consumer消费。
 1. 存储消费模型 RocketMQ采用了单一的日志文件，即把同1台机器上面所有topic的所有queue消息都存放在一个文件里面，以避免随机的磁盘写入。其存储结构如下：
 Broker会把所有消息都存在一个单一的CommitLog文件里面，然后由后台线程异步的同步到ConsumeQueue中，再由Consumer进行消费。
@@ -122,10 +122,10 @@ ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对
 </item>
 <item>
     <title>RocketMQ文件存储的基础:MappedFile和MappedFileQueue</title>
-    <link>https://atuowgo.github.io/08-mappedfile/</link>
+    <link>https://atuowgo.github.io/rocketmq_08_mappedfile/</link>
     <pubDate>Thu, 14 May 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/08-mappedfile/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_08_mappedfile/</guid>
     <description><![CDATA[RocketMQ文件存储的基础:MappedFile和MappedFileQueue RocketMQ中的MappedFile类对应一个文件的mmap映射,是RocketMQ实现高效存储的基础。本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡。
 1. 零拷贝 零拷贝（zero copy）指的是当拷贝发生时，CPU并不参与实际的拷贝过程。CPU可以切换到其他线程，数据的拷贝过程异步进行，异步过程通常要由硬件DMA实现。常用的零拷贝有 mmap 和 sendFile。
 采用传统的读写操作将磁盘中的数据发送到网络中，通常经历2次用户态/内核态的切换，并且读和写操作CPU分别要参与一次拷贝过程。
@@ -146,10 +146,10 @@ FileChannel本身不是基于零拷贝实现的，而是是基于块来实现的
 </item>
 <item>
     <title>RocketMQ的心脏:Broker</title>
-    <link>https://atuowgo.github.io/07-broker/</link>
+    <link>https://atuowgo.github.io/rocketmq_07_broker/</link>
     <pubDate>Mon, 04 May 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/07-broker/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_07_broker/</guid>
     <description><![CDATA[RocketMQ的心脏:Broker 这节介绍下RocketMQ中最后的一个部分，也是内容较多的一部分：Broker。
 Broker的启动同其他几个组件一样，从XXXStartup(BrokerStartup)类的main方法开始，首先加载对应的配置文件XXXConfig(BrokerConfig、NettyServerConfig、NettyClientConfig、MessageStoreConfig)，然后实例化XXXController(BrokerController)，接着调用Controller的initialize方法，最后注册ShutdownHook。
 Broker在构造方法中，会进行如下的实例化动作：
@@ -170,10 +170,10 @@ PullMessageProcessor主要的工作是根据客户端提供的offset，从Consum
 </item>
 <item>
     <title>轻量级注册中心：RocketMQ NameServer</title>
-    <link>https://atuowgo.github.io/06-nameserver/</link>
+    <link>https://atuowgo.github.io/rocketmq_06_nameserver/</link>
     <pubDate>Wed, 15 Apr 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/06-nameserver/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_06_nameserver/</guid>
     <description><![CDATA[NameServer实现比较简单，主要包括配置管理、路由管理两块。其主要功能是为整个MQ集群提供服务协调与治理，具体就是记录维护Topic、Broker的信息，及监控Broker的运行状态，为client提供路由能力。NameServer是一个几乎无状态节点，可集群部署，节点之间无任何信息同步。
 NameServer为生产者和消费者提供Meta数据，以确定消息该发往哪个Broker或者该从哪个Broker拉取消息。有了Meta数据后，生产者和消费者就可以直接和 Broker交互了。这种点对点的交互方式最大限度降低了消息传递的中间环节，缩短了链路耗时。
 1. 启动 NameServer的启动过程如下：
@@ -188,10 +188,10 @@ Topic对应的Queue列表 Queue所在的Broker，以及Queue对应的属性 Brok
 </item>
 <item>
     <title>Netty-RocketMQ底层通信的利器</title>
-    <link>https://atuowgo.github.io/05-netty/</link>
+    <link>https://atuowgo.github.io/rocketmq_05_netty/</link>
     <pubDate>Mon, 30 Mar 2020 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/05-netty/</guid>
+    <guid>https://atuowgo.github.io/rocketmq_05_netty/</guid>
     <description><![CDATA[这节介绍RocketMQ底层通信的原理
 在之前的内容中有介绍过RocketMQ底层用了Netty来进行通信，下图为RocketMQ通信的大致过程，主要分为Server端和Client端。
 客户端通过invokeSyncImpl、invokeAsyncImpl、invokeOnewayImpl这几个方法同服务端交互。

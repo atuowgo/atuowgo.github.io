@@ -5,10 +5,10 @@
         <description>Sentinel - 标签 - 程序猿二腊</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 01 Oct 2019 00:00:00 &#43;0000</lastBuildDate><atom:link href="https://atuowgo.github.io/tags/sentinel/" rel="self" type="application/rss+xml" /><item>
     <title>Sentinel Culster流程分析</title>
-    <link>https://atuowgo.github.io/03-module-cluster/</link>
+    <link>https://atuowgo.github.io/sentinel_03_module_cluster/</link>
     <pubDate>Tue, 01 Oct 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/03-module-cluster/</guid>
+    <guid>https://atuowgo.github.io/sentinel_03_module_cluster/</guid>
     <description><![CDATA[前面介绍了sentinel-core的流程，提到在进行流控判断时，会判断当前是本地限流，还是集群限流，若是集群模式，则会走另一个分支，这节便对集群模式做分析。
 一.基本概念 namespace：限流作用于，用于区分一个规则作用于什么范围
 flowId：代表全局唯一的规则 ID，Sentinel 集群限流服务端通过此 ID 来区分各个规则，因此务必保持全局唯一。一般 flowId 由统一的管控端进行分配，或写入至 DB 时生成。
@@ -42,10 +42,10 @@ acquireCount：需要获取的token数]]></description>
 </item>
 <item>
     <title>Sentinel Core流程分析</title>
-    <link>https://atuowgo.github.io/02-module-core/</link>
+    <link>https://atuowgo.github.io/sentinel_02_module_core/</link>
     <pubDate>Mon, 30 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/02-module-core/</guid>
+    <guid>https://atuowgo.github.io/sentinel_02_module_core/</guid>
     <description><![CDATA[上次介绍了Sentinel的基本概念，并在文章的最后介绍了基本的用法。这次将对用法中的主要流程和实现做说明，该部分主要涉及到源码中的sentinel-core模块。
 1.token获取 如上为token获取的主流程，首先会先获取线程的上下文对象Context，然后根据ResourceName查找对应的处理槽链，获得SlotChain后，生成该次调用动作的Entry对象，该对象会关联对应SlotChain。内部会调用SlotChain的entry方法，让entry动作进入每个槽，后续需要调用Entry的exit方法，让exit动作进入SlotChain的每个槽。
 其中第三步生成的Entry对象为CtEntry对象，其模型上是一个链表，会将每次entry动作生成的Entry对象串联起来
@@ -91,10 +91,10 @@ Local方式时，先选择统计数据的节点，再根据设定的限流器获
 </item>
 <item>
     <title>Sentinel基本概念</title>
-    <link>https://atuowgo.github.io/01-basic/</link>
+    <link>https://atuowgo.github.io/sentinel_01_basic/</link>
     <pubDate>Sun, 29 Sep 2019 00:00:00 &#43;0000</pubDate>
     <author>二腊</author>
-    <guid>https://atuowgo.github.io/01-basic/</guid>
+    <guid>https://atuowgo.github.io/sentinel_01_basic/</guid>
     <description><![CDATA[Sentinel是阿里开源的一款高性能的限流框架。这里将对Sentinel的使用和实现进行介绍。
 这里先介绍下Sentinel中涉及到的基本概念，包括使用上或者实现上。主要是笔者在阅读文档和源码时经常会接触到的对象。
 Resource 资源是整个Sentinel最基本的一个概念。可以是一段代码，一个http请求，一个微服务，总而言之，他是Sentinel需要保证的实体。大部分情况下，我们可以使用方法签名，URL或者是服务名称来作为资源的名称。它在Sentinel中的体现是：ResourceWrapper，他有两个子类：
