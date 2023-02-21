@@ -147,18 +147,7 @@ y(k) = \displaystyle\frac{e^{a_{k}}}{\sum_{i=1}^ne^{a_{i}}}
 
 由于$e^n$可能非常大，为了避免结果发生溢出，可以通过增加任意常数的方式来避免，如下：
 
-$$
-y(k) = \displaystyle\frac{e^{a_{k}}}{\sum_{i=1}^ne^{a_{i}}}\\
-
-\quad \\
-
-= \displaystyle\frac{Ce^{a_{k}}}{C\sum_{i=1}^ne^{a_{i}}} \\
-
-\quad \\
-
-= \displaystyle\frac{e^{(a_{k}+ logC)}}{\sum_{i=1}^ne^{(a_{i}+ logC)} } 
-
-$$
+![](softmax_math.jpg)
 
 其中$logC$为常数。
 

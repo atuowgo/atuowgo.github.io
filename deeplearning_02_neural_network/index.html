@@ -29,7 +29,7 @@
         "mainEntityOfPage": {
             "@type": "WebPage",
             "@id": "https:\/\/atuowgo.github.io\/deeplearning_02_neural_network\/"
-        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "deeplearn","wordcount":  170 ,
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "deeplearn","wordcount":  153 ,
         "url": "https:\/\/atuowgo.github.io\/deeplearning_02_neural_network\/","datePublished": "2023-02-21T01:36:54-07:00","dateModified": "2023-02-21T01:36:54-07:00","publisher": {
             "@type": "Organization",
             "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
@@ -103,7 +103,7 @@
             <div class="toc-content" id="toc-content-auto"></div>
         </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">深度学习:神经网络</h1><div class="post-meta">
             <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/theory/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>理论</a></span></div>
-            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2023-02-21">2023-02-21</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 170 字&nbsp;
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2023-02-21">2023-02-21</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 153 字&nbsp;
                 <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;
 
                 
@@ -290,13 +290,14 @@ y(k) = \displaystyle\frac{e^{a_{k}}}{\sum_{i=1}^ne^{a_{i}}}
         alt="/deeplearning_02_neural_network/softmax.jpg"
         title="/deeplearning_02_neural_network/softmax.jpg" width="1130" height="804" /></p>
 <p>由于$e^n$可能非常大，为了避免结果发生溢出，可以通过增加任意常数的方式来避免，如下：</p>
-<p>$$
-y(k) = \displaystyle\frac{e^{a_{k}}}{\sum_{i=1}^ne^{a_{i}}}\</p>
-<p>\quad \</p>
-<p>= \displaystyle\frac{Ce^{a_{k}}}{C\sum_{i=1}^ne^{a_{i}}} \</p>
-<p>\quad \</p>
-<p>= \displaystyle\frac{e^{(a_{k}+ logC)}}{\sum_{i=1}^ne^{(a_{i}+ logC)} }</p>
-<p>$$</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/softmax_math.jpg"
+        data-srcset="/deeplearning_02_neural_network/softmax_math.jpg, /deeplearning_02_neural_network/softmax_math.jpg 1.5x, /deeplearning_02_neural_network/softmax_math.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/softmax_math.jpg"
+        title="/deeplearning_02_neural_network/softmax_math.jpg" width="902" height="148" /></p>
 <p>其中$logC$为常数。</p>
 <p>另外，需要注意的是，即使使用了softmax函数，各元素之间的大小关系也不会改变。因此，神经网络在进行分类时，输出层的softmax函数可以省略。</p>
 </div><div class="post-footer" id="post-footer">
