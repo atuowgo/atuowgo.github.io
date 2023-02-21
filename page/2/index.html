@@ -99,6 +99,16 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/dubbo_02_extend/">Dubbo自适应扩展机制</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">上一节提到过，Dubbo里除了Service和Config层为API，其它各层均为SPI。相比于Java中的SPI仅仅通过接口类名获取所有实现，Dubbo的实现可以通过接口类名和key值来获取一个具体的实现。通过SPI机制，Dubbo实现了面向插件编程，只定义了模块的接口，实现由各插件来完成。
+1. 使用方式 1.1 Java SPI 在扩展类的jar包内，放置扩展点配置文件META-INF/service/接口全限定名，内容为：扩展实现类全限定名，多个实现类用换行符分隔。
+如下为Mysql中Driver接口的实现：
+1 2 3 4 5 6 7 package com.mysql.jdbc; import java.sql.SQLException; public class Driver extends NonRegisteringDriver implements java.sql.Driver { ... } 调用时使用ServiceLoader加载所有的实现并通过循环来找到目标实现类
+1 2 3 4 5 6 7 8 9 ServiceLoader&lt;Driver&gt; loadedDrivers = ServiceLoader.load(Driver.class); Iterator&lt;Driver&gt; driversIterator = loadedDrivers.iterator(); try{ while(driversIterator.hasNext()) { driversIterator.next(); } } catch(Throwable t) { // Do nothing } 1.2 Dubbo SPI 拿Dubbo中Protocol接口来说，Protocol的定义如下：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 package org.</div><div class="post-footer">
+        <a href="/dubbo_02_extend/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/doubbo/">doubbo</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/dubbo_01_introduce/">Dubbo简介</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这篇是开门贴，内容来自网上。
 Dubbo是阿里巴巴公司开源的一个高性能优秀的服务框架，使得应用可通过高性能的 RPC 实现服务的输出和输入功能，可以和Spring框架无缝集成。Dubbo是一款高性能、轻量级的开源Java RPC框架，它提供了三大核心能力：面向接口的远程方法调用，智能容错和负载均衡，以及服务自动注册和发现。(来自百度百科)
@@ -193,27 +203,6 @@ ConsumeQueue以路径的形式来分割每个topic下queue的存储，每个q对
 /DirToStore/topic/queueId/ 每次写入的数据格式(数据单元)为：
 1 物理偏移量(long/8)|消息大小(int/4)|逻辑偏移量(long/8) = 20 ConsumeQueue初始化MappedFile的默认大小为 30000 * 20，即每个文件存30万条记录，没个文件名的步长为600000，消费时只要每次读取20个字节便能查找到每个消息的offset。</div><div class="post-footer">
         <a href="/rocketmq_09_consumequeue/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/rocketmq_08_mappedfile/">RocketMQ文件存储的基础:MappedFile和MappedFileQueue</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">RocketMQ文件存储的基础:MappedFile和MappedFileQueue RocketMQ中的MappedFile类对应一个文件的mmap映射,是RocketMQ实现高效存储的基础。本文先介绍零拷贝的相关背景，再介绍RocketMQ中mmap的应用，为后面介绍MessageStore做过渡。
-1. 零拷贝 零拷贝（zero copy）指的是当拷贝发生时，CPU并不参与实际的拷贝过程。CPU可以切换到其他线程，数据的拷贝过程异步进行，异步过程通常要由硬件DMA实现。常用的零拷贝有 mmap 和 sendFile。
-采用传统的读写操作将磁盘中的数据发送到网络中，通常经历2次用户态/内核态的切换，并且读和写操作CPU分别要参与一次拷贝过程。
-我们知道，操作系统设置了用户态和内核态两种状态，用户态想要获取系统资源(例如访问硬盘), 必须通过系统调用进入到内核态, 由内核态获取到系统资源,再切换回用户态返回应用程序。同时，操作系统在内核态中也增加了一个&quot;内核缓冲区&quot;(kernel buffer)，读取数据时并不是直接把数据读取到应用程序的缓存区(app buffer), 而是先读取到内核缓冲区, 再由内核缓冲区复制到应用程序的缓存区。
-传统的IO读写过程，数据会在用户态和内核态之间发送多次复制和多次上下文切换，如下：
-主要流程为：
-硬盘拷贝到内核缓冲区(DMA COPY) 内核缓冲区拷贝到应用程序缓冲区(CPU COPY) 应用程序缓冲区拷贝到socket缓冲区(CPU COPY) socket buf拷贝到网卡的buf(DMA COPY) 即一次读写过程涉及到2次cpu copy, 还有4次的上下文切换。
-很明显,第2次和第3次的copy只是把数据复制到app buffer又原封不动的复制回来, 为此带来了两次的cpu copy和两次上下文切换, 是完全没有必要的。
-1.1 PageCache pagecache是文件系统层级的缓存，从磁盘里读取的内容是存储到这里，这样程序读取磁盘内容就会非常快。page cache的大小为一页，通常为4K。
-Java里的写操作都是写到PageCache里便认为逻辑落盘成功，后续操作是通过操作系统把它刷到磁盘文件上。
-1.2. sendfile linux内核2.1开始引入一个叫sendFile系统调用
-1 ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count); 这个系统调用可以在内核态内把数据从内核缓冲区直接复制到套接字(SOCKET)缓冲区内, 从而可以减少上下文的切换和不必要数据的复制,如下：
-涉及到数据拷贝变成:
-硬盘拷贝到内核缓冲区(DMA COPY) 内核缓冲区拷贝到socket缓冲区(CPU COPY) socket缓冲区拷贝到网卡的buf(DMA COPY) sendfile只能将数据从文件传递到套接字上，反之则不行。 使用sendfile不仅减少了数据拷贝的次数，还减少了上下文切换。
-Java类库通过java.nio.channels.FileChannel的transgerTo方法支持零拷贝。而在Netty中也通过在FileRegion中包装了NIO的FileChannel.transferTo()方法实现了零拷贝。RocketMQ在涉及到网络传输的地方也使用了该方法。
-FileChannel本身不是基于零拷贝实现的，而是是基于块来实现的。FileChannel配合着ByteBuffer，将读写的数据缓存到内存中，然后以批量/缓存的方式read/write，省去了非批量操作时的重复中间操作，操纵大文件时可以显著提高效率。FileChannel的write方法将数据写入PageCache后就认为落盘了，最终还是要操作系统完成PageCache到磁盘的最终写入。FileChannel的force方法则是用于通知操作系统进行及时的刷盘。
-1.3. mmap mmap也是零拷贝实现的一种，它利用共享内存空间的方式, 把文件映射到用户空间里的虚拟内存，省去了从内核缓冲区复制到用户空间的过程。</div><div class="post-footer">
-        <a href="/rocketmq_08_mappedfile/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/rocketmq/">RocketMQ</a></div></div>
 </article><ul class="pagination"><li class="page-item ">
                     <span class="page-link">

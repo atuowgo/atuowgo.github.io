@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>深度学习:神经网络 - 程序猿二腊</title><meta name="Description" content="介绍神经网络"><meta property="og:title" content="深度学习:神经网络" />
+<meta property="og:description" content="介绍神经网络" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://atuowgo.github.io/deeplearning_02_neural_network/" /><meta property="og:image" content="https://atuowgo.github.io/logo.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-02-21T01:36:54-07:00" />
+<meta property="article:modified_time" content="2023-02-21T01:36:54-07:00" /><meta property="og:site_name" content="程序猿二腊" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://atuowgo.github.io/logo.png"/>
+
+<meta name="twitter:title" content="深度学习:神经网络"/>
+<meta name="twitter:description" content="介绍神经网络"/>
+<meta name="application-name" content="程序猿二腊">
+<meta name="apple-mobile-web-app-title" content="程序猿二腊"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://atuowgo.github.io/deeplearning_02_neural_network/" /><link rel="prev" href="https://atuowgo.github.io/deeplearning_01_perceptron/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "深度学习:神经网络",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/atuowgo.github.io\/deeplearning_02_neural_network\/"
+        },"image": ["https:\/\/atuowgo.github.io\/images\/Apple-Devices-Preview.png"],"genre": "posts","keywords": "deeplearn","wordcount":  170 ,
+        "url": "https:\/\/atuowgo.github.io\/deeplearning_02_neural_network\/","datePublished": "2023-02-21T01:36:54-07:00","dateModified": "2023-02-21T01:36:54-07:00","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/atuowgo.github.io\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "二腊"
+            },"description": "介绍神经网络"
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="程序猿二腊"><span class="header-title-pre"><i class='far fa-face-laugh-beam fa-fw' aria-hidden='true'></i></span>程序猿二腊</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="">关于</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">深度学习:神经网络</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/theory/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>理论</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-check fa-fw"></i>&nbsp;<time datetime="2023-02-21">2023-02-21</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 170 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;
+
+                
+                </div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#神经网络">神经网络</a>
+          <ul>
+            <li><a href="#1-激活函数">1. 激活函数</a>
+              <ul>
+                <li><a href="#11-阶跃函数">1.1 阶跃函数</a></li>
+                <li><a href="#12-sigmoid函数">1.2 sigmoid函数</a></li>
+                <li><a href="#13-relu函数">1.3 ReLU函数</a></li>
+              </ul>
+            </li>
+            <li><a href="#2-神经网络">2. 神经网络</a>
+              <ul>
+                <li><a href="#21-softmax函数">2.1 softmax函数</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h3 id="神经网络">神经网络</h3>
+<blockquote>
+<p>接着上节感知机后，引入神经网络</p>
+</blockquote>
+<h4 id="1-激活函数">1. 激活函数</h4>
+<p>上一节介绍了两个输入信号的感知机的例子，以及用数学公式表示的例子，具体可以见上节内容,感知机。</p>
+<p>可以将上节感知机的公式调整为</p>
+<p>$$
+y = h(b+w_1x_1+w_2x_2)  (1.1)
+$$</p>
+<p>其中函数$h(x)$的定义如下
+$$
+h(x) =
+\begin{cases}
+0 (x \le 0) \
+1 (x \gt 0)
+\end{cases}
+(1.2)$$</p>
+<p>结合示例如下：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/01_neural_netowork_1.jpg"
+        data-srcset="/deeplearning_02_neural_network/01_neural_netowork_1.jpg, /deeplearning_02_neural_network/01_neural_netowork_1.jpg 1.5x, /deeplearning_02_neural_network/01_neural_netowork_1.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/01_neural_netowork_1.jpg"
+        title="/deeplearning_02_neural_network/01_neural_netowork_1.jpg" width="768" height="756" /></p>
+<p>其中函数$h(x)$称之为激活函数，该函数会将输入信号的总和转换为输出信号。而灰色的输入信号是为了体现偏执$b$专门加上去的，主要是为了方便理解。</p>
+<h5 id="11-阶跃函数">1.1 阶跃函数</h5>
+<p>上面(1.2)就是阶跃函数，它的值呈阶段式变化，所以称为阶跃函数。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/02_jieyue_f.jpg"
+        data-srcset="/deeplearning_02_neural_network/02_jieyue_f.jpg, /deeplearning_02_neural_network/02_jieyue_f.jpg 1.5x, /deeplearning_02_neural_network/02_jieyue_f.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/02_jieyue_f.jpg"
+        title="/deeplearning_02_neural_network/02_jieyue_f.jpg" width="1380" height="1044" /></p>
+<h5 id="12-sigmoid函数">1.2 sigmoid函数</h5>
+<p>sigmoid函数如下</p>
+<p>$$
+h(x) = \displaystyle\frac{1}{1+e^{-x}}
+(1.3)$$</p>
+<p>如下，sigmoid函数是一条平滑的曲线，输出随着输入发生连续性的变化，相对于阶跃函数，具有平滑性，在深度网络的学习中具有重要意义，能够增加表达能力。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/03_sigmod.jpg"
+        data-srcset="/deeplearning_02_neural_network/03_sigmod.jpg, /deeplearning_02_neural_network/03_sigmod.jpg 1.5x, /deeplearning_02_neural_network/03_sigmod.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/03_sigmod.jpg"
+        title="/deeplearning_02_neural_network/03_sigmod.jpg" width="1368" height="1046" /></p>
+<p>另一个不同点是，相对于阶跃只能返回0或1，sigmoid函数可以返回0.731&hellip;,0.880&hellip;等实物。也就是说，感知机中神经元之间流动的是0和1的二元信号，而神经网络中流动的是连续的实数值信号。</p>
+<p>虽然阶跃函数和sigmoid函数在平滑性上有差异，但二者还是有相同的点，当输入值越小，输出越接近0，输入值越大，输出越接近1.也就是说，当输入信号为重要信息时，阶跃函数和sigmoid都会输出较大值，当输入信号为不重要的信息时，二者都会输出较小的值。还有一个共同点，不管输入 信号多小，或者有多大，输出信号的值都在0和1之间。另外一个相同点是，它两都是非线性函数。</p>
+<p>神经网络的激活函数必须使用非线性函数，如果使用线性函数作为激活函数的话，加深神经网络的层数就没有意义了。以激活函数$h(x)=cx$举例，运算3层后结果为$y(x)=h(h(h(x)))$，即$y(x)=c^3x$等价于$y(x)=ax$，即对于线性函数来说，不管加多少层，总是存在与之等效的&quot;无隐藏层的神经网络&quot;。</p>
+<h5 id="13-relu函数">1.3 ReLU函数</h5>
+<p>如下，ReLU函数在输出大于0时，直接输出该值，在输出小于等于0时，输出0.</p>
+<p>$$
+h(x) =
+\begin{cases}
+0 (x \le 0) \
+x (x \gt 0)
+\end{cases}
+(1.4)$$</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/04_ReLU.jpg"
+        data-srcset="/deeplearning_02_neural_network/04_ReLU.jpg, /deeplearning_02_neural_network/04_ReLU.jpg 1.5x, /deeplearning_02_neural_network/04_ReLU.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/04_ReLU.jpg"
+        title="/deeplearning_02_neural_network/04_ReLU.jpg" width="1336" height="1038" /></p>
+<h4 id="2-神经网络">2. 神经网络</h4>
+<p>感知机的激活函数为阶跃函数，输出结果只有0和1两种，当激活函数为其他非线性函数时则为神经网络。</p>
+<p>如下所示，为3层神经网络的实例：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/neural_network_demo.jpg"
+        data-srcset="/deeplearning_02_neural_network/neural_network_demo.jpg, /deeplearning_02_neural_network/neural_network_demo.jpg 1.5x, /deeplearning_02_neural_network/neural_network_demo.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/neural_network_demo.jpg"
+        title="/deeplearning_02_neural_network/neural_network_demo.jpg" width="1584" height="864" /></p>
+<p>输入层和输出层之间为中间层，又称为隐藏层，其中输入层(第0层)有2个神经元，第一个隐藏层(第1层)有3个神经元，第2个隐藏层(第2层)有2个神经元，输出层(第3层)有2个神经元。</p>
+<p>上述激活函数主要作用于中间层。如下表示了激活函数$h()$的效果示例：</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/neural_network_transfor.jpg"
+        data-srcset="/deeplearning_02_neural_network/neural_network_transfor.jpg, /deeplearning_02_neural_network/neural_network_transfor.jpg 1.5x, /deeplearning_02_neural_network/neural_network_transfor.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/neural_network_transfor.jpg"
+        title="/deeplearning_02_neural_network/neural_network_transfor.jpg" width="1646" height="1196" /></p>
+<p>可以用矩阵表示上图的动作，即</p>
+<p>$$
+A^{(1)} = XW^{(1)} + B^{(1)}
+$$</p>
+<p>其中，$A^{(1)}$表示输出值，$X$为输入，$B^{(1)}$为偏置值，$W^{(1)}$为输出到各输出的权重
+$$
+A^{(1)} =
+\begin{pmatrix}
+a_{1}^{(1)} &amp; a_{2}^{(1)} &amp; a_{3}^{(1)} \
+\end{pmatrix}
+$$</p>
+<p>$$
+X =
+\begin{pmatrix}
+x_{1} &amp; x_{2} \
+\end{pmatrix}
+$$</p>
+<p>$$
+B^{(1)} =
+\begin{pmatrix}
+b_{1}^{(1)} &amp; b_{2}^{(1)} &amp; b_{3}^{(1)} \
+\end{pmatrix}
+$$</p>
+<p>$$
+W^{(1)} =
+\begin{pmatrix}
+w_{11}^{(1)} &amp; w_{21}^{(1)} &amp; w_{31}^{(1)} \
+w_{12}^{(1)} &amp; w_{22}^{(1)} &amp; w_{32}^{(1)} \
+\end{pmatrix}
+$$</p>
+<p>关于矩阵运算这里不展开讲，可以直接网上找材料，然后再对 $A^{(1)}$做激活函数运算，可以得到下一层神经网络的输入层</p>
+<p>$$
+Z^{(1)} = h(A^{(1)})
+$$</p>
+<p>注意，这里用到了numpy对矩阵运算的广播操作，即直接对矩阵的各元素单独执行了激活函数运算。</p>
+<p>以此类推，可以得到下一层神经网络的处理过程</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/neural_network_transfor_2.jpg"
+        data-srcset="/deeplearning_02_neural_network/neural_network_transfor_2.jpg, /deeplearning_02_neural_network/neural_network_transfor_2.jpg 1.5x, /deeplearning_02_neural_network/neural_network_transfor_2.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/neural_network_transfor_2.jpg"
+        title="/deeplearning_02_neural_network/neural_network_transfor_2.jpg" width="1618" height="1120" /></p>
+<p>重复下去最后到输出层。这里要注意一点的是，输出层矩阵(m,n)到输出层矩阵(p,q)是通过矩阵乘法来转换得到的，所以多次中间件矩阵变换的时候需要满足前后转换条件。</p>
+<h5 id="21-softmax函数">2.1 softmax函数</h5>
+<p>softmax函数主要作用于输出层：</p>
+<p>$$
+y(k) = \displaystyle\frac{e^{a_{k}}}{\sum_{i=1}^ne^{a_{i}}}
+(1.5)$$</p>
+<p>函数的输出是0.0到1.0之间的实数，并且，softmax函数的输出值的总和是1。输出总和为1是softmax函数的一个重要性质，因为有了这个性质，可以把softmax的输出解释为概率。</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="/deeplearning_02_neural_network/softmax.jpg"
+        data-srcset="/deeplearning_02_neural_network/softmax.jpg, /deeplearning_02_neural_network/softmax.jpg 1.5x, /deeplearning_02_neural_network/softmax.jpg 2x"
+        data-sizes="auto"
+        alt="/deeplearning_02_neural_network/softmax.jpg"
+        title="/deeplearning_02_neural_network/softmax.jpg" width="1130" height="804" /></p>
+<p>由于$e^n$可能非常大，为了避免结果发生溢出，可以通过增加任意常数的方式来避免，如下：</p>
+<p>$$
+y(k) = \displaystyle\frac{e^{a_{k}}}{\sum_{i=1}^ne^{a_{i}}}\</p>
+<p>\quad \</p>
+<p>= \displaystyle\frac{Ce^{a_{k}}}{C\sum_{i=1}^ne^{a_{i}}} \</p>
+<p>\quad \</p>
+<p>= \displaystyle\frac{e^{(a_{k}+ logC)}}{\sum_{i=1}^ne^{(a_{i}+ logC)} }</p>
+<p>$$</p>
+<p>其中$logC$为常数。</p>
+<p>另外，需要注意的是，即使使用了softmax函数，各元素之间的大小关系也不会改变。因此，神经网络在进行分类时，输出层的softmax函数可以省略。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2023-02-21</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/deeplearning_02_neural_network/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://atuowgo.github.io/deeplearning_02_neural_network/" data-title="深度学习:神经网络" data-hashtags="deeplearn"><i class="fab fa-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://atuowgo.github.io/deeplearning_02_neural_network/" data-hashtag="deeplearn"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://atuowgo.github.io/deeplearning_02_neural_network/" data-title="深度学习:神经网络"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/deeplearn/">深度学习</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/deeplearning_01_perceptron/" class="prev" rel="prev" title="深度学习:感知机"><i class="fas fa-angle-left fa-fw"></i>深度学习:感知机</a></div>
+</div>
+<div id="comments"><div id="utterances" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://utteranc.es/">utterances</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">Powered by Hugo & Theme - LoveIt</div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">二腊</a></span>
+    
+        
+        <script async src=" //busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js "></script>
+        <meta name="referrer" content="no-referrer-when-downgrade">
+    
+
+    
+        
+            <section>
+                
+                    <span id="busuanzi_container_value_site_pv"><i class="fa fa-eye"></i>
+                        
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+
+                
+                    &nbsp;|&nbsp;              
+                
+
+                
+                    <span id="busuanzi_container_value_site_uv"><i class="fa fa-user"></i>
+                        
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+            </section>
+        
+
+        
+        
+    
+
+</div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery-bundle.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/thumbnail/lg-thumbnail.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/plugins/zoom/lg-zoom.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/copy-tex.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/mhchem.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":50},"comment":{"utterances":{"darkTheme":"github-dark","issueTerm":"pathname","label":"Comment","lightTheme":"github-light","repo":"atuowgo/atuowgo.github.io"}},"lightgallery":true,"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":true,"left":"\\begin{equation}","right":"\\end{equation}"},{"display":true,"left":"\\begin{equation*}","right":"\\end{equation*}"},{"display":true,"left":"\\begin{align}","right":"\\end{align}"},{"display":true,"left":"\\begin{align*}","right":"\\end{align*}"},{"display":true,"left":"\\begin{alignat}","right":"\\end{alignat}"},{"display":true,"left":"\\begin{alignat*}","right":"\\end{alignat*}"},{"display":true,"left":"\\begin{gather}","right":"\\end{gather}"},{"display":true,"left":"\\begin{CD}","right":"\\end{CD}"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

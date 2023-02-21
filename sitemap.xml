@@ -2,13 +2,14 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
-            <loc>https://atuowgo.github.io/categories/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://atuowgo.github.io/posts/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://atuowgo.github.io/tags/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://atuowgo.github.io/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://atuowgo.github.io/categories/theory/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://atuowgo.github.io/tags/deeplearn/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://atuowgo.github.io/deeplearning_01_perceptron/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/categories/</loc><lastmod>2023-02-21T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/posts/</loc><lastmod>2023-02-21T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/tags/</loc><lastmod>2023-02-21T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/</loc><lastmod>2023-02-21T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/categories/theory/</loc><lastmod>2023-02-21T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/tags/deeplearn/</loc><lastmod>2023-02-21T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/deeplearning_02_neural_network/</loc><lastmod>2023-02-21T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://atuowgo.github.io/deeplearning_01_perceptron/</loc><lastmod>2023-02-02T01:36:54-07:00</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url><url>
             <loc>https://atuowgo.github.io/tags/golang/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/notes-007-golang-error/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>https://atuowgo.github.io/categories/notes/</loc><lastmod>2022-05-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>

@@ -99,6 +99,19 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/notes_001_java_eof/">Java的EOF标识？</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">这篇是关于JAVA中EOF标识的讲解，之前在工作上碰到过一个问题，有人问过，不能通过判断EOF来知道文件有没有读取完毕吗？其实，还真不能。
+直接从JDK接口文档入手，以FileInputStream为例，JDK接口文档给出了明确的说明：
+使用FileInputStream的read方法读取文件时，当返回-1就表明读到了文件末尾，如果期间出现IO异常，则会抛出一个IOException。而对于EOF文件结束符，其实是不存在的。在Linux系统之中，EOF根本不是一个字符，而是当系统读取到文件结尾，所返回的一个信号值，例如在C语言中，EOF是一个定义在头文件stdio.h的常量，一般等于-1。对于JAVA的实现，我们可以通过查看FileInputStream的源码查看，如下：
+其中read0为native方法，需要查看jvm源码。根据JVM源码定位进去，发现read0调用readSingle方法：
+源码看这FileInputStream.c（http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/5b86f66575b7/src/share/native/java/io/FileInputStream.c）
+而readSingle方法位于io_util.c中：
+搓这里io_util.c（http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/5b86f66575b7/src/share/native/java/io/io_util.c） 跟踪IO_Read方法，可以得到如下源码实现：
+源文件分别位于io_util_md.h(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.h)和io_util_md.c(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.c)
+所以，其实read方法最后还是调用了操作系统的read方法,该方法跟具体的操作系统相关，在linux下，有如下的说明 也就是，当使用read方法去读文件时，如果读到了文件末尾，没有字符返回时，则该方法返回0，如果出现异常，则返回-1.然后，JDK在readSingle方法里进行了包装，如果返回0，则在JDK层面返回-1，如果返回-1，则抛出IOException.因而，JAVA中没有EOF这个标识符，而是使用-1来标识文件结束。</div><div class="post-footer">
+        <a href="/notes_001_java_eof/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/work/">日常记录</a>,&nbsp;<a href="/tags/java/">Java</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/notes_000_distrubte_protocol/">分布式一致性协议</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">介绍常见的分布式一致性协议
 一．CAP/BASE 1. CAP理论 CAP理论又称之为布鲁尔定理（Brewer’S theorem），认为在设计一个大规模可扩放的网络服务时候不能同时兼容：一致性（consistency）、可用性（Availability）、分区容错（Partition-tolerance）。
@@ -248,27 +261,6 @@ SYNC命令的不足在于，从节点同主节点连接断开重新连接后如�
 PSYNC的执行步骤如下：
 3 过期键的复制 关于过期键的复制，持久化对复制的影响，以及4.0后提供的从节点到从节点的复制等，可以参考官方的文档。</div><div class="post-footer">
         <a href="/redis_03_copy/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/redis/">Redis</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/redis_02_persist/">Redis持久化</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍Redis的持久化，包括RDB和AOF两种方式。
-1.RDB持久化 Redis能够将内存中的数据持久化到RDB文件中，避免数据丢失。RDB文件的格式如下示：
-第一部分是开头的5个字节，值为REDIS，第二部分是长度为4个字节的版本号，值为一个字符串表示的整形。database部分包含零个或任意多个数据库，以及各个数据库中的键值对数据，database的结构如下示：
-EOF为1字节的结束符号，check_sum为8字节长的校验和，这个校验和是通过前面4个部分计算出来的。
-可以使用SAVE或者BGSAVE命令生成RDB文件。SAVE命令会阻塞Redis服务器进程，直到RDB文件创建完毕为止，在服务器进程阻塞期间，服务器不能处理任何命令请求。BGSAVE命令则会派生出一个子进程，然后由子进程负责创建RDB文件，父进程继续处理命令请求。
-BGSAVE除了可以通过命令来手动执行外，还可以通过配置项来定期执行，该功能可以将某个时间点上的数据库状态保存到一个RDB文件中。配置格式为：
-1 save N M 表示服务器在N秒内对数据进行了至少M次修改。该配置可以有多个，只要满足其中一个条件就会触发BGSAVE。当BGSAVE命令执行时，父进程会fork一个子进程，子进程会将当前内存中的数据写到磁盘上的一个临时文件。当临时文件写完后会将原来的RDB文件替换掉，这样的好处是可以使用copy-on-write。
-RDB文件只是服务器在某个时刻的快照，潜在的风险就是会丢失两次备份之间的数据，同时在服务器出现问题时也可能丢失最新的数据。
-RDB文件生成的文件名默认为dump.rbd，在文件会在服务器启动时自动载入。注意，如果开启了AOF持久化，则服务器优先加载AOF文件。只有在AOF持久化关闭的状态下，才会加载RDB文件。
-2.AOF持久化 不同于RDB文件以保存数据库中键值对值的方式，AOF文件以追加的方式，将所有的写命令以请求协议的格式保存到文件中来记录数据库的状态，因而文件内容是可识别的纯文本，可以直接查看。
-当有写命令到达时，服务器会执行客户端发来的命令，然后将执行后的写命令追加到AOF缓冲区中。追加完数据后服务器会判断是否需要执行文件写入和文件同步动作，当判断结果为需要时会将缓冲区中的内容写入到磁盘中，由于操作系统的特性，在没有调用fsync或者fdataasync同步函数时，操作系统通常会将写入数据暂时保存在一个内存缓冲区里面，等到缓冲区的空间被填满或者过了指定的时间后，才真正的将缓冲区中的数据写入到磁盘里面。AOF文件的持久化策略由appendfsync选项的值控制，包括always，everysec和no，分别为：
-每一次写操作都会调用一次fsync；每隔一秒进行一次fsync；
-不主动调用fsync，依赖于操作系统。
-Redis提供了AOF重写功能，来应对文件过大的情况。执行AOF重写时，父进程会fork一个子进程，让子进程来处理数据的持久化。子进程会遍历内存中的所有键值对，对于每一个键值对，会转为一条写操作，并将对应类型的请求协议写入到临时文件中。比如，在一段时间内，服务器处理了客户端的如下请求：
-1 2 3 4 SADD	key	“val1” SADD	key	“val2” SREM	key	“val1” SADD	key	“val3” 则原来的4条命令，在重写后等同于1条命令:
-1 SADD key	“val2”	”val3” 由于使用了fork命令，为了解决在重写的过程中，因为新的写请求命令到来而导致父子进程的数据不一致的情况，Redis服务器设置了一个AOF重写缓冲区，这个缓冲区在服务器创建子进程之后开始使用。当Redis服务器执行完一个写命令后，它会同时将该命令发送给AOF缓冲区和AOF重写缓冲区。当子进程完成AOF重写工作之后，它会向父进程发送一个信号，父进程在接到该信号后，将AOF重写缓冲区的命令写到临时AOF文件中，之后将临时AOF文件原子的覆盖现有的AOF文件，该过程是阻塞的进行的。
-不同于RDB文件的载入，由于需要执行AOF文件的命令，在使用AOF重建数据库时，Redis服务器会创建一个不带网络连接的伪客户端，使用伪客户端循环的执行文件中的每一个写命令直到AOF文件读取结束。</div><div class="post-footer">
-        <a href="/redis_02_persist/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/redis/">Redis</a></div></div>
 </article><ul class="pagination"><li class="page-item ">
                     <span class="page-link">

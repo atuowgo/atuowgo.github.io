@@ -99,6 +99,64 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/spring_03_beanload/">Spring BeanDefinition的加载</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">前面提到AbstractRefreshableApplicationContext在刷新BeanFactory时，会调用loadBeanDefinitions方法以加载系统中Bean的定义，下面将讲解Bean定义的加载过程。
+一．XML定义 XML配置的加载由AbstractXmlApplicationContext实现，方法实现如下：
+主要是实例化了一个XmlBeanDefinitionReader对象，对其设置了Environment对象（具体过程可以上一篇）等后，调用XmlBeanDefinitionReader进行解析。直接跟踪进去，得到如下内容：
+其中参数inputSource为XML配置文件，Resource则该配置文件的描述，主要描述了该配置文件在classpath中的位置和可用于加载该配置文件的加载器。doLoadDocument方法比较简单，主要是加载指定的配置文件，返回一个JDK内置的XML解析Document对象，以便于解析XML DOM节点。
+重点看下registerBeanDefinitions方法，如下：
+该方法最终委托给了BeanDefinitonDocumentReader来完成Bean的解析。在这之前，初始化了一系列相关对象。包括：
+使用DefaultBeanDefinitionDocumentReader作为BeanDefinitionDocumentReader接口的实现
+创建了一个XmlReaderContext用于保存解析过程中使用到的各个相关对象，如资源描述对象Resource、ReaderEventListener事件监听器、XmlBeanDefinitionReader以及NamespaceHandlerResolver命名空间解析器。其中划重点的是DefaultNamespaceHandlerResolver，该类完成了自定义XML格式的解析，后面会有讲解。
+初始相关对象后便将解析过程委托给了DefaultBeanDefinitionDocumentReader来进行处理，该类的重点为parseBeanDefinitions方法，在调用该方法前，先初始化了一个BeanDefinitionParserDelegate对象，如下：
+并将该delegate对象传入了parseBeanDefinitions方法。BeanDefinitionParserDelegate主要提供了命名空间为http://www.springframework.org/schema/beans（下面简写为beans空间）的XML文件解析过程。该命名空间定义了4个主要的XML标签，分别为beans、bean、import和alias以及这些标签对应的属性，如下为该命名空间的示例，定义了一个基础的Bean。
+需要注意的是，上面在初始化BeanDefinitionParserDelegate后会先解析XML上&lt;beans&gt;标签上的默认属性，包括：default-lazy-init、default-merge、default-autowire、default-dependency-check、default-autowire-candidates、default-init-method和default-destroy-method这些全局属性。
+下面看下parseBeanBefinitoins方法：
+该方法会对当前节点所属命名空间进行判断，分为默认命名空间和自定义命名空间，其中默认命名空间指的是上面提到的beans空间。对于默认命名空间，会逐一解析每个DOM子节点，判断子节点的命名空间，最终委托给两个方法：处理默认命名空间的parseDefaultElement方法和处理自定义命名空间的parseClustomElement方法。
+parseDefautlElement方法如上， 对beans空间定义的各个标签分别进行了处理：
+解析import标签时，会读取resource属性指定的配置文件，加载后再解析该文件中的bean定义。
+解析alias标签时，读取标签的name和alias属性，添加到BeanRegistry缓存中。
+解析bean标签时，直接委托给BeanDefinitionParserDelegate来处理，过程为：
+获取id属性值作为beanName
+获取name属性值作为aliases，该属性值可以配置多个，以 , 或者 ; 符进行分割，将作为该bean的别名使用；若id指为空，且name不为空，则使用第一个name值作为id值
+检查beanName和aliases的唯一性
+解析bean其他配置，生成GenericBeanDefinition对象
+若beanName为空，则为其分配一个
+对于步骤3.d，处理过程为：
+获取class属性值
+获取parent属性值
+初始化GenericBeanDefinition实例
+解析bean节点的属性，设置到BeanDefinition中，包括：scope、abstract、lazy-init、autowired、dependency-check、autowire-candidate、primary、init-method、destroy-method、factory-method、factory-bean
+解析description子节点，获取值设置bean的描述内容
+解析meta子节点列表，获取key、value值设置附加元数据信息
+解析lookup-method子节点列表，获取name、bean值设置方法注入信息
+解析replaced-method子节点列表，获取值设置需要动态代理的方法信息
+解析constructor-arg子节点列表，获取值设置构造参数信息
+解析property子节点列表，获取值设置属性信息
+解析qualifier子节点列表，获取值进行设置
+上面解析完bean的配置后，会再处理子节点中其他命名空间的配置，使用NamespaceHandler的decorate方法，用以修改Bean定义内容，这部分将使用下面的内容，放在后面一起讲。
+解析beans标签时，会进行递归处理 如上，默认命名空间主要用于解析bean的定义，经过上面的处理，bean定义的解析就已经完成，会将实例对象注册到上下文中进行保存
+下面介绍parseClustomElement方法，顾名思义，该方法主要用来处理自定义命名空间的XML标签的，可以当做是spring XML配置处理的一种扩展手段，如下，为该方法的内容：
+主要委托给了NamespaceHandlerResolver，通过查找到对应节点对应命名空间的Handler，调用该Handler的parse方法进行处理。
+前面说过，NamespaceHandlerResolver使用了DefaultNamespaceHandlerResolver作为实现，跟踪resolve方法进去如下：
+过程为：
+获取已有的Handler处理列表，返回结果为一个Map，Key为XML命名空间，值可能为代表对应Handler类型的Spring对象或者已经实例化后的Handler对象，取决于之前是否已经调用过
+若指为Handler对象，则直接返回
+若为String对象，表明未初始化过，则初始化该类，并执行init初始化方法，然后将其重新返回Map中
+对于第（1）步中Handler处理列表的获取，Spring会扫描classpath中所有位于META-INF中的spring.handlers配置文件，将所有内容读取到一个Map中并返回。
+如上，为spring-context模块提供的spring.handlers文件，提供了该模块自定义命名空间标签的支持。如下为自定义命名空间的例子：
+主要引入了context空间的spring-configured标签和annotation-config标签。
+至此，介绍了XML配置下的bean解析。
+二、注解配置 下面介绍Spring以注解的方式进行bean加载的过程，如下，为开启注解加载所需要的配置：
+根据前面的内容，component-scan为http://www.springframework.org/schema/context命名空间中的标签，处理对象在spring-context模块的spring.handlers文件中定义，对应的是类org.springframework.context.config.ContextNamespaceHandler，如下：
+查看该类，可以知道，component-scan由ComponentScanBeanDefinitionParser处理，如下：
+主要过程为：
+获取base-package属性内容赋值给basePackage
+替换basePackage中的占位符内容
+根据 , ; \t \n 分割符分割basePackage，得到多个包路径</div><div class="post-footer">
+        <a href="/spring_03_beanload/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/spring_02_env/">Spring Environment的加载</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">这节介绍environment，默认环境变量的加载以及初始化内容。
 之前在介绍spring启动过程讲到，第一步进行环境准备时就会初始化一个StandardEnvironment。下图为Environment类图的接口，可以分为4块内容：
@@ -318,19 +376,6 @@ OUT：是指我们系统调用其他第三方服务的出口流量。
 设置Type 为 OUT 一方面是为了保护第三方系统，比如我们系统依赖了一个生成订单号的接口，而这个接口是核心服务，如果我们的服务是非核心应用的话需要对他进行限流保护；另一方面也可以保护自己的系统，假设我们的服务是核心应用，而依赖的第三方应用老是超时，那这时可以通过设置依赖的服务的 rt 来进行降级，这样就不至于让第三方服务把我们的系统拖垮。</div><div class="post-footer">
         <a href="/sentinel_01_basic/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/sentinel/">Sentinel</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/notes_001_java_eof/">Java的EOF标识？</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">这篇是关于JAVA中EOF标识的讲解，之前在工作上碰到过一个问题，有人问过，不能通过判断EOF来知道文件有没有读取完毕吗？其实，还真不能。
-直接从JDK接口文档入手，以FileInputStream为例，JDK接口文档给出了明确的说明：
-使用FileInputStream的read方法读取文件时，当返回-1就表明读到了文件末尾，如果期间出现IO异常，则会抛出一个IOException。而对于EOF文件结束符，其实是不存在的。在Linux系统之中，EOF根本不是一个字符，而是当系统读取到文件结尾，所返回的一个信号值，例如在C语言中，EOF是一个定义在头文件stdio.h的常量，一般等于-1。对于JAVA的实现，我们可以通过查看FileInputStream的源码查看，如下：
-其中read0为native方法，需要查看jvm源码。根据JVM源码定位进去，发现read0调用readSingle方法：
-源码看这FileInputStream.c（http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/5b86f66575b7/src/share/native/java/io/FileInputStream.c）
-而readSingle方法位于io_util.c中：
-搓这里io_util.c（http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/5b86f66575b7/src/share/native/java/io/io_util.c） 跟踪IO_Read方法，可以得到如下源码实现：
-源文件分别位于io_util_md.h(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.h)和io_util_md.c(http://hg.openjdk.java.net/jdk/jdk/file/bd45ce23b1ac/src/java.base/unix/native/libjava/io_util_md.c)
-所以，其实read方法最后还是调用了操作系统的read方法,该方法跟具体的操作系统相关，在linux下，有如下的说明 也就是，当使用read方法去读文件时，如果读到了文件末尾，没有字符返回时，则该方法返回0，如果出现异常，则返回-1.然后，JDK在readSingle方法里进行了包装，如果返回0，则在JDK层面返回-1，如果返回-1，则抛出IOException.因而，JAVA中没有EOF这个标识符，而是使用-1来标识文件结束。</div><div class="post-footer">
-        <a href="/notes_001_java_eof/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/work/">日常记录</a>,&nbsp;<a href="/tags/java/">Java</a></div></div>
 </article><ul class="pagination"><li class="page-item ">
                     <span class="page-link">
                         <a href="/">1</a>

@@ -99,6 +99,30 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/deeplearning_02_neural_network/">深度学习:神经网络</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/theory/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>理论</a></span></div><div class="content">神经网络 接着上节感知机后，引入神经网络
+1. 激活函数 上一节介绍了两个输入信号的感知机的例子，以及用数学公式表示的例子，具体可以见上节内容,感知机。
+可以将上节感知机的公式调整为
+$$ y = h(b+w_1x_1+w_2x_2) (1.1) $$
+其中函数$h(x)$的定义如下 $$ h(x) = \begin{cases} 0 (x \le 0) \ 1 (x \gt 0) \end{cases} (1.2)$$
+结合示例如下：
+其中函数$h(x)$称之为激活函数，该函数会将输入信号的总和转换为输出信号。而灰色的输入信号是为了体现偏执$b$专门加上去的，主要是为了方便理解。
+1.1 阶跃函数 上面(1.2)就是阶跃函数，它的值呈阶段式变化，所以称为阶跃函数。
+1.2 sigmoid函数 sigmoid函数如下
+$$ h(x) = \displaystyle\frac{1}{1+e^{-x}} (1.3)$$
+如下，sigmoid函数是一条平滑的曲线，输出随着输入发生连续性的变化，相对于阶跃函数，具有平滑性，在深度网络的学习中具有重要意义，能够增加表达能力。
+另一个不同点是，相对于阶跃只能返回0或1，sigmoid函数可以返回0.731&hellip;,0.880&hellip;等实物。也就是说，感知机中神经元之间流动的是0和1的二元信号，而神经网络中流动的是连续的实数值信号。
+虽然阶跃函数和sigmoid函数在平滑性上有差异，但二者还是有相同的点，当输入值越小，输出越接近0，输入值越大，输出越接近1.也就是说，当输入信号为重要信息时，阶跃函数和sigmoid都会输出较大值，当输入信号为不重要的信息时，二者都会输出较小的值。还有一个共同点，不管输入 信号多小，或者有多大，输出信号的值都在0和1之间。另外一个相同点是，它两都是非线性函数。
+神经网络的激活函数必须使用非线性函数，如果使用线性函数作为激活函数的话，加深神经网络的层数就没有意义了。以激活函数$h(x)=cx$举例，运算3层后结果为$y(x)=h(h(h(x)))$，即$y(x)=c^3x$等价于$y(x)=ax$，即对于线性函数来说，不管加多少层，总是存在与之等效的&quot;无隐藏层的神经网络&quot;。
+1.3 ReLU函数 如下，ReLU函数在输出大于0时，直接输出该值，在输出小于等于0时，输出0.
+$$ h(x) = \begin{cases} 0 (x \le 0) \ x (x \gt 0) \end{cases} (1.4)$$
+2. 神经网络 感知机的激活函数为阶跃函数，输出结果只有0和1两种，当激活函数为其他非线性函数时则为神经网络。
+如下所示，为3层神经网络的实例：
+输入层和输出层之间为中间层，又称为隐藏层，其中输入层(第0层)有2个神经元，第一个隐藏层(第1层)有3个神经元，第2个隐藏层(第2层)有2个神经元，输出层(第3层)有2个神经元。
+上述激活函数主要作用于中间层。如下表示了激活函数$h()$的效果示例：</div><div class="post-footer">
+        <a href="/deeplearning_02_neural_network/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/deeplearn/">深度学习</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/deeplearning_01_perceptron/">深度学习:感知机</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/theory/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>理论</a></span></div><div class="content">感知机 最近陈硕在给我授课，讲深度学习，第一节内容主要是感知机
 1. 什么是感知机 感知机是二分类的线性模型，其输入是实例的特征向量，输出的是实例的类别，分别为0和1，属于判别模型。感知机接收多个输入信号，输出一个信号。
@@ -213,16 +237,6 @@ Snowflake算法中41个bit的时间戳完全依赖于时间的，如果有时钟
 如果发现有时钟回拨，时间很短比如5毫秒,就等待，然后再生成；或者就直接报错，交给业务层去处理 可以找2bit位作为时钟回拨位，发现有时钟回拨就将回拨位加1，达到最大位后再从0开始进行循环 实例启动后，改用内存生成时间，如百度开源的UidGenerator，该方式可以解决时钟回拨的第2种情况。对于时钟回拨的第1中情况，UidGenerator在实例启动后使用未分配过的工作机器id来解决，当然这样做就得管理工作机器id，因而需要一个外部存储，增加了复杂度。 </div><div class="post-footer">
         <a href="/notes_004_distrubte_id/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/work/">日常记录</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/dubbo_02_extend/">Dubbo自适应扩展机制</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">上一节提到过，Dubbo里除了Service和Config层为API，其它各层均为SPI。相比于Java中的SPI仅仅通过接口类名获取所有实现，Dubbo的实现可以通过接口类名和key值来获取一个具体的实现。通过SPI机制，Dubbo实现了面向插件编程，只定义了模块的接口，实现由各插件来完成。
-1. 使用方式 1.1 Java SPI 在扩展类的jar包内，放置扩展点配置文件META-INF/service/接口全限定名，内容为：扩展实现类全限定名，多个实现类用换行符分隔。
-如下为Mysql中Driver接口的实现：
-1 2 3 4 5 6 7 package com.mysql.jdbc; import java.sql.SQLException; public class Driver extends NonRegisteringDriver implements java.sql.Driver { ... } 调用时使用ServiceLoader加载所有的实现并通过循环来找到目标实现类
-1 2 3 4 5 6 7 8 9 ServiceLoader&lt;Driver&gt; loadedDrivers = ServiceLoader.load(Driver.class); Iterator&lt;Driver&gt; driversIterator = loadedDrivers.iterator(); try{ while(driversIterator.hasNext()) { driversIterator.next(); } } catch(Throwable t) { // Do nothing } 1.2 Dubbo SPI 拿Dubbo中Protocol接口来说，Protocol的定义如下：
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 package org.</div><div class="post-footer">
-        <a href="/dubbo_02_extend/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/doubbo/">doubbo</a></div></div>
 </article><ul class="pagination"><li class="page-item active">
                     <span class="page-link">
                         <a href="/">1</a>

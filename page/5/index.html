@@ -99,6 +99,16 @@
         alt="/images/avatar2.jpeg"
         title="/images/avatar2.jpeg" width="598" height="598" /></a></div><div class="home-subtitle">知其然而后知其所以然</div><div class="links"><a href="https://github.com/atuowgo" title="GitHub" target="_blank" rel="noopener noreffer me"><i class="fab fa-github fa-fw" aria-hidden="true"></i></a><a href="mailto:cxd_adam@126.com" title="Email" rel="me"><i class="far fa-envelope fa-fw" aria-hidden="true"></i></a></div></div>
 <article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/jacoco_02_class_instrument/">字节码增强</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">上节介绍了Java字节码结构，这节介绍字节码增强技术。Java字节码增强指的是在Java字节码生成之后，对其进行修改，增强其功能，这种方式相当于对应用程序的二进制文件进行修改。
+常见的字节码增强技术包括：
+Java自带的动态代理 ASM Javassist 1. 动态代理 在介绍动态代理前，先介绍代理模式。如下图，为代理模式的UML类图：
+代理模式是一种设计模式，提供了对目标对象额外的访问方式，即通过代理对象访问目标对象，这样可以在不修改原目标对象的前提下，提供额外的功能操作，扩展目标对象的功能。代理类ProxyAction和被代理类CoreActionImpl都实现了同一个接口Action，ProxyAction还持有了CoreActionImpl，以调用被代理类的核心操作。代理模式实现可以分为静态代理和动态代理。
+1.1. 静态代理 静态代理完全就是上面UML类图的直译，若代理类在程序运行前就已经存在，那么这种代理方式被成为 静态代理 ，这种情况下的代理类通常都是我们在Java代码中定义的。 通常情况下， 静态代理中的代理类和委托类会实现同一接口或是派生自相同的父类，再通过聚合来实现，让代理类持有一个委托类的引用即可。例子如下：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 public interface Action { void say(); } public class CoreActionImpl implements Action { @Override public void say() { System.out.println(&#34;hello world&#34;); } } public class ProxyAction implements Action { private Action action = new CoreActionImpl(); @Override public void say() { System.</div><div class="post-footer">
+        <a href="/jacoco_02_class_instrument/">阅读全文</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/jacoco/">Jacoco</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/jacoco_01_class_file_type/">Class文件格式</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/notes/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>烂笔头</a></span></div><div class="content">我们知道Java是一门跨平台的语言，我们编写的Java代码会被编译成中间class文件以让Java虚拟机解析运行。而Java虚拟机规范仅仅描述了抽象的Java虚拟机，在实现具体的Java虚拟机时，仅指出了设计规范。Java虚拟机的实现必须体现规范中的内容，但仅在确有必要时才应该受制于这些规范。对于完整内容，可以查看原文档，以JDK7为例，可查看https://docs.oracle.com/javase/specs/jvms/se7/html/，或者《深入理解Java虚拟机 JVM高级特性与最佳实践》一书。完整的规范主要包含以下内容：
 第2章：概览Java虚拟机整体架构 第3章：介绍如何将Java语言编写的程序转换为虚拟机指令集 第4章：定义class文件格式。它是一种与硬件和操作系统无关的二进制格式，用来表示编译后的类和接口 第5章：定义了Java虚拟机启动以及类和接口的加载、链接和初始化的过程 第6章：定义了Java虚拟机指令集 第7章：提供了一张以操作码值为索引的Java虚拟机操作码助记表 本文只是大概记录项目需要了解的基础概念，着重在介绍Class文件格式上，为该系列后续内容做铺垫。
@@ -208,64 +218,6 @@ AbstractBeanFactory：BeanFacoty的基本实现。
 AbstractBeanFactory的getBean方法内部调用了doGetBean，该方法提供了根据beanName获取实例的具体实现，代码如下(删除了相关的注释和空格)：
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 protected &lt;T&gt; T doGetBean( final String name, final Class&lt;T&gt; requiredType, final Object[] args, boolean typeCheckOnly) throws BeansException { /*(1)*/ final String beanName = transformedBeanName(name); Object bean; /*(2)*/ Object sharedInstance = getSingleton(beanName); /*(3)*/ if (sharedInstance !</div><div class="post-footer">
         <a href="/spring_04_getbean/">阅读全文</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/spring_03_beanload/">Spring BeanDefinition的加载</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>二腊</a></span>&nbsp;<span class="post-publish"></span>&nbsp;<span class="post-category">收录于 <a href="/categories/srccode/"><i class="far fa-folder fa-fw" aria-hidden="true"></i>源码系列</a></span></div><div class="content">前面提到AbstractRefreshableApplicationContext在刷新BeanFactory时，会调用loadBeanDefinitions方法以加载系统中Bean的定义，下面将讲解Bean定义的加载过程。
-一．XML定义 XML配置的加载由AbstractXmlApplicationContext实现，方法实现如下：
-主要是实例化了一个XmlBeanDefinitionReader对象，对其设置了Environment对象（具体过程可以上一篇）等后，调用XmlBeanDefinitionReader进行解析。直接跟踪进去，得到如下内容：
-其中参数inputSource为XML配置文件，Resource则该配置文件的描述，主要描述了该配置文件在classpath中的位置和可用于加载该配置文件的加载器。doLoadDocument方法比较简单，主要是加载指定的配置文件，返回一个JDK内置的XML解析Document对象，以便于解析XML DOM节点。
-重点看下registerBeanDefinitions方法，如下：
-该方法最终委托给了BeanDefinitonDocumentReader来完成Bean的解析。在这之前，初始化了一系列相关对象。包括：
-使用DefaultBeanDefinitionDocumentReader作为BeanDefinitionDocumentReader接口的实现
-创建了一个XmlReaderContext用于保存解析过程中使用到的各个相关对象，如资源描述对象Resource、ReaderEventListener事件监听器、XmlBeanDefinitionReader以及NamespaceHandlerResolver命名空间解析器。其中划重点的是DefaultNamespaceHandlerResolver，该类完成了自定义XML格式的解析，后面会有讲解。
-初始相关对象后便将解析过程委托给了DefaultBeanDefinitionDocumentReader来进行处理，该类的重点为parseBeanDefinitions方法，在调用该方法前，先初始化了一个BeanDefinitionParserDelegate对象，如下：
-并将该delegate对象传入了parseBeanDefinitions方法。BeanDefinitionParserDelegate主要提供了命名空间为http://www.springframework.org/schema/beans（下面简写为beans空间）的XML文件解析过程。该命名空间定义了4个主要的XML标签，分别为beans、bean、import和alias以及这些标签对应的属性，如下为该命名空间的示例，定义了一个基础的Bean。
-需要注意的是，上面在初始化BeanDefinitionParserDelegate后会先解析XML上&lt;beans&gt;标签上的默认属性，包括：default-lazy-init、default-merge、default-autowire、default-dependency-check、default-autowire-candidates、default-init-method和default-destroy-method这些全局属性。
-下面看下parseBeanBefinitoins方法：
-该方法会对当前节点所属命名空间进行判断，分为默认命名空间和自定义命名空间，其中默认命名空间指的是上面提到的beans空间。对于默认命名空间，会逐一解析每个DOM子节点，判断子节点的命名空间，最终委托给两个方法：处理默认命名空间的parseDefaultElement方法和处理自定义命名空间的parseClustomElement方法。
-parseDefautlElement方法如上， 对beans空间定义的各个标签分别进行了处理：
-解析import标签时，会读取resource属性指定的配置文件，加载后再解析该文件中的bean定义。
-解析alias标签时，读取标签的name和alias属性，添加到BeanRegistry缓存中。
-解析bean标签时，直接委托给BeanDefinitionParserDelegate来处理，过程为：
-获取id属性值作为beanName
-获取name属性值作为aliases，该属性值可以配置多个，以 , 或者 ; 符进行分割，将作为该bean的别名使用；若id指为空，且name不为空，则使用第一个name值作为id值
-检查beanName和aliases的唯一性
-解析bean其他配置，生成GenericBeanDefinition对象
-若beanName为空，则为其分配一个
-对于步骤3.d，处理过程为：
-获取class属性值
-获取parent属性值
-初始化GenericBeanDefinition实例
-解析bean节点的属性，设置到BeanDefinition中，包括：scope、abstract、lazy-init、autowired、dependency-check、autowire-candidate、primary、init-method、destroy-method、factory-method、factory-bean
-解析description子节点，获取值设置bean的描述内容
-解析meta子节点列表，获取key、value值设置附加元数据信息
-解析lookup-method子节点列表，获取name、bean值设置方法注入信息
-解析replaced-method子节点列表，获取值设置需要动态代理的方法信息
-解析constructor-arg子节点列表，获取值设置构造参数信息
-解析property子节点列表，获取值设置属性信息
-解析qualifier子节点列表，获取值进行设置
-上面解析完bean的配置后，会再处理子节点中其他命名空间的配置，使用NamespaceHandler的decorate方法，用以修改Bean定义内容，这部分将使用下面的内容，放在后面一起讲。
-解析beans标签时，会进行递归处理 如上，默认命名空间主要用于解析bean的定义，经过上面的处理，bean定义的解析就已经完成，会将实例对象注册到上下文中进行保存
-下面介绍parseClustomElement方法，顾名思义，该方法主要用来处理自定义命名空间的XML标签的，可以当做是spring XML配置处理的一种扩展手段，如下，为该方法的内容：
-主要委托给了NamespaceHandlerResolver，通过查找到对应节点对应命名空间的Handler，调用该Handler的parse方法进行处理。
-前面说过，NamespaceHandlerResolver使用了DefaultNamespaceHandlerResolver作为实现，跟踪resolve方法进去如下：
-过程为：
-获取已有的Handler处理列表，返回结果为一个Map，Key为XML命名空间，值可能为代表对应Handler类型的Spring对象或者已经实例化后的Handler对象，取决于之前是否已经调用过
-若指为Handler对象，则直接返回
-若为String对象，表明未初始化过，则初始化该类，并执行init初始化方法，然后将其重新返回Map中
-对于第（1）步中Handler处理列表的获取，Spring会扫描classpath中所有位于META-INF中的spring.handlers配置文件，将所有内容读取到一个Map中并返回。
-如上，为spring-context模块提供的spring.handlers文件，提供了该模块自定义命名空间标签的支持。如下为自定义命名空间的例子：
-主要引入了context空间的spring-configured标签和annotation-config标签。
-至此，介绍了XML配置下的bean解析。
-二、注解配置 下面介绍Spring以注解的方式进行bean加载的过程，如下，为开启注解加载所需要的配置：
-根据前面的内容，component-scan为http://www.springframework.org/schema/context命名空间中的标签，处理对象在spring-context模块的spring.handlers文件中定义，对应的是类org.springframework.context.config.ContextNamespaceHandler，如下：
-查看该类，可以知道，component-scan由ComponentScanBeanDefinitionParser处理，如下：
-主要过程为：
-获取base-package属性内容赋值给basePackage
-替换basePackage中的占位符内容
-根据 , ; \t \n 分割符分割basePackage，得到多个包路径</div><div class="post-footer">
-        <a href="/spring_03_beanload/">阅读全文</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;<a href="/tags/spring/">Spring</a></div></div>
 </article><ul class="pagination"><li class="page-item ">
                     <span class="page-link">

@@ -3,7 +3,34 @@
         <title>所有文章 - 程序猿二腊</title>
         <link>https://atuowgo.github.io/posts/</link>
         <description>所有文章 | 程序猿二腊</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Thu, 02 Feb 2023 01:36:54 -0700</lastBuildDate><atom:link href="https://atuowgo.github.io/posts/" rel="self" type="application/rss+xml" /><item>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Tue, 21 Feb 2023 01:36:54 -0700</lastBuildDate><atom:link href="https://atuowgo.github.io/posts/" rel="self" type="application/rss+xml" /><item>
+    <title>深度学习:神经网络</title>
+    <link>https://atuowgo.github.io/deeplearning_02_neural_network/</link>
+    <pubDate>Tue, 21 Feb 2023 01:36:54 -0700</pubDate>
+    <author>二腊</author>
+    <guid>https://atuowgo.github.io/deeplearning_02_neural_network/</guid>
+    <description><![CDATA[神经网络 接着上节感知机后，引入神经网络
+1. 激活函数 上一节介绍了两个输入信号的感知机的例子，以及用数学公式表示的例子，具体可以见上节内容,感知机。
+可以将上节感知机的公式调整为
+$$ y = h(b+w_1x_1+w_2x_2) (1.1) $$
+其中函数$h(x)$的定义如下 $$ h(x) = \begin{cases} 0 (x \le 0) \ 1 (x \gt 0) \end{cases} (1.2)$$
+结合示例如下：
+其中函数$h(x)$称之为激活函数，该函数会将输入信号的总和转换为输出信号。而灰色的输入信号是为了体现偏执$b$专门加上去的，主要是为了方便理解。
+1.1 阶跃函数 上面(1.2)就是阶跃函数，它的值呈阶段式变化，所以称为阶跃函数。
+1.2 sigmoid函数 sigmoid函数如下
+$$ h(x) = \displaystyle\frac{1}{1+e^{-x}} (1.3)$$
+如下，sigmoid函数是一条平滑的曲线，输出随着输入发生连续性的变化，相对于阶跃函数，具有平滑性，在深度网络的学习中具有重要意义，能够增加表达能力。
+另一个不同点是，相对于阶跃只能返回0或1，sigmoid函数可以返回0.731&hellip;,0.880&hellip;等实物。也就是说，感知机中神经元之间流动的是0和1的二元信号，而神经网络中流动的是连续的实数值信号。
+虽然阶跃函数和sigmoid函数在平滑性上有差异，但二者还是有相同的点，当输入值越小，输出越接近0，输入值越大，输出越接近1.也就是说，当输入信号为重要信息时，阶跃函数和sigmoid都会输出较大值，当输入信号为不重要的信息时，二者都会输出较小的值。还有一个共同点，不管输入 信号多小，或者有多大，输出信号的值都在0和1之间。另外一个相同点是，它两都是非线性函数。
+神经网络的激活函数必须使用非线性函数，如果使用线性函数作为激活函数的话，加深神经网络的层数就没有意义了。以激活函数$h(x)=cx$举例，运算3层后结果为$y(x)=h(h(h(x)))$，即$y(x)=c^3x$等价于$y(x)=ax$，即对于线性函数来说，不管加多少层，总是存在与之等效的&quot;无隐藏层的神经网络&quot;。
+1.3 ReLU函数 如下，ReLU函数在输出大于0时，直接输出该值，在输出小于等于0时，输出0.
+$$ h(x) = \begin{cases} 0 (x \le 0) \ x (x \gt 0) \end{cases} (1.4)$$
+2. 神经网络 感知机的激活函数为阶跃函数，输出结果只有0和1两种，当激活函数为其他非线性函数时则为神经网络。
+如下所示，为3层神经网络的实例：
+输入层和输出层之间为中间层，又称为隐藏层，其中输入层(第0层)有2个神经元，第一个隐藏层(第1层)有3个神经元，第2个隐藏层(第2层)有2个神经元，输出层(第3层)有2个神经元。
+上述激活函数主要作用于中间层。如下表示了激活函数$h()$的效果示例：]]></description>
+</item>
+<item>
     <title>深度学习:感知机</title>
     <link>https://atuowgo.github.io/deeplearning_01_perceptron/</link>
     <pubDate>Thu, 02 Feb 2023 01:36:54 -0700</pubDate>
@@ -205,25 +232,6 @@ Observer(观察者)观察Subject(目标)，Subject在发生变化时通知Observ
 Subject都会有一个Observer列表，以及提供一个添加观察者的方法(add) 用户通过调用Subject的add方法，触发观察，把Observer添加到Observer列表中 Subject在事件发生时，遍历Observer列表，通知到Observer 以此达到目的。下面来看jvm-sandbox如何实现该过程。
 2. 触发观察DefaultModuleEventWatcher.watch 从官网的例子开始
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 /** * 一个损坏的钟实现 */ static class BrokenClock extends Clock { @Override void checkState() { throw new IllegalStateException(); } @Override void delay() throws InterruptedException { Thread.sleep(10000L); } } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 /** * 修复损坏的钟模块 */ @Information(id = &#34;broken-clock-tinker&#34;) public class BrokenClockTinkerModule implements Module { @Resource private ModuleEventWatcher moduleEventWatcher; @Http(&#34;/repairCheckState&#34;) public void repairCheckState() { moduleEventWatcher.]]></description>
-</item>
-<item>
-    <title>JVM层面的切面实现 : jvm-sandbox 之 &lt;应用启动&gt;</title>
-    <link>https://atuowgo.github.io/sandbox_01_start/</link>
-    <pubDate>Fri, 24 Jul 2020 00:00:00 &#43;0000</pubDate>
-    <author>二腊</author>
-    <guid>https://atuowgo.github.io/sandbox_01_start/</guid>
-    <description><![CDATA[1. 启动 sandbox源码各模块的结构如下:
-sandbox安装后的目录结构如下:
-按照官方的教程，启动命令如下：
-1 ./sandbox.sh -p 2343 查看对应的脚本，函数定义如下：
-翻译过来就是执行如下命令
-1 java -Xms128M -Xmx128M -Xnoclassgc -ea -jar /xxx/sandbox-core.jar 2342 /xxx/sandbox-agent.jar home=/xxx;token=xxx;server.ip=xxx;service.port=xxx;namespace=xxx 按顺序将参数定义为
-targetJvmPid:目标应用pid agentJarPath:附加的agent包路径 cfg:agent-main的参数,包括home路径;该次唯一标识toke;ip端口以及命名空间 查看sandbox-core模块的pom.xml
-1 2 3 4 5 &lt;archive&gt; &lt;manifest&gt; &lt;mainClass&gt;com.alibaba.jvm.sandbox.core.CoreLauncher&lt;/mainClass&gt; &lt;/manifest&gt; &lt;/archive&gt; 找到启动类 com.alibaba.jvm.sandbox.core.CoreLauncher
-该类存在一个main方法，接收3个参数，并实例化一个CoreLauncher实例，它在构造方法中完成agent的attach动作.
-1 2 3 4 5 6 7 public CoreLauncher(final String targetJvmPid, final String agentJarPath, final String token) throws Exception { attachAgent(targetJvmPid, agentJarPath, token); } 主要是以agent-main的方式执行。
-去到sandbox-agent模块的pom.xml，有如下配置
-1 2 3 4 5 6 7 8 &lt;archive&gt; &lt;manifestEntries&gt; &lt;Premain-Class&gt;com.]]></description>
 </item>
 </channel>
 </rss>
